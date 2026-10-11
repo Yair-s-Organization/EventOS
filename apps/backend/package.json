@@ -1,5 +1,5 @@
 {
-  "name": "@eventoos/backend",
+  "name": "@eventos/backend",
   "version": "0.0.0",
   "private": true,
   "scripts": {
@@ -11,7 +11,7 @@
     "migration:revert": "bun --bun run typeorm migration:revert -d src/data-source.ts"
   },
   "dependencies": {
-    "@eventoos/shared": "workspace:*",
+    "@eventos/shared": "workspace:*",
     "@nestjs/common": "^12.1.2",
     "@nestjs/core": "^12.1.2",
     "@nestjs/platform-express": "^12.1.2",

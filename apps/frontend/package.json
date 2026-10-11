@@ -1,5 +1,5 @@
 {
-  "name": "@eventoos/frontend",
+  "name": "@eventos/frontend",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -9,7 +9,7 @@
     "preview": "bun --bun vite preview"
   },
   "dependencies": {
-    "@eventoos/shared": "workspace:*",
+    "@eventos/shared": "workspace:*",
     "react": "^19.3.0",
     "react-dom": "^19.3.0"
   },

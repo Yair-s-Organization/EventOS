@@ -1,15 +1,15 @@
 {
-  "name": "eventoos",
+  "name": "eventos",
   "private": true,
   "packageManager": "bun@1.4.3",
   "workspaces": ["apps/*", "packages/*"],
   "scripts": {
     "dev": "bun run --filter '*' dev",
-    "dev:backend": "bun run --filter @eventoos/backend dev",
-    "dev:frontend": "bun run --filter @eventoos/frontend dev",
+    "dev:backend": "bun run --filter @eventos/backend dev",
+    "dev:frontend": "bun run --filter @eventos/frontend dev",
     "build": "bun run --filter '*' build",
-    "db:migrate": "bun run --filter @eventoos/backend migration:run",
-    "db:revert": "bun run --filter @eventoos/backend migration:revert"
+    "db:migrate": "bun run --filter @eventos/backend migration:run",
+    "db:revert": "bun run --filter @eventos/backend migration:revert"
   },
   "devDependencies": {
     "typescript": "^7.0.2"
