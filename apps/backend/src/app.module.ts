@@ -2,13 +2,13 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { dbOptions } from './data-source';
 
-@Module({
+@Module({                                       // un módulo agrupa partes de la aplicación
   imports: [
-    TypeOrmModule.forRoot({
-      ...dbOptions,
-      autoLoadEntities: true,
-      synchronize: false, // el esquema se gestiona solo con migraciones
+    TypeOrmModule.forRoot({                     // conecta TypeORM con NestJS
+      ...dbOptions,                             // usa los mismos datos de conexión
+      autoLoadEntities: true,                   // registra solas las entidades declaradas con forFeature
+      synchronize: false,                       // NO modifica tablas automáticamente (solo migraciones)
     }),
   ],
 })
-export class AppModule {}
+export class AppModule {}                       // la clase vacía existe para "recibir" el @Module
