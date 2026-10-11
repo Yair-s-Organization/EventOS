@@ -1,4 +1,4 @@
-# Documentación del proyecto EventoOS
+# Documentación del proyecto EventOS
 
 ## Contenido
 
@@ -15,7 +15,7 @@
 
 Un Monorepo es un único repositorio en GitHub que aloja múltiples proyectos distintos (en este caso, el código del frontend y del backend juntos). Existe para resolver el problema de mantener sincronizados varios repositorios; permite compartir configuraciones, dependencias y código (como interfaces de TypeScript) entre el cliente y el servidor de forma directa.
 
-Github: <https://github.com/gameShark1610/EventoOS>
+Github: <https://github.com/Yair-s-Organization/EventOS>
 
 ## Tecnologías a usar
 
@@ -135,7 +135,7 @@ Esta sección documenta cómo está armado el repositorio: cómo se vinculan los
 ## Estructura de carpetas
 
 ```text
-EventoOS/
+EventOS/
 ├── package.json            # raíz: workspaces + scripts globales
 ├── bun.lock                # lockfile único (se versiona)
 ├── .gitignore
@@ -174,17 +174,17 @@ El `package.json` de la raíz es lo que convierte el repositorio en un monorepo.
 
 ```json
 {
-  "name": "eventoos",
+  "name": "eventos",
   "private": true,
   "packageManager": "bun@1.4.3",
   "workspaces": ["apps/*", "packages/*"],
   "scripts": {
     "dev": "bun run --filter '*' dev",
-    "dev:backend": "bun run --filter @eventoos/backend dev",
-    "dev:frontend": "bun run --filter @eventoos/frontend dev",
+    "dev:backend": "bun run --filter @eventos/backend dev",
+    "dev:frontend": "bun run --filter @eventos/frontend dev",
     "build": "bun run --filter '*' build",
-    "db:migrate": "bun run --filter @eventoos/backend migration:run",
-    "db:revert": "bun run --filter @eventoos/backend migration:revert"
+    "db:migrate": "bun run --filter @eventos/backend migration:run",
+    "db:revert": "bun run --filter @eventos/backend migration:revert"
   }
 }
 ```
@@ -199,7 +199,7 @@ bun add -d typescript
 - `packageManager` fija la versión de Bun que usa el proyecto. Ajustarlo a la versión instalada (`bun --version`).
 - `workspaces` hace que un único `bun install` en la raíz instale las dependencias de todos los paquetes y genere un solo `bun.lock`. Nunca ejecutar `bun install` dentro de `apps/*`, ni usar npm.
 - Los scripts de la raíz son el punto de entrada del equipo: `bun run dev`, `bun run build`, `bun run db:migrate`.
-- `bun run --filter '*' dev` ejecuta en paralelo el script `dev` de todos los paquetes que lo definan; por eso backend y frontend exponen `dev` y `build` en su propio `package.json`. `--filter @eventoos/backend` limita la ejecución a un solo paquete.
+- `bun run --filter '*' dev` ejecuta en paralelo el script `dev` de todos los paquetes que lo definan; por eso backend y frontend exponen `dev` y `build` en su propio `package.json`. `--filter @eventos/backend` limita la ejecución a un solo paquete.
 
 ## Paquete compartido: packages/shared
 
@@ -209,7 +209,7 @@ Contiene las interfaces TypeScript que comparten backend y frontend. Al apuntar 
 
 ```json
 {
-  "name": "@eventoos/shared",
+  "name": "@eventos/shared",
   "version": "0.0.0",
   "private": true,
   "main": "src/index.ts",
@@ -229,7 +229,7 @@ export interface Evento {
 Para usarlo, cada app lo declara como dependencia con el protocolo `workspace:*` (Bun lo enlaza localmente, no lo descarga) y lo importa por nombre:
 
 ```ts
-import type { Evento } from '@eventoos/shared';
+import type { Evento } from '@eventos/shared';
 ```
 
 ## Backend: apps/backend (NestJS + TypeORM + PostgreSQL)
@@ -238,7 +238,7 @@ import type { Evento } from '@eventoos/shared';
 
 ```json
 {
-  "name": "@eventoos/backend",
+  "name": "@eventos/backend",
   "version": "0.0.0",
   "private": true,
   "scripts": {
@@ -250,7 +250,7 @@ import type { Evento } from '@eventoos/shared';
     "migration:revert": "bun --bun run typeorm migration:revert -d src/data-source.ts"
   },
   "dependencies": {
-    "@eventoos/shared": "workspace:*"
+    "@eventos/shared": "workspace:*"
   }
 }
 ```
@@ -295,7 +295,7 @@ DB_HOST=localhost
 DB_PORT=5432
 DB_USER=postgres
 DB_PASSWORD=tu_contraseña
-DB_NAME=eventoos
+DB_NAME=eventos
 ```
 
 Este archivo se versiona como plantilla; el `.env` real con la contraseña de cada persona **no** se sube a GitHub (está en `.gitignore`). Bun carga el `.env` automáticamente desde la carpeta donde corre el script, por lo que no se necesita `dotenv`.
@@ -312,7 +312,7 @@ export const dbOptions: DataSourceOptions = {
   port: Number(process.env.DB_PORT ?? 5432),
   username: process.env.DB_USER ?? 'postgres',
   password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME ?? 'eventoos',
+  database: process.env.DB_NAME ?? 'eventos',
 };
 
 // Usado solo por el CLI de TypeORM (migraciones)
@@ -367,7 +367,7 @@ bootstrap();
 
 ```json
 {
-  "name": "@eventoos/frontend",
+  "name": "@eventos/frontend",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -377,7 +377,7 @@ bootstrap();
     "preview": "bun --bun vite preview"
   },
   "dependencies": {
-    "@eventoos/shared": "workspace:*"
+    "@eventos/shared": "workspace:*"
   }
 }
 ```
@@ -420,7 +420,7 @@ export default defineConfig({
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>EventoOS</title>
+    <title>EventOS</title>
   </head>
   <body>
     <div id="root"></div>
@@ -441,10 +441,10 @@ createRoot(document.getElementById('root')!).render(<App />);
 **`apps/frontend/src/App.tsx`**
 
 ```tsx
-import type { Evento } from '@eventoos/shared';
+import type { Evento } from '@eventos/shared';
 
 export default function App() {
-  const ejemplo: Evento = { id: '1', nombre: 'EventoOS' };
+  const ejemplo: Evento = { id: '1', nombre: 'EventOS' };
   return <h1>{ejemplo.nombre}</h1>;
 }
 ```
@@ -487,8 +487,8 @@ Todos los comandos se ejecutan desde la **raíz del repositorio** salvo que se i
 ## 1. Clonar el repositorio e instalar dependencias
 
 ```bash
-git clone https://github.com/gameShark1610/EventoOS.git
-cd EventoOS
+git clone https://github.com/Yair-s-Organization/EventOS.git
+cd EventOS
 git switch develop
 git switch -c feature/nombre-de-tu-tarea
 bun install
@@ -505,7 +505,7 @@ PostgreSQL se ejecuta como servicio del sistema. Primero asegurarse de que esté
 ```powershell
 Get-Service postgresql*
 Start-Service postgresql-x64-18
-psql -U postgres -c "CREATE DATABASE eventoos;"
+psql -U postgres -c "CREATE DATABASE eventos;"
 ```
 
 Si `psql` no se reconoce, agregar `C:\Program Files\PostgreSQL\18\bin` al PATH o usar la aplicación "SQL Shell (psql)" del menú Inicio. El comando pide la contraseña que se definió al instalar PostgreSQL.
@@ -514,14 +514,14 @@ Si `psql` no se reconoce, agregar `C:\Program Files\PostgreSQL\18\bin` al PATH o
 
 ```bash
 sudo systemctl start postgresql
-sudo -u postgres psql -c "CREATE DATABASE eventoos;"
+sudo -u postgres psql -c "CREATE DATABASE eventos;"
 sudo -u postgres psql -c "ALTER USER postgres PASSWORD 'tu_contraseña';"
 ```
 
 El tercer comando asigna una contraseña al usuario `postgres`, necesaria porque el backend se conecta por TCP con usuario y contraseña. Para comprobar la conexión:
 
 ```bash
-psql -U postgres -h localhost -d eventoos -c "SELECT 1;"
+psql -U postgres -h localhost -d eventos -c "SELECT 1;"
 ```
 
 ## 3. Configurar las variables de entorno
@@ -603,7 +603,7 @@ bun run dev:frontend
 
 - `ECONNREFUSED 127.0.0.1:5432` o `Unable to connect to the database`: PostgreSQL no está activo o el puerto es otro. Repetir el paso 2 y revisar `DB_PORT`. El backend reintenta conectarse automáticamente.
 - `password authentication failed`: la contraseña de `DB_PASSWORD` no coincide con la del usuario de PostgreSQL.
-- `database "eventoos" does not exist`: falta crear la base de datos (paso 2) o el nombre en `DB_NAME` es distinto.
+- `database "eventos" does not exist`: falta crear la base de datos (paso 2) o el nombre en `DB_NAME` es distinto.
 - `EADDRINUSE` / puerto ocupado: otro proceso usa el 3000 o el 5173. Cerrarlo o cambiar `PORT` en `.env` (backend) o `server.port` en `vite.config.ts` (frontend).
 - `node: command not found` al ejecutar una herramienta: ese comando intenta usar Node.js. Ejecutarlo con `bun --bun` o `bunx --bun` en lugar de instalar Node.
 - Errores de dependencias tras un `git pull`: ejecutar `bun install` en la raíz.
