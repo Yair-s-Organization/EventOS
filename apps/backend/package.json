@@ -4,11 +4,11 @@
   "private": true,
   "scripts": {
     "dev": "bun --watch src/main.ts",
-    "build": "bun build src/main.ts --target=bun --outdir=dist --packages=external",
+    "build": "bun build src/main.ts --target bun --outdir=dist --packages external",
     "start": "bun dist/main.js",
-    "migration:generate": "bun --bun run typeorm migration:generate -d src/data-source.ts",
-    "migration:run": "bun --bun run typeorm migration:run -d src/data-source.ts",
-    "migration:revert": "bun --bun run typeorm migration:revert -d src/data-source.ts"
+    "migration:generate": "bun --bun run typeorm migration:generate -d src/database/data-source.ts",
+    "migration:run": "bun --bun run typeorm migration:run -d src/database/data-source.ts",
+    "migration:revert": "bun --bun run typeorm migration:revert -d src/database/data-source.ts"
   },
   "dependencies": {
     "@eventos/shared": "workspace:*",
