@@ -1,6 +1,5 @@
-import type { Evento } from '@eventoos/shared';
+import { AppRouter } from "./app/router";
 
 export default function App() {
-  const ejemplo: Evento = { id: '1', nombre: 'EventOS' };
-  return <h1>{ejemplo.nombre}</h1>;
+  return <AppRouter />;
 }
