@@ -1,16 +1,10 @@
-
 import {
   BrowserRouter,
-  Navigate,
   Route,
   Routes,
-} from 'react-router';
+} from "react-router";
 
-import { MainLayout } from '../components/layout/MainLayout';
-
-import { LoginPage } from '../features/auth/pages/LoginPage';
-import { EventsPage } from '../features/events/pages/EventsPage';
-import { MyTicketsPage } from '../features/tickets/pages/MyTicketsPage';
+import { MainLayout } from "../components/templates/MainLayout";
 
 export function AppRouter() {
   return (
@@ -18,30 +12,15 @@ export function AppRouter() {
       <Routes>
         <Route element={<MainLayout />}>
           <Route
-            path="/"
-            element={<Navigate to="/eventos" replace />}
+            index
+            element={<h1>Bienvenido a EventOS</h1>}
           />
 
           <Route
-            path="/iniciar-sesion"
-            element={<LoginPage />}
-          />
-
-          <Route
-            path="/eventos"
-            element={<EventsPage />}
-          />
-
-          <Route
-            path="/mis-boletos"
-            element={<MyTicketsPage />}
+            path="*"
+            element={<h1>Página no encontrada</h1>}
           />
         </Route>
-
-        <Route
-          path="*"
-          element={<h1>Página no encontrada</h1>}
-        />
       </Routes>
     </BrowserRouter>
   );
