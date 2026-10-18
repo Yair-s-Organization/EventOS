@@ -1,0 +1,19 @@
+@import "tailwindcss";
+
+@theme {
+  /* Colores principales */
+  --color-eventos-primary: #5F1B36;
+  --color-eventos-secondary: #1B585F;
+
+  /* Colores claros */
+  --color-eventos-primary-light: #EDD5D6;
+  --color-eventos-secondary-light: #B7D6D9;
+
+  /* Estados */
+  --color-eventos-success: #338315;
+  --color-eventos-error: #AD3343;
+  --color-eventos-warning: #CDCD36;
+
+  /* Neutros */
+  --color-eventos-neutral: #E9E9E9;
+}
