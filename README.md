@@ -3,14 +3,14 @@
 ## Contenido
 
 1. [Arquitectura del Proyecto: Monorepo](#1-arquitectura-del-proyecto-monorepo)
-2. [Tecnologías a usar](#2-tecnologías-a-usar)
-3. [Cómo se manejarán las ramas en GitHub](#3-cómo-se-manejarán-las-ramas-en-github)
-4. [Guía de Instalación](#4-guía-de-instalación)
+3. [Tecnologías a usar](#2-tecnologías-a-usar)
+4. [Cómo se manejarán las ramas en GitHub](#3-cómo-se-manejarán-las-ramas-en-github)
+5. [Guía de Instalación](#4-guía-de-instalación)
    - [Git](#git)
    - [PostgreSQL](#postgresql)
    - [Bun](#bun)
    - [NestJS](#nestjs)
-5. [Configuración del Monorepo](#5-configuración-del-monorepo)
+6. [Configuración del Monorepo](#5-configuración-del-monorepo)
    - [Estructura general de carpetas](#estructura-general-de-carpetas)
    - [Bun Workspaces: `package.json` raíz](#bun-workspaces-packagejson-raíz)
    - [Paquete compartido: `packages/shared`](#paquete-compartido-packagesshared)
@@ -20,17 +20,21 @@
    - [Arquitectura y Estructura de Carpetas del Frontend (`apps/frontend/src/`)](#arquitectura-y-estructura-de-carpetas-del-frontend-appsfrontendsrc)
    - [¿Cómo se conecta todo? (Ejemplo del flujo completo)](#cómo-se-conecta-todo-ejemplo-del-flujo-completo)
    - [Archivos de control de versiones](#archivos-de-control-de-versiones)
-6. [Guía de ejecución del proyecto](#6-guía-de-ejecución-del-proyecto)
+7. [Guía de ejecución del proyecto](#6-guía-de-ejecución-del-proyecto)
    - [1. Clonar el repositorio e instalar dependencias](#1-clonar-el-repositorio-e-instalar-dependencias)
    - [2. Levantar la base de datos (PostgreSQL)](#2-levantar-la-base-de-datos-postgresql)
    - [3. Configurar las variables de entorno](#3-configurar-las-variables-de-entorno)
    - [4. Aplicar las migraciones](#4-aplicar-las-migraciones)
    - [5. Levantar backend y frontend en modo desarrollo](#5-levantar-backend-y-frontend-en-modo-desarrollo)
    - [6. Verificar que todo funciona](#6-verificar-que-todo-funciona)
-7. [Comandos frecuentes](#7-comandos-frecuentes)
-8. [Problemas comunes](#8-problemas-comunes)
+8. [Comandos frecuentes](#7-comandos-frecuentes)
+9. [Problemas comunes](#8-problemas-comunes)
 
----
+
+
+# ¿Quién aprueba y revisa los cambios?
+
+Se acordó que los cambios se aprueban entre los miembros de cada equipo, es decir, si perteneces al equipo de Frontend los cambios deben ser aprobados por miembros del mismo equipo, sucede lo mismo con el Backend.
 
 ## 1. Arquitectura del Proyecto: Monorepo
 
