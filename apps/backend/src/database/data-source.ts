@@ -13,5 +13,5 @@ export const dbOptions: DataSourceOptions = {   // los datos de conexión, reuti
 export default new DataSource({                 // este objeto solo lo usa el CLI de migraciones
   ...dbOptions,                                 // copia los datos de conexión de arriba
   entities: ['src/**/*.entity.ts'],             // dónde buscar las entidades (tablas)
-  migrations: ['src/migrations/*.ts'],          // dónde están/se guardan las migraciones
+  migrations: ['src/database/migrations/*.ts'], // dónde están/se guardan las migraciones
 });

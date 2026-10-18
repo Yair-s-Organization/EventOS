@@ -17,7 +17,7 @@ export interface SubEvento {
   idEvento: number;
   idRecinto: number;
   idFecha: number;
-  accesoQR: string;
+  accesoQR: boolean;
   estado: EstadoSubEvento;
 }
 

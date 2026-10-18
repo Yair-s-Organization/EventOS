@@ -8,7 +8,8 @@
     "start": "bun dist/main.js",
     "migration:generate": "bun --bun run typeorm migration:generate -d src/database/data-source.ts",
     "migration:run": "bun --bun run typeorm migration:run -d src/database/data-source.ts",
-    "migration:revert": "bun --bun run typeorm migration:revert -d src/database/data-source.ts"
+    "migration:revert": "bun --bun run typeorm migration:revert -d src/database/data-source.ts",
+    "seed": "bun src/database/seeds/recintos.seed.ts"
   },
   "dependencies": {
     "@eventos/shared": "workspace:*",
