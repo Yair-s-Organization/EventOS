@@ -9,7 +9,8 @@
     "dev:frontend": "bun run --filter @eventos/frontend dev",
     "build": "bun run --filter '*' build",
     "db:migrate": "bun run --filter @eventos/backend migration:run",
-    "db:revert": "bun run --filter @eventos/backend migration:revert"
+    "db:revert": "bun run --filter @eventos/backend migration:revert",
+    "db:seed": "bun run --filter @eventos/backend seed"
   },
   "devDependencies": {
     "@types/qrcode": "^1.5.6",

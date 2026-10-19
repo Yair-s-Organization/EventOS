@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { dbOptions } from './database/data-source';
+import { StorageModule } from './common/storage/storage.module';
 
 @Module({                                       
   imports: [
@@ -9,6 +10,7 @@ import { dbOptions } from './database/data-source';
       autoLoadEntities: true,                   
       synchronize: false,                      
     }),
+    StorageModule,
   ],
 })
 export class AppModule {}                       
