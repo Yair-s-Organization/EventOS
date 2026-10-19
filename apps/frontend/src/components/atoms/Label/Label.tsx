@@ -14,7 +14,7 @@ export function Label({
 } : LabelProps){
     return(
         <label htmlFor={htmlFor}
-        className={`block text-sm font-medium text-gray-700 mb-1 ${className}`}
+        className={`font-merriweather font-medium text-[16px] text-gray-700 mb-1 ${className}`}
         {...restOfProps}>
             {children}
             {required && <span className="ml-1 text-red-500 font-bold" aria-hidden="true">*</span>}
