@@ -12,7 +12,7 @@ export class LogisticaService {
 
     if (!tienePermiso) {
       throw new ForbiddenException(
-        'Acceso denegado (HTTP 403). No cuentas con permisos de Personal de Logística para este evento específico (RN-44).',
+        'Acceso denegado (HTTP 403). No cuentas con permisos de Personal de Logística para este evento específico.',
       );
     }
 
