@@ -10,11 +10,15 @@
     "build": "bun run --filter '*' build",
     "db:migrate": "bun run --filter @eventos/backend migration:run",
     "db:revert": "bun run --filter @eventos/backend migration:revert",
-    "db:seed": "bun run --filter @eventos/backend seed"
+    "db:seed": "bun run --filter @eventos/backend seed",
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "vitepress build docs",
+    "docs:preview": "vitepress preview docs"
   },
   "devDependencies": {
     "@types/qrcode": "^1.5.6",
-    "typescript": "^7.0.2"
+    "typescript": "^7.0.2",
+    "vitepress": "^1.6.4"
   },
   "dependencies": {
     "@nestjs/jwt": "^12.0.3",
