@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { dbOptions } from './database/data-source';
 import { StorageModule } from './common/storage/storage.module';
+import { AuthModule } from './modules/auth/auth.module';
 
 @Module({                                       
   imports: [
@@ -11,6 +12,7 @@ import { StorageModule } from './common/storage/storage.module';
       synchronize: false,                      
     }),
     StorageModule,
+    AuthModule,
   ],
 })
 export class AppModule {}                       
