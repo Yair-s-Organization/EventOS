@@ -33,12 +33,11 @@ export class AuthService {
 
     
     const correoMin = dto.correo.toLowerCase();
-    let tipoAsignado = TipoCuentaUsuario.ASISTENTE;
-
+    let tipoAsignado = TipoCuentaUsuario.EXTERNO;
     if (correoMin.endsWith('@alumno.ipn.mx') || correoMin.endsWith('@ipn.mx')) {
-      tipoAsignado = TipoCuentaUsuario.ASISTENTE; 
+      tipoAsignado = TipoCuentaUsuario.INTERNO;
     } else {
-      tipoAsignado = TipoCuentaUsuario.ASISTENTE;
+      tipoAsignado = TipoCuentaUsuario.EXTERNO;
     }
 
     
@@ -64,6 +63,24 @@ export class AuthService {
   }
 
   async login(dto: { correo: string; contrasena: string; captchaToken?: string }) {
+    if (!dto.captchaToken) {
+      throw new UnauthorizedException('Por favor, completa la verificación del CAPTCHA.');
+    }
+
+    const secretKey = process.env.RECAPTCHA_SECRET_KEY;
+    const verifyUrl = `https://www.google.com/recaptcha/api/siteverify?secret=${secretKey}&response=${dto.captchaToken}`;
+    
+    try {
+      const response = await fetch(verifyUrl, { method: 'POST' });
+      const captchaResult = await response.json();
+
+      if (!captchaResult.success) {
+        throw new UnauthorizedException('Validación de CAPTCHA fallida o inválida.');
+      }
+    } catch (error) {
+      throw new UnauthorizedException('No se pudo verificar el CAPTCHA con los servidores externos.');
+    }
+
     const usuario = await this.usuarioRepository.findOne({
       where: { correo: dto.correo },
     });

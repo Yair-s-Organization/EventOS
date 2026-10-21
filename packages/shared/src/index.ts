@@ -83,6 +83,8 @@ export enum TipoCuentaUsuario {
   ADMINISTRADOR = 'Administrador',
   ASISTENTE = 'Asistente',
   SUBDIRECCION = 'Subdirección',
+  INTERNO = 'Usuario Interno',
+  EXTERNO = 'Usuario Externo',
 }
 
 export enum EstadoVerificacion {
