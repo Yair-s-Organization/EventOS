@@ -31,10 +31,68 @@ export interface Fecha {
 export interface Recinto {
   idRecinto: number;
   nombre: string;
+  aforo: number;
   computadorasDisponibles?: number; 
-  idEstadoRecinto?: number;
+  idEstadoRecinto?: EstadoRecinto;
 }
 
+export interface Asiento {
+  idAsiento: number;
+  fila: string;
+  numero: number;
+  idRecinto: number;
+}
+
+export interface Boleto {
+  idBoleto: number;
+  tokenQr: string;
+  fechaGeneracion: string;
+  idAsiento: number | null;
+  idEstadoBoleto: EstadoBoleto;
+}
+
+export interface AsistenteEvento {
+  idSubEvento: number;
+  idUsuario: number;
+  idBoleto: number;
+}
+
+export interface AsientoDisponible {
+  idAsiento: number;
+  fila: string;
+  numero: number;
+  ocupado: boolean; // <- calculado por el back
+}
+
+export interface DisponibilidadSubEvento {
+  idSubEvento: number;
+  recinto: Recinto;
+  lugaresDisponibles: number;  //<- calculado por el back
+  asientos: AsientoDisponible[]; // <- lista de asientos disponibles
+}
+
+export interface CrearReservaPayload {
+  idSubEvento: number;
+  idAsiento: number | null;
+}
+
+export interface DetalleBoletoUsuario {
+  idBoleto: number;
+  fechaGeneracion: string;
+  idEstadoBoleto: EstadoBoleto;
+  qrImagenBase64: string; //<-la crea back
+  idEvento: number;
+  idSubEvento: number;
+  nombreEvento: string;
+  poster?: string | null;
+  accesoQR: boolean;
+  fecha: string;
+  horaInicio: string;
+  horaFin: string;
+  nombreRecinto: string;
+  filaAsiento?: string | null;
+  numeroAsiento?: number | null;
+}
 export interface Usuario {
   idUsuario: number;
   nombre: string;
@@ -69,14 +127,27 @@ export enum EstadoEvento {
   RECHAZADO = 1,
   ACEPTADO = 2,
   ENPROCESO = 3,
-  CANCELADO= 4,
-  FINALIZADO= 5
+  CANCELADO = 4,
+  FINALIZADO = 5
 }
 
 export enum EstadoSubEvento {
   ACEPTADO = 1,
-  CANCELADO= 2,
-  FINALIZADO= 3
+  CANCELADO = 2,
+  FINALIZADO = 3
+}
+
+export enum EstadoRecinto{
+  HABILITADO = 1,
+  INHABILITADO = 2,
+  MANTENIMIENTO = 3
+}
+
+//el estado cancelado se va a usar? -> habria que revisarlo
+export enum EstadoBoleto {
+  VALIDO = 1,
+  UTILIZADO = 2,
+  CANCELADO = 3
 }
 
 export enum TipoCuentaUsuario {
