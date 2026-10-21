@@ -6,12 +6,14 @@ import { SubEventoEntity } from './entities/subevento.entity';
 import { FechaEntity } from './entities/fecha.entity';
 import { EventosService } from './services/eventos.service';
 import { RecintosModule } from '../recintos/recintos.module';
+import { SolicitudesController } from './controllers/solicitudes.controller';
 
 @Module({
     imports: [
         TypeOrmModule.forFeature([EventoEntity, UsuarioEntity, SubEventoEntity, FechaEntity]),
         RecintosModule,
     ],
+    controllers: [SolicitudesController],
     providers: [EventosService],
     exports: [EventosService],
 })

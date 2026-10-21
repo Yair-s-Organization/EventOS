@@ -17,6 +17,7 @@ import {
   EstadoVerificacion,
   type SubeventoPayload,
 } from '@eventos/shared';
+import type { CrearSolicitudDto } from '../dto/crearSolicitud.dto';
 
 @Injectable()
 export class EventosService {
@@ -176,5 +177,23 @@ export class EventosService {
         },
       };
     });
+  }
+
+  // Orquesta la creación de una solicitud a partir del DTO recibido y delega a la transacción crearEvento
+  async registrarSolicitud(
+    idOrganizador: number,
+    dto: CrearSolicitudDto,
+    posterKey?: string,
+  ) {
+    const nuevoEvento = this.eventoRepository.create({
+      nombre: dto.nombre,
+      descripcion: dto.descripcion,
+      justificacion: dto.justificacion,
+      idAlcance: dto.idAlcance,
+      poster: posterKey ?? dto.poster ?? null,
+      idOrganizador,
+    });
+
+    return await this.crearEvento(nuevoEvento, dto.subeventos);
   }
 }
