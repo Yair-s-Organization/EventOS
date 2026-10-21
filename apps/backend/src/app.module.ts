@@ -4,6 +4,7 @@ import { dbOptions } from './database/data-source';
 import { StorageModule } from './common/storage/storage.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { EventosModule } from './modules/eventos/eventos.module';
+import { RecintosModule } from './modules/recintos/recintos.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { EventosModule } from './modules/eventos/eventos.module';
     StorageModule,
     AuthModule,
     EventosModule,
+    RecintosModule,
   ],
 })
 export class AppModule { }                       
