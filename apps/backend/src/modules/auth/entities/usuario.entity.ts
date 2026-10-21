@@ -1,7 +1,7 @@
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 import { EstadoVerificacion, TipoCuentaUsuario, type Usuario } from '@eventos/shared';
 
-@Entity({ name: 'usuarios' })
+@Entity({ name: 'usuario' })
 export class UsuarioEntity implements Usuario {
   @PrimaryGeneratedColumn({ name: 'idUsuario' })
   idUsuario: number;
@@ -9,11 +9,11 @@ export class UsuarioEntity implements Usuario {
   @Column({ name: 'nombre', type: 'varchar', length: 100 })
   nombre: string;
 
-  @Column({ name: 'apP', type: 'varchar', length: 50 })
-  apP: string;
+  @Column({ name: 'apellidoPa', type: 'varchar', length: 50 })
+  apellidoPa: string;
 
-  @Column({ name: 'apM', type: 'varchar', length: 50, nullable: true })
-  apM: string | null;
+  @Column({ name: 'apellidoMa', type: 'varchar', length: 50, nullable: true })
+  apellidoMa: string | null;
 
   @Column({ name: 'correo', type: 'varchar', length: 254, unique: true })
   correo: string;

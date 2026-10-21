@@ -29,7 +29,6 @@ export class RolesGuard implements CanActivate {
 
       request.user = payload;
 
-      
       const rolesRequeridos = this.reflector.get<string[]>('roles', context.getHandler());
       if (rolesRequeridos && rolesRequeridos.length > 0) {
         const tieneRol = rolesRequeridos.includes(payload.tipoCuenta);

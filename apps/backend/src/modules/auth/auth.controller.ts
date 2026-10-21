@@ -11,8 +11,8 @@ export class AuthController {
     @Body()
     body: {
       nombre: string;
-      apP: string;
-      apM?: string;
+      apellidoPa: string;
+      apellidoMa?: string;
       correo: string;
       contrasena: string;
     },

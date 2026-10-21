@@ -16,8 +16,8 @@ export class AuthService {
 
   async registrar(dto: {
     nombre: string;
-    apP: string;
-    apM?: string;
+    apellidoPa: string;
+    apellidoMa?: string;
     correo: string;
     contrasena: string;
   }) {
@@ -43,8 +43,8 @@ export class AuthService {
     
     const nuevoUsuario = this.usuarioRepository.create({
       nombre: dto.nombre,
-      apP: dto.apP,
-      apM: dto.apM || null,
+      apellidoPa: dto.apellidoPa,
+      apellidoMa: dto.apellidoMa || null,
       correo: dto.correo,
       contrasena: hashedPassword,
       estatus: true,
