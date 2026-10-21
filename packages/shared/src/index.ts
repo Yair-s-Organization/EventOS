@@ -163,3 +163,18 @@ export enum EstadoVerificacion {
   NO_VERIFICADO = 'No verificado',
 }
 
+export enum RecintoId {
+  AUDITORIO = 1,
+  LABORATORIO_A = 2,
+  LABORATORIO_B = 3,
+  SALA_14 = 4,
+}
+
+export interface SubeventoPayload {
+  idRecinto: number;
+  accesoQR?: boolean;
+  fecha: string;
+  horaInicio: string;
+  horaFin: string;
+}
+
