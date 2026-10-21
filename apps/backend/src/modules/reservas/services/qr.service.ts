@@ -2,17 +2,17 @@ import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as qrcode from 'qrcode';
 
-export interface TicketInfo {
-    ticketId: number;
-    eventId: number;
-    userId: number;
+export interface InfoBoleto {
+    idBoleto: number;
+    idEvento: number;
+    idUsuario: number;
 }
 
 @Injectable() export class QrService {
     
     constructor(private readonly jwtService : JwtService){}    
 
-    async generateQrCode(info : TicketInfo, eventEndDate: Date): Promise<string>{
+    async generateQrCode(info : InfoBoleto, eventEndDate: Date): Promise<string>{
         //The event end date is converted to seconds
         const expirationTime = Math.floor(eventEndDate.getTime() / 1000);
         //The exp field is added to the original information
