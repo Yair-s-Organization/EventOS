@@ -1,11 +1,14 @@
 import { FormField } from "../molecules/FormField";
 import { FormHeader } from "../molecules/FormHeader";
 import { Input } from "../atoms/Input/Input";
-import type { FormularioSolicitudoData } from "../../features/events/SolicitudEventos";
+import type {
+  CampoFormulario,
+  FormularioSolicitudoData,
+} from "../../features/events/SolicitudEventos";
 
 interface SeccionDatosSolicitanteProps {
   form: FormularioSolicitudoData;
-  updateField: (field: keyof FormularioSolicitudoData, value: string) => void;
+  updateField: (field: CampoFormulario, value: string) => void;
 }
 
 export function SeccionDatosSolicitante({
@@ -15,8 +18,8 @@ export function SeccionDatosSolicitante({
   return (
     <section>
       <FormHeader titulo="Datos del solicitante" />
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-3 space-y-5">
-      <FormField label="Nombre del solicitante" htmlFor="campoNombre" required>
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+      <FormField label="Nombre del solicitante" htmlFor="campoNombre">
         <Input
           id="campoNombre"
           type="text"
@@ -26,7 +29,7 @@ export function SeccionDatosSolicitante({
         </Input>
       </FormField>
 
-      <FormField label="Correo del solicitante" htmlFor="campoCorreo" required>
+      <FormField label="Correo del solicitante" htmlFor="campoCorreo">
         <Input
           id="campoCorreo"
           type="email"
@@ -35,7 +38,6 @@ export function SeccionDatosSolicitante({
           onChange={(e) => updateField("correoSolicitante", e.target.value)}>
         </Input>
       </FormField>
-
       </div>
     </section>
   );

@@ -17,14 +17,16 @@ export function FormField({
   children,
 }: FormFieldProps) {
   return (
-    <div className="flex flex-col gap-2 flex-1">
+    <div className="flex min-w-0 flex-col justify-end gap-1">
       <Label htmlFor={htmlFor} required={required}>
         {label}
       </Label>
       {children}
-      {errorMessage && (
-        <span className="text-xs text-red-500 mt-1">{errorMessage}</span>
-      )}
+      <span
+        aria-live="polite"
+        className="mt-1 block min-h-5 text-xs leading-4 text-red-600">
+        {errorMessage ?? ""}
+      </span>
     </div>
   );
 }
