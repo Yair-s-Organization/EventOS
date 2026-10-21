@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { QrService } from './services/qr.service';
+import { ReservationsController } from './controllers/reservations.controller';
+import { ReservationsService } from './services/reservations.service';
 
 @Module({
     imports: [
@@ -8,7 +10,7 @@ import { QrService } from './services/qr.service';
      secret: process.env.JWT_PASS, 
     }),
   ],
-  controllers: [],
-  providers: [QrService],
+  controllers: [ReservationsController],
+  providers: [QrService, ReservationsService],
 })
 export class ReservationsModule {}
