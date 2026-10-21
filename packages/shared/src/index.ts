@@ -93,6 +93,19 @@ export interface DetalleBoletoUsuario {
   filaAsiento?: string | null;
   numeroAsiento?: number | null;
 }
+export interface Usuario {
+  idUsuario: number;
+  nombre: string;
+  apP: string;
+  apM?: string | null;
+  correo: string;
+  contrasena?: string;
+  estatus?: boolean;
+  esVerificado?: EstadoVerificacion;
+  tipoCuenta?: TipoCuentaUsuario;
+  esJefeAcademia?: boolean;
+}
+
 
 //Enums
 
@@ -137,5 +150,16 @@ export enum EstadoBoleto {
   CANCELADO = 3
 }
 
+export enum TipoCuentaUsuario {
+  ADMINISTRADOR = 'Administrador',
+  ASISTENTE = 'Asistente',
+  SUBDIRECCION = 'Subdirección',
+  INTERNO = 'Usuario Interno',
+  EXTERNO = 'Usuario Externo',
+}
 
+export enum EstadoVerificacion {
+  VERIFICADO = 'Verificado',
+  NO_VERIFICADO = 'No verificado',
+}
 
