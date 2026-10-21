@@ -1,4 +1,7 @@
 node_modules/
 dist/
 .env
-.vitepress/cache
+.vitepress/cache/
+.vitepress/dist/
+docs/.vitepress/cache/
+docs/.vitepress/dist/

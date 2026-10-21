@@ -32,75 +32,81 @@ export default defineConfig({
         ]
       },
       {
-        text: 'Casos de Uso (CU01 – CU31)',
+        text: 'Casos de Uso (CU01 – CU37)',
         collapsed: false,
         items: [
           { text: '📑 Índice General de Casos de Uso', link: '/03-Casos-de-Uso/00-Indice-Casos-de-Uso' },
           {
-            text: 'Autenticación y Sesión',
+            text: 'Universales',
             collapsed: true,
             items: [
               { text: 'CU01: Iniciar sesión', link: '/03-Casos-de-Uso/CU01-Iniciar-sesion' },
-              { text: 'CU07: Cerrar sesión', link: '/03-Casos-de-Uso/CU07-Cerrar-sesion' },
+              { text: 'CU02: Ver perfil', link: '/03-Casos-de-Uso/CU02-Ver-perfil' },
+              { text: 'CU03: Cerrar sesión', link: '/03-Casos-de-Uso/CU03-Cerrar-sesion' },
             ]
           },
           {
             text: 'Subdirección de Servicios Educativos',
             collapsed: true,
             items: [
-              { text: 'CU02: Consultar solicitudes de eventos', link: '/03-Casos-de-Uso/CU02-Consultar-solicitudes-de-eventos' },
-              { text: 'CU03: Consultar datos de un evento', link: '/03-Casos-de-Uso/CU03-Consultar-datos-de-un-evento' },
-              { text: 'CU04: Consultar eventos aprobados', link: '/03-Casos-de-Uso/CU04-Consultar-eventos-aprobados' },
-              { text: 'CU05: Cancelar evento', link: '/03-Casos-de-Uso/CU05-Cancelar-evento' },
-              { text: 'CU08: Visualizar Bitácora de Eventos Realizados', link: '/03-Casos-de-Uso/CU08-Visualizar-Bitacora-de-Eventos-Realizados' },
-              { text: 'CU26: Emitir boletos directos', link: '/03-Casos-de-Uso/CU26-Emitir-boletos-directos' },
-            ]
-          },
-          {
-            text: 'Organizador',
-            collapsed: true,
-            items: [
-              { text: 'CU06: Solicitar un evento', link: '/03-Casos-de-Uso/CU06-Solicitar-un-evento' },
-              { text: 'CU20: Consultar mis eventos', link: '/03-Casos-de-Uso/CU20-Consultar-mis-eventos' },
-              { text: 'CU21: Modificar logística del evento', link: '/03-Casos-de-Uso/CU21-Modificar-logistica-del-evento' },
-              { text: 'CU22: Modificar detalles de un evento', link: '/03-Casos-de-Uso/CU22-Modificar-detalles-de-un-evento' },
-              { text: 'CU23: Actualizar información general del evento', link: '/03-Casos-de-Uso/CU23-Actualizar-informacion-general-del-evento' },
-              { text: 'CU24: Solicitar requerimientos técnicos', link: '/03-Casos-de-Uso/CU24-Solicitar-requerimientos-tecnicos' },
-              { text: 'CU25: Cancelar evento propio', link: '/03-Casos-de-Uso/CU25-Cancelar-evento-propio' },
-              { text: 'CU27: Asignar personal de Logística', link: '/03-Casos-de-Uso/CU27-Asignar-personal-de-Logistica' },
+              { text: 'CU04: Consultar solicitudes de eventos', link: '/03-Casos-de-Uso/CU04-Consultar-solicitudes-de-eventos' },
+              { text: 'CU05: Consultar datos de un evento', link: '/03-Casos-de-Uso/CU05-Consultar-datos-de-un-evento' },
+              { text: 'CU06: Consultar eventos aprobados', link: '/03-Casos-de-Uso/CU06-Consultar-eventos-aprobados' },
+              { text: 'CU07: Cancelar evento', link: '/03-Casos-de-Uso/CU07-Cancelar-evento' },
+              { text: 'CU08: Agregar ponente', link: '/03-Casos-de-Uso/CU08-Agregar-ponente' },
+              { text: 'CU09: Solicitar evento', link: '/03-Casos-de-Uso/CU09-Solicitar-evento' },
+              { text: 'CU10: Registrar personal de logística', link: '/03-Casos-de-Uso/CU10-Registrar-personal-de-logistica' },
             ]
           },
           {
             text: 'Asistente',
             collapsed: true,
             items: [
-              { text: 'CU09: Consultar Cartelera de Eventos', link: '/03-Casos-de-Uso/CU09-Consultar-Cartelera-de-Eventos' },
-              { text: 'CU10: Reservar lugar a un evento', link: '/03-Casos-de-Uso/CU10-Reservar-lugar-a-un-evento' },
-              { text: 'CU11: Recibir confirmación de reserva por correo', link: '/03-Casos-de-Uso/CU11-Recibir-confirmacion-de-reserva-por-correo' },
-              { text: 'CU12: Consultar disponibilidad de lugares', link: '/03-Casos-de-Uso/CU12-Consultar-disponibilidad-de-lugares' },
-              { text: 'CU13: Generar código QR', link: '/03-Casos-de-Uso/CU13-Generar-codigo-QR' },
-              { text: 'CU14: Consultar sus eventos', link: '/03-Casos-de-Uso/CU14-Consultar-sus-eventos' },
-              { text: 'CU15: Cancelar su asistencia', link: '/03-Casos-de-Uso/CU15-Cancelar-su-asistencia' },
-              { text: 'CU16: Visualizar QR de acceso', link: '/03-Casos-de-Uso/CU16-Visualizar-QR-de-acceso' },
+              { text: 'CU11: Registrar usuario', link: '/03-Casos-de-Uso/CU11-Registrar-usuario' },
+              { text: 'CU12: Visualizar bitácora de eventos realizados', link: '/03-Casos-de-Uso/CU12-Visualizar-bitacora-de-eventos-realizados' },
+              { text: 'CU13: Consultar cartelera de eventos', link: '/03-Casos-de-Uso/CU13-Consultar-cartelera-de-eventos' },
+              { text: 'CU14: Reservar lugar a un evento', link: '/03-Casos-de-Uso/CU14-Reservar-lugar-a-un-evento' },
+              { text: 'CU15: Consultar disponibilidad de lugares', link: '/03-Casos-de-Uso/CU15-Consultar-disponibilidad-de-lugares' },
+              { text: 'CU16: Generar código QR', link: '/03-Casos-de-Uso/CU16-Generar-codigo-QR' },
+              { text: 'CU17: Consultar mis eventos por asistir', link: '/03-Casos-de-Uso/CU17-Consultar-mis-eventos-por-asistir' },
+              { text: 'CU18: Cancelar su asistencia', link: '/03-Casos-de-Uso/CU18-Cancelar-su-asistencia' },
+              { text: 'CU19: Visualizar QR de acceso', link: '/03-Casos-de-Uso/CU19-Visualizar-QR-de-acceso' },
+              { text: 'CU20: Solicitar evento (Asistente)', link: '/03-Casos-de-Uso/CU20-Solicitar-evento' },
+              { text: 'CU21: Agregar etiquetas', link: '/03-Casos-de-Uso/CU21-Agregar-etiquetas' },
             ]
           },
           {
             text: 'Personal de Logística',
             collapsed: true,
             items: [
-              { text: 'CU17: Consultar Eventos Asignados', link: '/03-Casos-de-Uso/CU17-Consultar-Eventos-Asignados' },
-              { text: 'CU18: Visualizar detalles del evento', link: '/03-Casos-de-Uso/CU18-Visualizar-detalles-del-evento' },
-              { text: 'CU19: Escanear QR', link: '/03-Casos-de-Uso/CU19-Escanear-QR' },
+              { text: 'CU22: Consultar eventos asignados', link: '/03-Casos-de-Uso/CU22-Consultar-eventos-asignados' },
+              { text: 'CU23: Visualizar detalles del evento', link: '/03-Casos-de-Uso/CU23-Visualizar-detalles-del-evento' },
+              { text: 'CU24: Escanear QR', link: '/03-Casos-de-Uso/CU24-Escanear-QR' },
+            ]
+          },
+          {
+            text: 'Organizador',
+            collapsed: true,
+            items: [
+              { text: 'CU25: Consultar mis eventos', link: '/03-Casos-de-Uso/CU25-Consultar-mis-eventos' },
+              { text: 'CU26: Modificar logística del evento', link: '/03-Casos-de-Uso/CU26-Modificar-logistica-del-evento' },
+              { text: 'CU27: Modificar detalles de un evento', link: '/03-Casos-de-Uso/CU27-Modificar-detalles-de-un-evento' },
+              { text: 'CU28: Actualizar información general del evento', link: '/03-Casos-de-Uso/CU28-Actualizar-informacion-general-del-evento' },
+              { text: 'CU29: Solicitar requerimientos técnicos', link: '/03-Casos-de-Uso/CU29-Solicitar-requerimientos-tecnicos' },
+              { text: 'CU30: Cancelar evento propio', link: '/03-Casos-de-Uso/CU30-Cancelar-evento-propio' },
+              { text: 'CU31: Emitir boletos directos', link: '/03-Casos-de-Uso/CU31-Emitir-boletos-directos' },
+              { text: 'CU32: Asignar personal de logística', link: '/03-Casos-de-Uso/CU32-Asignar-personal-de-logistica' },
             ]
           },
           {
             text: 'Administrador',
             collapsed: true,
             items: [
-              { text: 'CU28: Cambiar estatus de cuenta de usuario', link: '/03-Casos-de-Uso/CU28-Cambiar-estatus-de-cuenta-de-usuario' },
-              { text: 'CU29: Gestionar Espacios Físicos', link: '/03-Casos-de-Uso/CU29-Gestionar-Espacios-Fisicos-Administrador' },
-              { text: 'CU30: Gestionar Inventario de Equipos de Cómputo', link: '/03-Casos-de-Uso/CU30-Gestionar-Inventario-de-Equipos-de-Computo-Administrador' },
-              { text: 'CU31: Consultar y Exportar Bitácora Histórica', link: '/03-Casos-de-Uso/CU31-Consultar-y-Exportar-Bitacora-Historica' },
+              { text: 'CU33: Cambiar estatus de cuenta de usuario', link: '/03-Casos-de-Uso/CU33-Cambiar-estatus-de-cuenta-de-usuario' },
+              { text: 'CU34: Gestionar espacios físicos', link: '/03-Casos-de-Uso/CU34-Gestionar-espacios-fisicos' },
+              { text: 'CU35: Gestionar inventario de equipos de cómputo', link: '/03-Casos-de-Uso/CU35-Gestionar-inventario-de-equipos-de-computo' },
+              { text: 'CU36: Consultar y exportar bitácora histórica', link: '/03-Casos-de-Uso/CU36-Consultar-y-exportar-bitacora-historica' },
+              { text: 'CU37: Gestionar estado de verificación de usuarios', link: '/03-Casos-de-Uso/CU37-Gestionar-estado-de-verificacion-de-usuarios' },
             ]
           }
         ]

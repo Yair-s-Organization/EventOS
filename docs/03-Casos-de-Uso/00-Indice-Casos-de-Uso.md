@@ -9,47 +9,83 @@ tags:
   - casos-de-uso
 ---
 
-# 🗂️ Índice de Casos de Uso (`CU01` – `CU31`) — EventOS
+# 🗂️ Índice de Casos de Uso (`CU01` – `CU37`) — EventOS
 
 > [!TIP] Consulta Modular para Desarrollo y Testing
-> Cada Caso de Uso está documentado en su propia nota atómica con su tabla de atributos (Autor, Actor, Entradas, Salidas, Precondiciones, Postcondiciones, Errores) y sus trayectorias (Principal y Alternativas con distinción explícita entre pasos de 👤 **[Actor]** y ⚙️ **[Sistema]**).
+> Cada Caso de Uso está documentado en su propia nota atómica con su tabla de atributos (Autor, Actor, Entradas, Salidas, Precondiciones, Postcondiciones, Errores) y sus trayectorias (Principal y Alternativas con distinción explícita entre pasos de 👤 **[Actor]** y ⚙️ **[Sistema]**), conforme al Documento Definitivo de Especificaciones de Uso.
 >
 > 🔗 **Hub del Proyecto:** [[00-Proyecto-EventOS]] | **Reglas de Negocio:** [[01-Requerimientos-y-Reglas-de-Negocio]] | **Catálogos UI/MSG:** [[02-Actores-y-Catalogos]]
 
 ---
 
-## Tabla General de Casos de Uso
+## Tabla General de Casos de Uso por Actores (`CU01` – `CU37`)
+
+### 🌐 Universales (Todos los Actores)
 
 | Código | Caso de Uso (Enlace) | Actor(es) | Propósito |
 | :--- | :--- | :--- | :--- |
-| **CU01** | [[CU01-Iniciar-sesion\|CU01 - Iniciar sesión]] | Asistente, Organizador, Subdirección de Servicios Educativos, Personal de Logística y Administrador. | Autenticar al usuario en el sistema para acceder a las funciones del sistema según sus permisos. |
-| **CU02** | [[CU02-Consultar-solicitudes-de-eventos\|CU02 - Consultar solicitudes de eventos]] | Subdirección de Servicios Académicos | Permitir al personal de Subdirección de Servicios Académicos consultar el listado de las solicitudes de eventos pendientes de aprobación. |
-| **CU03** | [[CU03-Consultar-datos-de-un-evento\|CU03 - Consultar datos de un evento]] | Subdirección de Servicios Académicos | Permitir al personal de Subdirección de Servicios Académicos consultar los datos de una solicitud específica para su evaluación. |
-| **CU04** | [[CU04-Consultar-eventos-aprobados\|CU04 - Consultar eventos aprobados]] | Subdirección de Servicios Académicos | Permitir al personal de Subdirección de Servicios visualizar un listado de las solicitudes de eventos que se han aprobado. |
-| **CU05** | [[CU05-Cancelar-evento\|CU05 - Cancelar evento]] | Subdirección de Servicios Educativos | Permitir la anulación de un evento de forma controlada, garantizando que los espacios físicos vuelvan a estar disponibles y que la comunidad sea informada adecuadamente. |
-| **CU06** | [[CU06-Solicitar-un-evento\|CU06 - Solicitar un evento]] | Asistente, Subdirección de Servicios Educativos | Permitir al Asistente o a Subdirección de Servicios Educativos registrar una solicitud de evento; en el caso del Asistente queda pendiente de evaluación, mientras que si la registra Subdirección se aprueba automáticamente. |
-| **CU07** | [[CU07-Cerrar-sesion\|CU07 - Cerrar sesión]] | Asistente, subdirección de servicios educativos, organizador, persona de logística o administrador (Cualquier usuario autenticado del sistema). | Permitir al actor finalizar su sesión de trabajo activa en la plataforma de forma segura. |
-| **CU08** | [[CU08-Visualizar-Bitacora-de-Eventos-Realizados\|CU08 - Visualizar Bitácora de Eventos Realizados]] | Asistente. | Permitir al usuario consultar el historial completo y llevar un control de los eventos que ha organizado o realizados dentro del sistema. |
-| **CU09** | [[CU09-Consultar-Cartelera-de-Eventos\|CU09 - Consultar Cartelera de Eventos]] | Asistente | Permitir a los asistentes ver qué eventos están disponibles. |
-| **CU10** | [[CU10-Reservar-lugar-a-un-evento\|CU10 - Reservar lugar a un evento]] | Asistente | Permitir a los asistentes registrarse en un evento de su interés y obtener una entrada que le asegura un lugar en el evento. |
-| **CU11** | [[CU11-Recibir-confirmacion-de-reserva-por-correo\|CU11 - Recibir confirmación de reserva por correo]] | Asistente | Permitir al asistente solicitar y recibir en su correo electrónico el comprobante de su reserva y su pase de acceso al evento. |
-| **CU12** | [[CU12-Consultar-disponibilidad-de-lugares\|CU12 - Consultar disponibilidad de lugares]] | Asistente | Permitir al Asistente conocer la cantidad de lugares disponibles de un evento antes de iniciar o continuar con el proceso de reserva. |
-| **CU13** | [[CU13-Generar-codigo-QR\|CU13 - Generar código QR]] | Asistente | Generar el código QR único asociado a la reserva confirmada del Asistente y permitir la emisión de su boleto digital para acceder al evento. |
-| **CU14** | [[CU14-Consultar-sus-eventos\|CU14 - Consultar sus eventos]] | Asistente | Permitir al Asistente consultar los eventos en los que cuenta con una reserva, así como acceder a las opciones de cancelar su asistencia o visualizar el código QR de acceso correspondiente. |
-| **CU15** | [[CU15-Cancelar-su-asistencia\|CU15 - Cancelar su asistencia]] | Asistente | Permitir al Asistente cancelar su reserva de lugar en un evento, liberando el cupo o lugar ocupado. |
-| **CU16** | [[CU16-Visualizar-QR-de-acceso\|CU16 - Visualizar QR de acceso]] | Asistente | Permitir al Asistente visualizar el código QR de su boleto digital para presentarlo al personal de logística el día del evento. |
-| **CU17** | [[CU17-Consultar-Eventos-Asignados\|CU17 - Consultar Eventos Asignados]] | Personal de Logística | Permitir al personal de logística visualizar los eventos próximos en los que tiene asignada la validación de acceso. |
-| **CU18** | [[CU18-Visualizar-detalles-del-evento\|CU18 - Visualizar detalles del evento]] | Personal de Logística | Permitir al personal de logística visualizar los detalles de un evento del que validará el acceso |
-| **CU19** | [[CU19-Escanear-QR\|CU19 - Escanear QR]] | Personal de Logística | Permitir al personal de logística escanear el código QR del asistente para permitir su acceso para un evento |
-| **CU20** | [[CU20-Consultar-mis-eventos\|CU20 - Consultar mis eventos]] | Organizador | Listar los eventos creados por el usuario y servir como punto de partida para consultar su estado, modificar sus especificaciones, cancelarlos y/o emitir boletos directos. |
-| **CU21** | [[CU21-Modificar-logistica-del-evento\|CU21 - Modificar logística del evento]] | Organizador | Actualizar la logística del evento, garantizando que los asistentes estén informados y que no existan empalmes de infraestructura y horario en la escuela. |
-| **CU22** | [[CU22-Modificar-detalles-de-un-evento\|CU22 - Modificar detalles de un evento]] | Organizador | Permite al usuario modificar determinada especificación de sus eventos. |
-| **CU23** | [[CU23-Actualizar-informacion-general-del-evento\|CU23 - Actualizar información general del evento]] | Organizador | Permitir al Organizador modificar el texto descriptivo, configurar la accesibilidad, y asignar o editar etiquetas temáticas y áreas de conocimiento del evento. |
-| **CU24** | [[CU24-Solicitar-requerimientos-tecnicos\|CU24 - Solicitar requerimientos técnicos]] | Organizador | Registrar la cantidad de computadoras necesarias para el evento, garantizando que no se supere la capacidad instalada. |
-| **CU25** | [[CU25-Cancelar-evento-propio\|CU25 - Cancelar evento propio]] | Organizador | Permitir al organizador la cancelación de un evento particular, ingresando una justificación de cancelación para ser notificada a los asistentes. |
-| **CU26** | [[CU26-Emitir-boletos-directos\|CU26 - Emitir boletos directos]] | Organizador | Generar y asignar boletos directos para un evento controlando estrictamente el límite de asistencia por seguridad. |
-| **CU27** | [[CU27-Asignar-personal-de-Logistica\|CU27 - Asignar personal de Logística]] | Organizador | Permitir al organizador buscar opciones entre los usuarios del sistema para asignarlos como parte del personal de logística de su evento ya agendado. |
-| **CU28** | [[CU28-Cambiar-estatus-de-cuenta-de-usuario\|CU28 - Cambiar estatus de cuenta de usuario]] | Administrador | Cambiar el estatus de un usuario entre activo e inactivo en caso de que se requiera deshabilitar una cuenta. |
-| **CU29** | [[CU29-Gestionar-Espacios-Fisicos-Administrador\|CU29 - Gestionar Espacios Físicos (Administrador)]] | Administrador | Mantener actualizado el catálogo general de recintos (Auditorio, Sala 14 y Laboratorios de Cómputo), controlando su aforo y estado operativo. |
-| **CU30** | [[CU30-Gestionar-Inventario-de-Equipos-de-Computo-Administrador\|CU30 - Gestionar Inventario de Equipos de Cómputo (Administrador)]] | Administrador | Controlar la cantidad de equipos funcionales en cada laboratorio, lo cual determina el límite máximo de aforo para los eventos en esos espacios. |
-| **CU31** | [[CU31-Consultar-y-Exportar-Bitacora-Historica\|CU31 - Consultar y Exportar Bitácora Histórica]] | Administrador | Consultar la trazabilidad de los eventos y acciones del sistema, y exportar la información para auditorías institucionales sin alterar los registros. |
+| **CU01** | [[CU01-Iniciar-sesion\|CU01 - Iniciar sesión]] | Todos los actores | Autenticar al usuario en el sistema para acceder a las funciones según sus permisos. |
+| **CU02** | [[CU02-Ver-perfil\|CU02 - Ver perfil]] | Todos los actores | Permitir al actor consultar la información registrada en su cuenta, datos personales, tipo de usuario y rol asignado. |
+| **CU03** | [[CU03-Cerrar-sesion\|CU03 - Cerrar sesión]] | Todos los actores | Permitir al actor finalizar su sesión de trabajo activa en la plataforma de forma segura. |
+
+### 🏛️ Subdirección de Servicios Educativos
+
+| Código | Caso de Uso (Enlace) | Actor(es) | Propósito |
+| :--- | :--- | :--- | :--- |
+| **CU04** | [[CU04-Consultar-solicitudes-de-eventos\|CU04 - Consultar solicitudes de eventos]] | Subdirección de Servicios Educativos | Consultar las solicitudes de eventos pendientes de aprobación para identificar aquellas que requieren evaluación. |
+| **CU05** | [[CU05-Consultar-datos-de-un-evento\|CU05 - Consultar datos de un evento (extend de CU-04)]] | Subdirección de Servicios Educativos | Consultar los datos de una solicitud específica para su evaluación y dictaminar su aprobación o rechazo. |
+| **CU06** | [[CU06-Consultar-eventos-aprobados\|CU06 - Consultar eventos aprobados]] | Subdirección de Servicios Educativos | Visualizar y consultar los eventos con estatus "Aprobado" y acceder a operaciones adicionales. |
+| **CU07** | [[CU07-Cancelar-evento\|CU07 - Cancelar evento (extend de CU-06)]] | Subdirección de Servicios Educativos | Cancelar un evento aprobado registrando motivo obligatorio, liberando espacio e informando a los asistentes en la aplicación. |
+| **CU08** | [[CU08-Agregar-ponente\|CU08 - Agregar ponente (extend de CU-06 y CU-27)]] | Subdirección / Organizador | Registrar y asociar ponentes a eventos previamente aprobados (`UI29`). |
+| **CU09** | [[CU09-Solicitar-evento\|CU09 - Solicitar evento]] | Asistente / Subdirección | Registrar solicitudes de eventos con uno o más bloques de subevento (`UI07`), aprobándose automáticamente si registra Subdirección (`RN-13`). |
+| **CU10** | [[CU10-Registrar-personal-de-logistica\|CU10 - Registrar personal de logística]] | Subdirección / Organizador | Registrar y asignar personal de logística a un evento aprobado (`UI27`), con permisos exclusivos para ese evento. |
+
+### 🎓 Asistente
+
+| Código | Caso de Uso (Enlace) | Actor(es) | Propósito |
+| :--- | :--- | :--- | :--- |
+| **CU11** | [[CU11-Registrar-usuario\|CU11 - Registrar usuario]] | Asistente / Administrador | Permitir el alta de usuarios desde `UI02` (registro público o creación manual por Administrador). |
+| **CU12** | [[CU12-Visualizar-bitacora-de-eventos-realizados\|CU12 - Visualizar bitácora de eventos realizados]] | Asistente | Consultar el historial cronológico de eventos concluidos que ha organizado o realizado (`UI10`). |
+| **CU13** | [[CU13-Consultar-cartelera-de-eventos\|CU13 - Consultar cartelera de eventos]] | Asistente | Visualizar y filtrar los eventos disponibles según el alcance del asistente (`UI04`, `UI05`). |
+| **CU14** | [[CU14-Reservar-lugar-a-un-evento\|CU14 - Reservar lugar a un evento]] | Asistente | Registrarse en un evento de su interés seleccionando asiento/lugar cuando corresponda (`UI06`) y obteniendo su boleto digital. |
+| **CU15** | [[CU15-Consultar-disponibilidad-de-lugares\|CU15 - Consultar disponibilidad de lugares (include de CU-14)]] | Asistente | Obtener la cantidad de lugares disponibles para determinar si el Asistente puede continuar con su reserva. |
+| **CU16** | [[CU16-Generar-codigo-QR\|CU16 - Generar código QR (include de CU-14)]] | Asistente | Generar un código QR único encriptado y asociarlo al boleto digital de la reserva confirmada (`UI09`). |
+| **CU17** | [[CU17-Consultar-mis-eventos-por-asistir\|CU17 - Consultar mis eventos por asistir]] | Asistente | Consultar el listado de eventos en los que el Asistente cuenta con una reserva activa (`UI08`). |
+| **CU18** | [[CU18-Cancelar-su-asistencia\|CU18 - Cancelar su asistencia (extend de CU-17)]] | Asistente | Cancelar su reserva de lugar en un evento activo, liberando el cupo o lugar específico ocupado. |
+| **CU19** | [[CU19-Visualizar-QR-de-acceso\|CU19 - Visualizar QR de acceso (extend de CU-17)]] | Asistente | Visualizar el código QR de su boleto digital (`UI09`) para presentarlo al personal de logística el día del evento. |
+| **CU20** | [[CU20-Solicitar-evento\|CU20 - Solicitar evento]] | Asistente | Solicitar un evento de una o varias fechas (subeventos) en `UI07`, adjuntando documento según tipo de solicitante. |
+| **CU21** | [[CU21-Agregar-etiquetas\|CU21 - Agregar etiquetas (extend de CU-20)]] | Asistente | Incorporar etiquetas temáticas o áreas de conocimiento a un evento (`UI30`). |
+
+### 🪪 Personal de Logística
+
+| Código | Caso de Uso (Enlace) | Actor(es) | Propósito |
+| :--- | :--- | :--- | :--- |
+| **CU22** | [[CU22-Consultar-eventos-asignados\|CU22 - Consultar eventos asignados]] | Personal de Logística | Consultar los eventos próximos en los que ha sido asignado para validar el acceso de los asistentes (`UI18`). |
+| **CU23** | [[CU23-Visualizar-detalles-del-evento\|CU23 - Visualizar detalles del evento (extend de CU-22)]] | Personal de Logística | Visualizar la información detallada de un evento asignado (`UI05`) y acceder al escáner QR. |
+| **CU24** | [[CU24-Escanear-QR\|CU24 - Escanear QR (extend de CU-23)]] | Personal de Logística | Validar el acceso de los asistentes escaneando sus códigos QR (`UI19`) y actualizando el boleto a `Ingresado`. |
+
+### 📋 Organizador
+
+| Código | Caso de Uso (Enlace) | Actor(es) | Propósito |
+| :--- | :--- | :--- | :--- |
+| **CU25** | [[CU25-Consultar-mis-eventos\|CU25 - Consultar mis eventos]] | Organizador | Listar los eventos administrados por el organizador (`UI14`) y acceder a su panel de administración (`UI15`). |
+| **CU26** | [[CU26-Modificar-logistica-del-evento\|CU26 - Modificar logística del evento (extend de CU-25)]] | Organizador | Reprogramar o reubicar fecha, hora o espacio de un evento con motivo obligatorio y notificación interna en la aplicación. |
+| **CU27** | [[CU27-Modificar-detalles-de-un-evento\|CU27 - Modificar detalles de un evento (extend de CU-25)]] | Organizador | Acceder a la edición de especificaciones generales, requerimientos técnicos o ponentes de un evento (`UI15`). |
+| **CU28** | [[CU28-Actualizar-informacion-general-del-evento\|CU28 - Actualizar información general del evento (extend de CU-27)]] | Organizador | Modificar descripción, alcance (Público, Interno, Privado) y etiquetas temáticas del evento (`UI16`). |
+| **CU29** | [[CU29-Solicitar-requerimientos-tecnicos\|CU29 - Solicitar requerimientos técnicos (extend de CU-27)]] | Organizador | Registrar la cantidad de computadoras necesarias para un evento en laboratorio (`UI17`). |
+| **CU08** | [[CU08-Agregar-ponente\|CU08 - Agregar ponente (extend de CU-27)]] | Organizador / Subdirección | Registrar y asociar ponentes a un evento aprobado (`UI29`). |
+| **CU30** | [[CU30-Cancelar-evento-propio\|CU30 - Cancelar evento propio (extend de CU-25)]] | Organizador | Cancelar un evento propio especificando justificación obligatoria, notificando internamente a los asistentes. |
+| **CU31** | [[CU31-Emitir-boletos-directos\|CU31 - Emitir boletos directos (extend de CU-25)]] | Organizador | Emitir boletos directos individuales para destinatarios con cuenta activa, disponibles en la aplicación sin envío de correo. |
+| **CU32** | [[CU32-Asignar-personal-de-logistica\|CU32 - Asignar personal de logística (extend de CU-25)]] | Organizador | Seleccionar usuarios activos del listado del sistema para asignarlos como personal de logística del evento. |
+| **CU10** | [[CU10-Registrar-personal-de-logistica\|CU10 - Registrar personal de logística]] | Organizador / Subdirección | Registrar y asignar personal de logística mediante nombre y correo en `UI27`. |
+
+### 🛡️ Administrador
+
+| Código | Caso de Uso (Enlace) | Actor(es) | Propósito |
+| :--- | :--- | :--- | :--- |
+| **CU11** | [[CU11-Registrar-usuario\|CU11 - Registrar usuario]] | Administrador / Asistente | Registrar manualmente cuentas de usuario asignando el rol de Asistente o Subdirección (`UI02`). |
+| **CU33** | [[CU33-Cambiar-estatus-de-cuenta-de-usuario\|CU33 - Cambiar estatus de cuenta de usuario]] | Administrador | Activar o desactivar cuentas de usuario (`Activo` / `Inactivo`) en `UI21` sin eliminar su información. |
+| **CU34** | [[CU34-Gestionar-espacios-fisicos\|CU34 - Gestionar espacios físicos]] | Administrador | Consultar y modificar el estado operativo (`Activo`, `Mantenimiento`, `Inactivo`) y aforo máximo de los espacios físicos (`UI22`). |
+| **CU35** | [[CU35-Gestionar-inventario-de-equipos-de-computo\|CU35 - Gestionar inventario de equipos de cómputo]] | Administrador | Consultar y modificar el estado de los equipos de cómputo de un laboratorio (`UI23`), recalculando su capacidad operativa. |
+| **CU36** | [[CU36-Consultar-y-exportar-bitacora-historica\|CU36 - Consultar y exportar bitácora histórica]] | Administrador | Consultar, filtrar y exportar en formato PDF los registros históricos de eventos y acciones del sistema (`UI20`). |
+| **CU37** | [[CU37-Gestionar-estado-de-verificacion-de-usuarios\|CU37 - Gestionar estado de verificación de usuarios]] | Administrador | Gestionar el estado de verificación (`Verificado` / `No verificado`) de Alumnos, Profesores y Empresas (`UI31`). |

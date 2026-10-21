@@ -32,9 +32,9 @@ tags:
 2. 👥 **[[02-Actores-y-Catalogos|Actores, Diagramas y Catálogos Oficiales]]**
    - Perfiles de los 5 Actores (*Asistente, Organizador, Subdirección de Servicios Educativos, Personal de Logística, Administrador*)
    - Diagramas de Casos de Uso por actor
-   - Catálogo de Pantallas (`UI01` – `UI24`), Mensajes de Error (`MSG-E-01` – `MSG-E-30`) y Mensajes de Sistema (`MSG-01` – `MSG-25`)
-3. 🗂️ **[[00-Indice-Casos-de-Uso|Índice de Casos de Uso (CU01 – CU31)]]**
-   - 31 fichas individuales con precondiciones, postcondiciones, entradas, salidas, errores y trayectorias paso a paso (👤 Actor / ⚙️ Sistema).
+   - Catálogo de Pantallas (`UI0`, `UI01` – `UI32`), Mensajes de Error (`MSG-E-01` – `MSG-E-49`), Mensajes Informativos (`MSG-I-01` – `MSG-I-23`) y Mensajes de Pantalla (`MSG-P-01` – `MSG-P-07`)
+3. 🗂️ **[[00-Indice-Casos-de-Uso|Índice de Casos de Uso (CU01 – CU37)]]**
+   - 37 fichas individuales con precondiciones, postcondiciones, entradas, salidas, errores y trayectorias paso a paso (👤 Actor / ⚙️ Sistema).
 4. 🎨 **[[04-Diseno-UI|Diseño de Interfaces de Usuario (Mockups UI)]]**
    - Diseños visuales de las pantallas principales de EventOS.
 5. 📅 **[[05-Planeacion-y-Sprints|Planeación y Sprints (Scrum)]]**
@@ -51,8 +51,9 @@ Ante esta situación, el equipo **Sinergia Ágil** propone el desarrollo de **Ev
 ### 1.1. Descripción General del Proyecto
 Plataforma web que permite a ESCOM gestionar de forma integral sus eventos académicos, congresos, ferias de proyectos, hackathones y talleres realizados en el Auditorio, Sala 14 y los laboratorios de cómputo de la escuela, cubriendo todo el ciclo de vida: desde la solicitud del evento hasta el control de acceso mediante código QR.
 
-- **Solicitud y Aprobación:** El interesado (interno, externo o club) solicita la creación de un evento indicando espacio, horario y cupos requeridos. El personal de **Subdirección de Servicios Educativos** evalúa la solicitud y decide si se autoriza según disponibilidad e impacto académico (las solicitudes de directivos se aprueban automáticamente conforme a `RN-13`).
-- **Reserva y Acceso QR:** Los asistentes consultan la cartelera, reservan su lugar (incluyendo butaca específica o equipo de cómputo en laboratorio según `RN-03` y `RN-16`) y reciben un boleto digital con código QR de un solo uso (`RN-11`), validado por el **Personal de Logística**.
+- **Solicitud de Eventos y Subeventos (`CU09`, `CU20`):** El interesado (Estudiante, Empresa o Externo verificado, o personal de Subdirección) solicita la creación de un evento indicando recinto y uno o más bloques de fecha y horario (subeventos de una misma solicitud). El personal de **Subdirección de Servicios Educativos** evalúa la solicitud (`CU04`, `CU05`) y decide si se autoriza según disponibilidad e impacto académico (las solicitudes de Subdirección se aprueban automáticamente conforme a `RN-13`).
+- **Reserva, Boletos Directos y Acceso QR (`CU14`–`CU19`, `CU24`, `CU31`):** Los asistentes consultan la cartelera (`CU13`), reservan su lugar (incluyendo butaca específica o equipo de cómputo en laboratorio según `RN-03` y `RN-16`) y visualizan en la plataforma su boleto digital con código QR de un solo uso (`RN-11`), validado por el **Personal de Logística** (`CU24`). Las notificaciones de cancelación o reprogramación y los boletos directos se gestionan internamente dentro de la aplicación, sin depender de envíos por correo electrónico.
+- **Administración y Verificación (`CU33`–`CU37`):** El **Administrador** gestiona el estado de las cuentas de usuario (`CU33`), el estado de verificación de Alumnos, Profesores y Empresas (`CU37`), el estado operativo y aforo de los espacios físicos (`CU34`), el inventario de equipos de cómputo de los laboratorios (`CU35`) y la bitácora histórica inmutable exportable en PDF (`CU36`).
 
 ### 1.2. Objetivo General
 Desarrollar una plataforma web que facilite la gestión de eventos académicos en las instalaciones de ESCOM, agilizando su solicitud, aprobación y control de acceso.

@@ -10,7 +10,7 @@ hero:
       text: 🚀 Explorar Hub del Proyecto
       link: /00-Proyecto-EventOS
     - theme: alt
-      text: 📋 Casos de Uso (CU01–CU31)
+      text: 📋 Casos de Uso (CU01–CU37)
       link: /03-Casos-de-Uso/00-Indice-Casos-de-Uso
     - theme: alt
       text: ⚖️ Reglas de Negocio
@@ -19,16 +19,16 @@ hero:
 features:
   - icon: 🎓
     title: Ámbito Institucional (ESCOM / IPN)
-    details: Auditorio, Sala 14 y Laboratorios de cómputo con validación de correos @alumno.ipn.mx y @ipn.mx.
+    details: Auditorio, Sala 14 y Laboratorios de cómputo con validación de correos @alumno.ipn.mx y @ipn.mx y verificación de usuarios.
   - icon: 🎫
     title: Boletos Digitales y Acceso QR
-    details: Control de acceso firmado criptográficamente, concurrencia atómica en BD y validación por personal de logística.
+    details: Control de acceso firmado criptográficamente, concurrencia atómica en BD, notificaciones en la app y validación por personal de logística.
   - icon: ⚡
     title: Arquitectura Moderna (100% Bun)
     details: Monorepo con NestJS, TypeORM, PostgreSQL 18, React, Vite y MinIO/Cloudflare R2.
   - icon: 📑
     title: Metodología Ágil (Scrum)
-    details: 31 Casos de Uso detallados, 45 Reglas de Negocio, catálogo de pantallas UI01–UI24 y mensajes MSG/MSG-E.
+    details: 37 Casos de Uso detallados, 45 Reglas de Negocio, catálogo de pantallas UI0–UI32 y mensajes MSG-E, MSG-I y MSG-P.
 ---
 
 <style>

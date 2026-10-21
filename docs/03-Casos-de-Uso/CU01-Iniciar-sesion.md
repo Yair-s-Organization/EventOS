@@ -19,44 +19,45 @@ El actor accede a la plataforma validando sus credenciales (correo y contraseña
 
 ### 📋 Ficha de Especificación
 
-| Caso de uso | CU01 Iniciar Sesión |
-| --- | --- |
-| Resumen de atributos |  |
-| Autor: | Benitez Álvarez Efrain |
-| Actor | Asistente, Organizador, Subdirección de Servicios Educativos, Personal de Logística y Administrador. |
-| Propósito: | Autenticar al usuario en el sistema para acceder a las funciones del sistema según sus permisos. |
-| Entradas: | Correo electrónico.<br>Contraseña (con estándar de complejidad alto exigido para la cuenta del Administrador: mínimo 12 caracteres, incluyendo mayúsculas, números y símbolos).<br>Resolución de mecanismo anti-bots (por ejemplo, CAPTCHA). |
-| Salidas: | Sesión activa en el sistema.<br>Mensajes de error en caso de datos inválidos en el formulario. |
-| Precondiciones: | El usuario debe contar con un registro previo en la plataforma.<br>La cuenta del usuario no debe tener un estado inactivo por borrado lógico aplicado por el administrador |
-| Postcondiciones: | El sistema asigna el rol base de "Usuario Interno" si el correo ingresado utiliza los dominios @alumno.ipn.mx o @ipn.mx.<br>El sistema asigna el rol base de "Usuario Externo" si el correo ingresado utiliza cualquier otro dominio. |
-| Errores: | Datos inválidos introducidos en el formulario de inicio de sesión.<br>Múltiples intentos fallidos (5 intentos) de ingreso su contraseña que derivan en un bloqueo preventivo de 10 minutos.<br>MSG14<br>MSG 17<br>MSG 10 |
-| Tipo: | Primario para los actores Asistente, Organizador, Subdirección de Servicios Educativos, Personal de Logística y Administrador. |
+| Caso de uso | CU-01 Iniciar Sesión |
+| :--- | :--- |
+| **Resumen de atributos** | |
+| **Autor:** | Benitez Álvarez Efrain |
+| **Actor:** | Asistente, Organizador, Subdirección de Servicios Educativos, Personal de Logística y Administrador. |
+| **Propósito:** | Autenticar al usuario en el sistema para acceder a las funciones del sistema según sus permisos. |
+| **Entradas:** | • Correo electrónico.<br>• Contraseña (con estándar de complejidad alto exigido para la cuenta del Administrador: mínimo 12 caracteres, incluyendo mayúsculas, números y símbolos).<br>• Resolución de mecanismo anti-bots (por ejemplo, CAPTCHA). |
+| **Salidas:** | • Sesión activa en el sistema.<br>• Pantalla principal según el rol del usuario al que se redirige exitosamente. |
+| **Precondiciones:** | • El usuario debe contar con un registro previo en la plataforma.<br>• La cuenta del usuario no debe tener un estado inactivo por borrado lógico aplicado por el administrador. |
+| **Postcondiciones:** | • El sistema asigna el rol base de "Usuario Interno" si el correo ingresado utiliza los dominios `@alumno.ipn.mx` o `@ipn.mx`.<br>• El sistema asigna el rol base de "Usuario Externo" si el correo ingresado utiliza cualquier otro dominio. |
+| **Errores:** | • Se mostrará el mensaje `MSG-E-11` "Por favor, completa todos los campos obligatorios resaltados para continuar.", en caso de datos vacíos.<br>• Se mostrará el mensaje `MSG-E-21` "Advertencia: Ingrese un correo válido.", en caso de un formato de correo incorrecto. |
+| **Tipo:** | Primario para los actores Asistente, Organizador, Subdirección de Servicios Educativos, Personal de Logística y Administrador. |
 
 ### 🔄 Trayectorias del Caso de Uso
 
 #### Trayectoria Principal
-1. 👤 **[Actor]** El actor interactúa con la pantalla P01 Pantalla de Inicio de Sesión / Registro para iniciar sesión.
-2. ⚙️ **[Sistema]** El sistema muestra el formulario solicitando correo electrónico, contraseña y presenta un mecanismo anti-bots CAPTCHA.
-3. 👤 **[Actor]** El actor ingresa su correo electrónico, su contraseña y resuelve el mecanismo de anti-bots CAPTCHA para evitar ataques automatizados
-4. ⚙️ **[Sistema]** El sistema aplica validaciones en tiempo real sobre los datos ingresados en el formulario.
-5. ⚙️ **[Sistema]** El sistema evalúa el dominio del correo: si es @alumno.ipn.mx o @ipn.mx, lo cataloga automáticamente como "Usuario Interno".
-6. ⚙️ **[Sistema]** Si el dominio del correo es distinto a los institucionales, el sistema lo cataloga automáticamente como "Usuario Externo".
-7. ⚙️ **[Sistema]** El sistema valida las credenciales; si la cuenta corresponde al Administrador, el sistema verifica que cumpla con las credenciales especificas correctas. [Bifurca a Trayectoria alternativa B]
-8. ⚙️ **[Sistema]** El sistema valida el inicio de sesión y permite el acceso a las funciones correspondientes del usuario.
+1. 👤 **[Actor]** Interactúa con la pantalla `UI01` "Pantalla de Inicio de Sesión" para iniciar sesión.
+2. ⚙️ **[Sistema]** Muestra el formulario solicitando correo electrónico, contraseña y presenta un mecanismo anti-bots CAPTCHA.
+3. 👤 **[Actor]** Ingresa su correo electrónico, su contraseña y resuelve el mecanismo de anti-bots CAPTCHA para evitar ataques automatizados.
+4. ⚙️ **[Sistema]** Aplica validaciones en tiempo real sobre los datos ingresados en el formulario. `[Trayectoria A]`
+5. ⚙️ **[Sistema]** Evalúa el dominio del correo: si es `@alumno.ipn.mx` o `@ipn.mx`, lo cataloga automáticamente como "Usuario Interno".
+6. ⚙️ **[Sistema]** Si el dominio del correo es distinto a los institucionales, lo cataloga automáticamente como "Usuario Externo".
+7. ⚙️ **[Sistema]** Valida las credenciales ingresadas para cualquier cuenta de usuario. `[Trayectoria B]`
+8. ⚙️ **[Sistema]** Valida el inicio de sesión y permite el acceso a las funciones correspondientes redirigiendo al usuario a su menú principal.
 
 *`----- Fin de trayectoria.`*
 
-#### Trayectoria alternativa A:
-> **Condición:** El actor ingresa información con formato incorrecto en los campos o sus credenciales son erróneas.
-- ⚙️ **[Sistema]** **A-1** El sistema detecta que los datos proporcionados en el formulario son inválidos.
-- ⚙️ **[Sistema]** **A-2** El sistema muestra mensajes al usuario notificando que las credenciales ingresadas son incorrectas o inexistentes. [MSG 17]: "Por favor, completa todos los campos obligatorios resaltados para continuar." [MSG 10]*: "Advertencia: Ingrese un correo valido." (correspondiente a la segunda sección de tu catálogo)
+#### Trayectoria alternativa A: Datos inválidos o campos vacíos
+> **Condición:** Ocurre en el paso 4 de la trayectoria principal cuando el actor ingresa información con formato incorrecto en los campos, credenciales erróneas, o deja campos vacíos.
+- **A-1.** ⚙️ **[Sistema]** Detecta que los datos proporcionados en el formulario son inválidos.
+- **A-2.** ⚙️ **[Sistema]** Muestra mensajes al usuario en la pantalla `UI01` notificando el error. Muestra el `MSG-E-11`: "Por favor, completa todos los campos obligatorios resaltados para continuar." o el `MSG-E-21`: "Advertencia: Ingrese un correo válido." según sea el caso.
+- **A-3.** ⚙️ **[Sistema]** Mantiene al usuario en la `UI01` "Pantalla de Inicio de Sesión" en espera de que corrija los campos.
 
 *`----- Fin de trayectoria.`*
 
-#### Trayectoria alternativa B:
-> **Condición:** El actor intenta acceder con su respectiva cuenta y falla repetidamente la introducción de su contraseña.
-- ⚙️ **[Sistema]** **B-1** . El sistema registra que el actor ha realizado 5 intentos fallidos consecutivos de inicio de sesión en la cuenta del Administrador.
-- ⚙️ **[Sistema]** **B-2** El sistema bloquea automáticamente el acceso a la cuenta durante 10 minutos para protegerla contra ataques de fuerza bruta. [MSG14]: "Sesión expirada o invalida".
+#### Trayectoria alternativa B: Bloqueo por intentos fallidos
+> **Condición:** Ocurre en el paso 7 de la trayectoria principal cuando cualquier usuario falla repetidamente al ingresar su contraseña.
+- **B-1.** ⚙️ **[Sistema]** Registra que el actor ha realizado 5 intentos fallidos consecutivos de inicio de sesión en su cuenta.
+- **B-2.** ⚙️ **[Sistema]** Bloquea automáticamente el acceso a la cuenta durante 30 minutos para protegerla contra ataques de fuerza bruta y despliega el `MSG-E-10`: "Sesión expirada o inválida.".
 
 *`----- Fin de trayectoria.`*
 
