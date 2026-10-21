@@ -5,10 +5,11 @@ import {
   Injectable,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { EventoEntity } from '../entities/evento.entity';
 import { UsuarioEntity } from '../../auth/entities/usuario.entity';
 import { SubEventoEntity } from '../entities/subevento.entity';
+import { FechaEntity } from '../entities/fecha.entity';
 import { RecintoService } from '../../recintos/services/recinto.service';
 import {
   EstadoEvento,
@@ -16,6 +17,7 @@ import {
   EstadoVerificacion,
   type SubeventoPayload,
 } from '@eventos/shared';
+import type { CrearSolicitudDto } from '../dto/crearSolicitud.dto';
 
 @Injectable()
 export class EventosService {
@@ -23,17 +25,20 @@ export class EventosService {
   usuarioRepository: Repository<UsuarioEntity>;
   subEventoRepository: Repository<SubEventoEntity>;
   recintoService: RecintoService;
+  private readonly dataSource: DataSource;
 
   constructor(
     @InjectRepository(EventoEntity) repo: Repository<EventoEntity>,
     @InjectRepository(UsuarioEntity) repoUsuario: Repository<UsuarioEntity>,
     @InjectRepository(SubEventoEntity) repoSubEvento: Repository<SubEventoEntity>,
     recintoService: RecintoService,
+    dataSource: DataSource,
   ) {
     this.eventoRepository = repo;
     this.usuarioRepository = repoUsuario;
     this.subEventoRepository = repoSubEvento;
     this.recintoService = recintoService;
+    this.dataSource = dataSource;
   }
 
   // Valida que la cuenta del usuario exista, esté activa y verificada.
@@ -136,11 +141,59 @@ export class EventosService {
       await this.validarSubeventos(subeventos);
     }
 
-    const eventoGuardado = await this.eventoRepository.save(evento);
+    // Transacción atómica: guarda el evento, sus fechas y sus subeventos como un todo
+    return await this.dataSource.transaction(async (manager) => {
+      // Guardar el evento general (incluye nombre, descripción, póster, justificación, etc.)
+      const eventoGuardado = await manager.save(EventoEntity, evento);
 
-    return {
-      mensaje: 'Evento registrado con éxito y rol de Organizador asignado.',
-      evento: eventoGuardado,
-    };
+      // Guardar cada subevento con su bloque de fecha
+      const subeventosGuardados: SubEventoEntity[] = [];
+
+      for (const sub of subeventos) {
+        // Guarda en la tabla 'fechas'
+        const fechaGuardada = await manager.save(FechaEntity, {
+          fecha: sub.fecha,
+          horaInicio: sub.horaInicio,
+          horaFin: sub.horaFin,
+        });
+
+        // Guarda en la tabla 'subeventos' asociando idEvento e idFecha
+        const nuevoSubEvento = await manager.save(SubEventoEntity, {
+          idEvento: eventoGuardado.idEvento,
+          idRecinto: sub.idRecinto,
+          idFecha: fechaGuardada.idFecha,
+          accesoQR: sub.accesoQR ?? false,
+          estado: EstadoSubEvento.ACEPTADO,
+        });
+
+        subeventosGuardados.push(nuevoSubEvento);
+      }
+
+      return {
+        mensaje: 'Operación realizada con éxito.',
+        evento: {
+          ...eventoGuardado,
+          subEventos: subeventosGuardados,
+        },
+      };
+    });
+  }
+
+  // Orquesta la creación de una solicitud a partir del DTO recibido y delega a la transacción crearEvento
+  async registrarSolicitud(
+    idOrganizador: number,
+    dto: CrearSolicitudDto,
+    posterKey?: string,
+  ) {
+    const nuevoEvento = this.eventoRepository.create({
+      nombre: dto.nombre,
+      descripcion: dto.descripcion,
+      justificacion: dto.justificacion,
+      idAlcance: dto.idAlcance,
+      poster: posterKey ?? dto.poster ?? null,
+      idOrganizador,
+    });
+
+    return await this.crearEvento(nuevoEvento, dto.subeventos);
   }
 }
