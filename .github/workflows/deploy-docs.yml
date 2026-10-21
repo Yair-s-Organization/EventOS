@@ -1,0 +1,60 @@
+name: Despliegue de Documentación Oficial (VitePress)
+
+on:
+  push:
+    branches:
+      - develop
+    paths:
+      - 'docs/**'
+      - '.github/workflows/deploy-docs.yml'
+      - 'package.json'
+      - 'bun.lock'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clonar repositorio
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configurar Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.3
+
+      - name: Instalar dependencias
+        run: bun install --frozen-lockfile
+
+      - name: Compilar documentación VitePress
+        run: bun run docs:build
+        env:
+          VITEPRESS_BASE: /EventOS/
+
+      - name: Subir artefacto para GitHub Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs/.vitepress/dist
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    needs: build
+    runs-on: ubuntu-latest
+    name: Desplegar en GitHub Pages
+    steps:
+      - name: Desplegar
+        id: deployment
+        uses: actions/deploy-pages@v4

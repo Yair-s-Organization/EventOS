@@ -29,8 +29,12 @@
    - [5. Aplicar las migraciones](#5-aplicar-las-migraciones)
    - [6. Levantar backend y frontend en modo desarrollo](#6-levantar-backend-y-frontend-en-modo-desarrollo)
    - [7. Verificar que todo funciona](#7-verificar-que-todo-funciona)
-8. [Comandos frecuentes](#7-comandos-frecuentes)
-9. [Problemas comunes](#8-problemas-comunes)
+8. [Documentación Oficial de ADS (VitePress y GitHub Pages)](#8-documentación-oficial-de-ads-vitepress-y-github-pages)
+   - [¿Qué incluye la documentación?](#qué-incluye-la-documentación)
+   - [Cómo consultar la documentación localmente](#cómo-consultar-la-documentación-localmente)
+   - [Despliegue automático en GitHub Pages](#despliegue-automático-en-github-pages)
+9. [Comandos frecuentes](#9-comandos-frecuentes)
+10. [Problemas comunes](#10-problemas-comunes)
 
 
 
@@ -1028,7 +1032,46 @@ bun run dev:frontend
 
 ---
 
-## 7. Comandos frecuentes
+## 8. Documentación Oficial de ADS (VitePress y GitHub Pages)
+
+La documentación completa de **Análisis y Diseño de Sistemas (ADS)** del proyecto reside en la carpeta `docs/` bajo el enfoque **Docs-as-Code** (compatible con Obsidian y navegable como sitio web interactivo con **VitePress**).
+
+### ¿Qué incluye la documentación?
+- **Hub del Proyecto:** `docs/00-Proyecto-EventOS.md`
+- **Requerimientos y Reglas de Negocio:** `docs/01-Requerimientos-y-Reglas-de-Negocio.md` (`RF-01` a `RF-28`, `RNF-01` a `RNF-27`, `RN-01` a `RN-45`).
+- **Actores y Catálogos Oficiales:** `docs/02-Actores-y-Catalogos.md` (Pantallas `UI0`–`UI32`, Mensajes de Error `MSG-E-01`–`49`, Mensajes Informativos `MSG-I-01`–`23` y Mensajes de Pantalla `MSG-P-01`–`07`).
+- **Casos de Uso Oficiales (`CU01` a `CU37`):** `docs/03-Casos-de-Uso/` con fichas detalladas, precondiciones, postcondiciones y trayectorias paso a paso (`Actor` / `Sistema`).
+- **Diseño de Interfaces (Mockups UI):** `docs/04-Diseno-UI.md`.
+- **Planeación y Sprints (Scrum):** `docs/05-Planeacion-y-Sprints.md` con avance de Subequipos A, B y C.
+
+### Cómo consultar la documentación localmente
+
+Para levantar el servidor local de desarrollo de la documentación con recarga instantánea:
+
+```bash
+bun run docs:dev
+```
+Abre en tu navegador `http://localhost:5173` (o el puerto asignado) para explorar el sitio completo con buscador local integrado y árbol de navegación lateral.
+
+Para compilar el sitio estático para producción:
+```bash
+bun run docs:build
+```
+
+Para previsualizar la compilación de producción:
+```bash
+bun run docs:preview
+```
+
+### Despliegue automático en GitHub Pages
+
+El repositorio cuenta con una GitHub Action automatizada (`.github/workflows/deploy-docs.yml`):
+- Cada vez que se hace un `push` o se aprueba y fusiona un Pull Request hacia la rama `develop` que incluya cambios en `docs/**`, el flujo compila automáticamente el sitio de VitePress.
+- Se publica automáticamente en **GitHub Pages** en la URL configurada del proyecto (`https://Yair-s-Organization.github.io/EventOS/`).
+
+---
+
+## 9. Comandos frecuentes
 
 | Comando                                              | Qué hace                                                                                                                 |
 | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
@@ -1037,20 +1080,23 @@ bun run dev:frontend
 | `bun run dev:backend`                              | Levanta solo el backend                                                                                                   |
 | `bun run dev:frontend`                             | Levanta solo el frontend                                                                                                  |
 | `bun run build`                                    | Compila el backend y el frontend                                                                                          |
+| `bun run docs:dev`                                 | Levanta el servidor local de documentación VitePress                                                                      |
+| `bun run docs:build`                               | Compila el sitio estático de documentación VitePress                                                                      |
+| `bun run docs:preview`                             | Previsualiza el sitio de documentación compilado                                                                          |
 | `bunx tsc -p apps/frontend/tsconfig.json --noEmit` | Comprueba TypeScript en el frontend                                                                                       |
 | `bun run db:migrate`                               | Aplica las migraciones pendientes                                                                                         |
 | `bun run db:revert`                                | Revierte la última migración aplicada                                                                                   |
 | `bun add <paquete>`                                | Agrega una dependencia; ejecutarlo dentro de `apps/backend`, `apps/frontend` o `packages/shared` según corresponda |
 | `bun --bun run nest g resource <nombre>`           | Genera un módulo CRUD de Nest (ejecutar desde `apps/backend`)                                                          |
-| `docker compose up -d minio minio-init` | Levanta el almacenamiento de archivos local (MinIO) y crea los buckets |
-| `docker compose ps` | Muestra el estado de los contenedores de Docker |
-| `docker compose stop` | Apaga los contenedores sin borrar los datos |
-| `docker compose down` | Quita los contenedores (los archivos guardados se conservan en el volumen) |
-| `docker compose down -v` | Quita los contenedores **y borra** todos los archivos guardados |
+| `docker compose up -d minio minio-init`            | Levanta el almacenamiento de archivos local (MinIO) y crea los buckets                                                   |
+| `docker compose ps`                                | Muestra el estado de los contenedores de Docker                                                                           |
+| `docker compose stop`                              | Apaga los contenedores sin borrar los datos                                                                               |
+| `docker compose down`                              | Quita los contenedores (los archivos guardados se conservan en el volumen)                                                |
+| `docker compose down -v`                           | Quita los contenedores **y borra** todos los archivos guardados                                                           |
 
 ---
 
-## 8. Problemas comunes
+## 10. Problemas comunes
 
 - **`ECONNREFUSED 127.0.0.1:5432` o `Unable to connect to the database`:** PostgreSQL no está activo o el puerto es otro. Repetir el paso 2 y revisar `DB_PORT`. El backend reintenta conectarse automáticamente.
 - **`password authentication failed`:** La contraseña de `DB_PASSWORD` no coincide con la del usuario de PostgreSQL.
