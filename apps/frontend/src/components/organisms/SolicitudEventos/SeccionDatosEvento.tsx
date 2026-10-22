@@ -1,18 +1,19 @@
-import { FormField } from "../molecules/FormField";
-import { FormHeader } from "../molecules/FormHeader";
-import { Select } from "../atoms/Select/Select";
-import { TextArea } from "../atoms/TextArea/TextArea";
-import { Input } from "../atoms/Input/Input";
-import { InputFile } from "../atoms/InputFile/InputFile";
+import { FormField } from "../../molecules/FormField";
+import { FormHeader } from "../../molecules/FormHeader";
+import { Select } from "../../atoms/Select/Select";
+import { TextArea } from "../../atoms/TextArea/TextArea";
+import { Input } from "../../atoms/Input/Input";
+import { InputFile } from "../../atoms/InputFile/InputFile";
 import type {
-  CampoFormulario,
+  CampoTextoFormulario,
   FormularioSolicitudoData,
   PropsValidacionFormulario,
-} from "../../features/events/SolicitudEventos";
+} from "../../../features/events/SolicitudEventos";
 
 interface SeccionDatosEventoProps extends PropsValidacionFormulario {
   form: FormularioSolicitudoData;
-  updateField: (field: CampoFormulario, value: string) => void;
+  actualizarCampo: (field: CampoTextoFormulario, value: string) => void;
+  actualizarPoster: (poster: File | null) => void;
 }
 
 const CATEGORIAS = [
@@ -22,7 +23,8 @@ const CATEGORIAS = [
 
 export function SeccionDatosEvento({
   form,
-  updateField,
+  actualizarCampo,
+  actualizarPoster,
   errors,
   touched,
   markTouched,
@@ -38,8 +40,11 @@ export function SeccionDatosEvento({
           <FormField
             label="Nombre del evento"
             htmlFor="campoNombreEvento"
+            //mensajeAyuda="Nombre del solicitante"
             required
-            errorMessage={touched.nombreEvento ? errors.nombreEvento : undefined}>
+            errorMessage={
+              touched.nombreEvento ? errors.nombreEvento : undefined
+            }>
             <Input
               id="campoNombreEvento"
               type="text"
@@ -47,7 +52,7 @@ export function SeccionDatosEvento({
               value={form.nombreEvento}
               maxLength={100}
               hasError={Boolean(touched.nombreEvento && errors.nombreEvento)}
-              onChange={(e) => updateField("nombreEvento", e.target.value)}
+              onChange={(e) => actualizarCampo("nombreEvento", e.target.value)}
               onBlur={() => markTouched("nombreEvento")}
             />
           </FormField>
@@ -63,7 +68,7 @@ export function SeccionDatosEvento({
               options={CATEGORIAS}
               value={form.categoria}
               hasError={Boolean(touched.categoria && errors.categoria)}
-              onChange={(e) => updateField("categoria", e.target.value)}
+              onChange={(e) => actualizarCampo("categoria", e.target.value)}
               onBlur={() => markTouched("categoria")}
             />
           </FormField>
@@ -72,13 +77,14 @@ export function SeccionDatosEvento({
             label="Póster del evento"
             htmlFor="campoPoster"
             required
+            mensajeAyuda="El poster debe estar en formato jpg y con un tamaño menor a 5 megabytes"
             errorMessage={touched.rutaPoster ? errors.rutaPoster : undefined}>
             <InputFile
               id="campoPoster"
-              accept="image/*"
+              accept=".jpg"
               hasError={Boolean(touched.rutaPoster && errors.rutaPoster)}
               onChange={(e) =>
-                updateField("rutaPoster", e.target.value)
+                actualizarPoster(e.target.files?.[0] ?? null)
               }
               onBlur={() => markTouched("rutaPoster")}
             />
@@ -93,11 +99,11 @@ export function SeccionDatosEvento({
           <TextArea
             id="campoDescripcion"
             placeholder="Ingresa la descripción del evento"
-            maxLength={600}
             className="flex-1 resize-none"
             hasError={Boolean(touched.descripcion && errors.descripcion)}
             value={form.descripcion}
-            onChange={(e) => updateField("descripcion", e.target.value)}
+            onChange={(e) => actualizarCampo("descripcion", e.target.value)}
+            maxLength={501}
             onBlur={() => markTouched("descripcion")}
           />
         </FormField>
@@ -106,15 +112,17 @@ export function SeccionDatosEvento({
           label="Justificación"
           htmlFor="campoJustificacion"
           required
-          errorMessage={touched.justificacion ? errors.justificacion : undefined}>
+          errorMessage={
+            touched.justificacion ? errors.justificacion : undefined
+          }>
           <TextArea
             id="campoJustificacion"
             placeholder="Ingresa la justificación"
-            maxLength={300}
+            maxLength={501}
             className="flex-1 resize-none"
             hasError={Boolean(touched.justificacion && errors.justificacion)}
             value={form.justificacion}
-            onChange={(e) => updateField("justificacion", e.target.value)}
+            onChange={(e) => actualizarCampo("justificacion", e.target.value)}
             onBlur={() => markTouched("justificacion")}
           />
         </FormField>
