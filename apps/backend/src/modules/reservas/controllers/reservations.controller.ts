@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, Param, ParseIntPipe } from '@nestjs/common';
+import { Controller, Post, Body, Get, Param, ParseIntPipe, Patch } from '@nestjs/common';
 import { ReservationsService } from '../services/reservations.service';
 import { CreateReservationDto } from '../dto/createReservation.dto';
 
@@ -23,4 +23,13 @@ export class ReservationsController {
     
     return await this.reservationsService.crearReserva(idUsuario, dto);
   }
+
+  @Patch(':idBoleto/cancelar')
+  async cancelarReserva(
+    @Param('idBoleto', ParseIntPipe) idBoleto: number,
+  ) {
+    const idUsuario = 1; // Reemplazar con token JWT
+    return await this.reservationsService.cancelarReserva(idUsuario, idBoleto);
+  }
+  
 }

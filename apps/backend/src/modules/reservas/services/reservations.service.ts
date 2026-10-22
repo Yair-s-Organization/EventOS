@@ -359,5 +359,58 @@ export class ReservationsService {
         };
     }
 
+    //CANCELACION LOGICA Y LIBERACION DEL LUGAR
+
+    async cancelarReserva(idUsuario: number, idBoleto: number) {
+    //Validar que la reserva existe y le pertenece al usuario
+    const reserva = await this.asistenteRepo.findOne({
+        where: { idUsuario: idUsuario, idBoleto: idBoleto }
+    });
+
+    if (!reserva) {
+        throw new NotFoundException('No se encontró la reserva o no pertenece al usuario actual.');
+    }
+
+    const boleto = await this.boletoRepo.findOne({ where: { idBoleto: idBoleto } });
+    if (!boleto) {
+        throw new NotFoundException('El boleto no existe.');
+    }
+
+    //Validar que el boleto sea elegible para cancelacion
+    if (boleto.idEstadoBoleto === EstadoBoleto.CANCELADO) {
+        throw new ConflictException('Esta reserva ya se encontraba cancelada.');
+    }
+    if (boleto.idEstadoBoleto === EstadoBoleto.UTILIZADO) {
+        throw new ConflictException('No puedes cancelar un boleto que ya fue escaneado en la entrada.');
+    }
+
+    //Esta parte es por si se usa el estado de boleto Expirado
+
+    // if (boleto.idEstadoBoleto === EstadoBoleto.EXPIRADO) {
+    //     throw new ConflictException('No puedes cancelar un boleto de un evento que ya terminó.');
+    // }
+
+    //Validar que el evento no haya comenzado
+    const subEvento = await this.subEventoRepo.findOne({ where: { idSubEvento: reserva.idSubEvento } });
+    if (subEvento) {
+        const fechaEvento = await this.fechaRepo.findOne({ where: { idFecha: subEvento.idFecha } });
+        if (fechaEvento) {
+            const limiteCancelacion = new Date(`${fechaEvento.fecha}T${fechaEvento.horaInicio}`);
+            if (new Date() > limiteCancelacion) {
+                throw new ConflictException('El evento ya comenzó, el periodo de cancelación ha finalizado.');
+            }
+        }
+    }
+
+    // Aplicar Cancelacion Logica
+    boleto.idEstadoBoleto = EstadoBoleto.CANCELADO;
+    await this.boletoRepo.save(boleto);
+
+    return {
+      mensaje: 'Reserva cancelada exitosamente. Tu lugar ha sido liberado.',
+      boleto: boleto
+    };
+  }
+
 
 }
