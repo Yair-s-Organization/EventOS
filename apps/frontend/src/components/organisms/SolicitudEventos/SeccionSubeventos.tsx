@@ -64,8 +64,7 @@ export function SeccionSubeventos({
                 markSubeventoTouched={markSubeventoTouched}
                 canRemove={deletingId === null && subeventos.length > 1}
                 onRemove={() => handleRemove(subevento.id)}
-              />
-              
+              />              
             </div>
           </div>
         );
