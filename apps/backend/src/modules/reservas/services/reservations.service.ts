@@ -10,7 +10,7 @@ export class ReservationsService {
   // simulacion de bd (mocking)
  
   private subEventosMock: SubEvento[] = [
-    { idSubEvento: 1, idEvento: 10, idRecinto: 100, idFecha: 1000, accesoQR: true, estado: EstadoSubEvento.ACEPTADO }
+    { idSubEvento: 1, idEvento: 10, idRecinto: 100, idFecha: 1000, nombre: 'Subevento Demo', descripcion: 'Descripción demo', accesoQR: true, estado: EstadoSubEvento.ACEPTADO }
   ];
   
   private fechasMock: Fecha[] = [

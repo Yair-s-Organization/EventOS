@@ -12,10 +12,16 @@ import { EventoEntity } from './evento.entity';
 import { FechaEntity } from './fecha.entity';
 import { RecintoEntity } from '../../recintos/entities/recinto.entity';
 
-@Entity({ name: 'subeventos' })
+@Entity({ name: 'subEvento' })
 export class SubEventoEntity implements SubEvento {
   @PrimaryGeneratedColumn({ name: 'idSubEvento' })
   idSubEvento: number;
+
+  @Column({ name: 'nombre', type: 'varchar', length: 150 })
+  nombre: string;
+
+  @Column({ name: 'descripcion', type: 'varchar', length: 500 })
+  descripcion: string;
 
   @Column({ name: 'idEvento', type: 'int' })
   idEvento: number;
@@ -30,11 +36,12 @@ export class SubEventoEntity implements SubEvento {
   accesoQR: boolean;
 
   @Column({
-    name: 'estado',
-    type: 'int',
-    default: EstadoSubEvento.ACEPTADO,
-  })
-  estado: EstadoSubEvento;
+      name: 'estado',
+      type: 'varchar',
+      length: 50,
+      default: EstadoSubEvento.ACEPTADO,
+    })
+    estado: EstadoSubEvento;
 
   // ==========================================
   // RELACIONES (Foreign Keys)
