@@ -192,16 +192,14 @@ export class EventosService {
 
     const where: { idEstadoEvento?: EstadoEvento } = {};
     if (estado !== undefined && estado !== '') {
-      const idEstado = mapa[estado.trim().toLowerCase()];
+      const idEstado = mapa[estado.trim().toLowerCase()];//convierte el estado a minisculas y busca en el mapa
       if (idEstado === undefined) {
         throw new BadRequestException(`Estado inválido: "${estado}".`);
       }
       where.idEstadoEvento = idEstado;
     }
-
     return await this.eventoRepository.find({
       where,
-      relations: { subEventos: true },
       order: { idEvento: 'DESC' },
     });
   }
