@@ -7,7 +7,7 @@ export function MainLayout() {
         <span className="font-merriweather font-bold text-[36px] text-white">Event-OS</span>
       </header>
 
-      <main className="px-4 py-8">
+      <main className="px-7 py-8">
         <Outlet />
       </main>
     </>

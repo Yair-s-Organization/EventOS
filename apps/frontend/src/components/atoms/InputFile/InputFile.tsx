@@ -5,7 +5,7 @@ export interface InputFileProps extends Omit<
   InputHTMLAttributes<HTMLInputElement>,
   "type" | "placeholder"
 > {
-  accept: "image/*" | ".pdf" | ".docx";
+  accept: "image/*" | ".pdf" | ".docx" | ".jpg";
   placeholder?: string;
   hasError?: boolean;
 }
