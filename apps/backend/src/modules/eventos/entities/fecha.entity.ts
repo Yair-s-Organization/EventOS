@@ -2,9 +2,9 @@ import { Column, Entity, OneToMany, PrimaryGeneratedColumn, type Relation } from
 import type { Fecha } from '@eventos/shared';
 import { SubEventoEntity } from './subevento.entity';
 
-@Entity({ name: 'fechas' })
+@Entity({ name: 'fecha' })
 export class FechaEntity implements Fecha {
-  @PrimaryGeneratedColumn({ name: 'idFecha' })
+  @PrimaryGeneratedColumn({ name: 'idFecha', type: 'int' })
   idFecha: number;
 
   @Column({ name: 'fecha', type: 'date' })

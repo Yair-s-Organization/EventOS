@@ -5,6 +5,7 @@ import { StorageModule } from './common/storage/storage.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { EventosModule } from './modules/eventos/eventos.module';
 import { RecintosModule } from './modules/recintos/recintos.module';
+import { ReservationsModule } from './modules/reservas/reservations.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { RecintosModule } from './modules/recintos/recintos.module';
     AuthModule,
     EventosModule,
     RecintosModule,
+    ReservationsModule, 
   ],
 })
-export class AppModule { }                       
+export class AppModule {}                   
