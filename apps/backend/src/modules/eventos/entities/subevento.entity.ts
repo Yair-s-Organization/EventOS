@@ -12,10 +12,16 @@ import { EventoEntity } from './evento.entity';
 import { FechaEntity } from './fecha.entity';
 import { RecintoEntity } from '../../recintos/entities/recinto.entity';
 
-@Entity({ name: 'subeventos' })
+@Entity({ name: 'subEvento' })
 export class SubEventoEntity implements SubEvento {
   @PrimaryGeneratedColumn({ name: 'idSubEvento' })
   idSubEvento: number;
+
+  @Column({ name: 'nombre', type: 'varchar', length: 150 })
+  nombre: string;
+
+  @Column({ name: 'descripcion', type: 'varchar', length: 500 })
+  descripcion: string;
 
   @Column({ name: 'idEvento', type: 'int' })
   idEvento: number;
