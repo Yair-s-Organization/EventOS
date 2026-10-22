@@ -257,4 +257,107 @@ export class ReservationsService {
         };
     }
 
+    //CONSULTAR MIS EVENTOS
+
+    async obtenerMisBoletos(idUsuario: number) {
+        const reservas = await this.asistenteRepo.find({
+            where: { idUsuario: idUsuario }
+        });
+
+        const misBoletos = [];
+
+        for (const reserva of reservas) {
+            if (!reserva.idBoleto) continue;
+
+            const boleto = await this.boletoRepo.findOne({ where: { idBoleto: reserva.idBoleto } });
+            if (!boleto) continue;
+
+            const subEvento = await this.subEventoRepo.findOne({ where: { idSubEvento: reserva.idSubEvento } });
+            if (!subEvento) continue; 
+
+            const fechaEvento = await this.fechaRepo.findOne({ where: { idFecha: subEvento.idFecha } });
+            if (!fechaEvento) continue; 
+            
+            const limiteTerminoEvento = new Date(`${fechaEvento.fecha}T${fechaEvento.horaFin}`);
+            
+            if (new Date() > limiteTerminoEvento && boleto.idEstadoBoleto === EstadoBoleto.VALIDO) {
+                boleto.idEstadoBoleto = EstadoBoleto.CANCELADO;
+                await this.boletoRepo.save(boleto);
+            }
+
+            misBoletos.push({
+                idSubEvento: subEvento.idSubEvento,
+                idBoleto: boleto.idBoleto,
+                estadoBoleto: boleto.idEstadoBoleto,
+                fecha: fechaEvento.fecha,
+                horaInicio: fechaEvento.horaInicio,
+                horaFin: fechaEvento.horaFin,
+            });
+        }
+
+        return misBoletos;
+    }
+
+    //DETALLE DEL BOLETO Y QR
+
+    async obtenerDetalleBoleto(idUsuario: number, idBoleto: number) {
+        const reserva = await this.asistenteRepo.findOne({
+            where: { idUsuario: idUsuario, idBoleto: idBoleto }
+        });
+
+        if (!reserva) {
+            throw new NotFoundException('No se encontró una reserva asociada a este boleto para el usuario actual.');
+        }
+
+        const boleto = await this.boletoRepo.findOne({ where: { idBoleto: idBoleto } });
+        if (!boleto) throw new NotFoundException('Boleto no encontrado.');
+
+        const subEvento = await this.subEventoRepo.findOne({ where: { idSubEvento: reserva.idSubEvento } });
+        if (!subEvento) throw new NotFoundException('SubEvento asociado no encontrado.'); 
+
+        const fechaEvento = await this.fechaRepo.findOne({ where: { idFecha: subEvento.idFecha } });
+        if (!fechaEvento) throw new NotFoundException('Fecha del evento no encontrada.'); 
+
+        const recinto = await this.recintoRepo.findOne({ where: { idRecinto: subEvento.idRecinto } });
+        if (!recinto) throw new NotFoundException('Recinto no encontrado.'); 
+
+        const limiteTerminoEvento = new Date(`${fechaEvento.fecha}T${fechaEvento.horaFin}`);
+        if (new Date() > limiteTerminoEvento && boleto.idEstadoBoleto === EstadoBoleto.VALIDO) {
+            boleto.idEstadoBoleto = EstadoBoleto.CANCELADO;
+            await this.boletoRepo.save(boleto);
+        }
+
+        let qrBase64 = null;
+        if (boleto.tokenQr && boleto.tokenQr !== '') {
+            qrBase64 = await this.qrService.generateImageFromToken(boleto.tokenQr);
+        }
+
+        let asientoDetalle = null;
+        if (boleto.idAsiento) {
+            const asiento = await this.asientoRepo.findOne({ where: { idAsiento: boleto.idAsiento } });
+            if (asiento) {
+                asientoDetalle = { fila: asiento.fila, numero: asiento.numero };
+            }
+        }
+
+        return {
+            idBoleto: boleto.idBoleto,
+            estadoBoleto: boleto.idEstadoBoleto,
+            qr: qrBase64,
+            asiento: asientoDetalle,
+            subEvento: {
+                idSubEvento: subEvento.idSubEvento,
+                idEvento: subEvento.idEvento,
+                fecha: fechaEvento.fecha,
+                horaInicio: fechaEvento.horaInicio,
+                horaFin: fechaEvento.horaFin,
+            },
+            recinto: {
+                idRecinto: recinto.idRecinto,
+                nombre: recinto.nombre,
+            }
+        };
+    }
+
+
 }
