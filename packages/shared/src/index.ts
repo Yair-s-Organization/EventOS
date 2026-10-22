@@ -17,6 +17,8 @@ export interface SubEvento {
   idEvento: number;
   idRecinto: number;
   idFecha: number;
+  nombre: string;
+  descripcion: string;
   accesoQR: boolean;
   estado: EstadoSubEvento;
 }
@@ -96,8 +98,8 @@ export interface DetalleBoletoUsuario {
 export interface Usuario {
   idUsuario: number;
   nombre: string;
-  apP: string;
-  apM?: string | null;
+  apellidoPa: string;
+  apellidoMa?: string | null;
   correo: string;
   contrasena?: string;
   estatus?: boolean;

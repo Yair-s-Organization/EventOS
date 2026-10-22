@@ -1,14 +1,16 @@
 import { useState } from "react";
+import { useNavigate } from "react-router";
 import { Input } from "../../components/atoms/Input/Input";
 import { Label } from "../../components/atoms/Label/Label";
 import { TextLink } from "../../components/atoms/TextLink/TextLink";
 import { FieldMessage } from "../../components/atoms/FieldMessage/FieldMessage";
 
 export function Registro() {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     nombre: "",
-    app: "",
-    apm: "",
+    apellidoPa: "",
+    apellidoMaterno: "", 
     correo: "",
     contrasena: "",
     confirmarContrasena: "",
@@ -18,6 +20,7 @@ export function Registro() {
     correo: "",
     contrasena: "",
     confirmarContrasena: "",
+    general: "",
   });
 
   const [showPassword, setShowPassword] = useState(false);
@@ -70,8 +73,9 @@ export function Registro() {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setErrors((prev) => ({ ...prev, general: "" }));
     let hasError = false;
 
     if (!formData.correo.trim()) {
@@ -98,10 +102,37 @@ export function Registro() {
       hasError = true;
     }
 
-    if (!hasError) {
-      console.log("Enviando formulario de registro con éxito...", formData);
-    } else {
-      console.log("Error: corrige los errores antes de continuar.");
+    if (hasError) return;
+
+    try {
+      const payloadBackend = {
+        nombre: formData.nombre,
+        apellidoPa: formData.apellidoPa,
+        apellidoMa: formData.apellidoMaterno || undefined,
+        correo: formData.correo,
+        contrasena: formData.contrasena,
+      };
+
+      const response = await fetch("http://localhost:3000/api/auth/registro", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payloadBackend),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Error al registrar el usuario.");
+      }
+
+      console.log("Usuario registrado con éxito:", data);
+      
+      navigate("/login");
+
+    } catch (error: any) {
+      setErrors((prev) => ({ ...prev, general: error.message || "Error al conectar con el servidor." }));
     }
   };
 
@@ -112,6 +143,12 @@ export function Registro() {
         <h1 className="mb-8 text-center text-3xl font-serif font-merriweather font-bold text-[36px]">
           Registro
         </h1>
+
+        {errors.general && (
+          <div className="mb-4 rounded bg-red-50 p-3 text-center text-sm text-red-600 border border-red-200">
+            {errors.general}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 font-merriweather font-regular text-[16px]">
@@ -125,27 +162,29 @@ export function Registro() {
                   type="text"
                   value={formData.nombre}
                   onChange={handleChange}
+                  required
                 />
               </div>
 
               <div>
-                <Label htmlFor="app">Apellido Paterno</Label>
+                <Label htmlFor="apellidoPa">Apellido Paterno</Label>
                 <Input
-                  id="app"
-                  name="app"
+                  id="apellidoPa"
+                  name="apellidoPa"
                   type="text"
-                  value={formData.app}
+                  value={formData.apellidoPa}
                   onChange={handleChange}
+                  required
                 />
               </div>
 
               <div>
-                <Label htmlFor="apm">Apellido Materno</Label>
+                <Label htmlFor="apellidoMaterno">Apellido Materno</Label>
                 <Input
-                  id="apm"
-                  name="apm"
+                  id="apellidoMaterno"
+                  name="apellidoMaterno"
                   type="text"
-                  value={formData.apm}
+                  value={formData.apellidoMaterno}
                   onChange={handleChange}
                 />
               </div>
@@ -192,14 +231,9 @@ export function Registro() {
                     aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
                   >
                     {showPassword ? (
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243M12 9.75l2.25 2.25" />
-                      </svg>
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243M12 9.75l2.25 2.25" /></svg>
                     ) : (
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      </svg>
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                     )}
                   </button>
                 </div>
@@ -229,25 +263,7 @@ export function Registro() {
                     aria-describedby="confirm-error"
                     className="pr-10"
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
-                    aria-label={showPassword ? "Ocultar confirmación de contraseña" : "Mostrar confirmación de contraseña"}
-                  >
-                    {showPassword ? (
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243M12 9.75l2.25 2.25" />
-                      </svg>
-                    ) : (
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      </svg>
-                    )}
-                  </button>
                 </div>
-
                 {errors.confirmarContrasena && (
                   <FieldMessage id="confirm-error" variant="error" className="mt-1">
                     {errors.confirmarContrasena}
