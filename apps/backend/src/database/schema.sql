@@ -36,7 +36,9 @@ CREATE TABLE usuario (
   estatus boolean NOT NULL,
   "esVerificado" varchar(15) NOT NULL,
   "tipoCuenta" varchar(20) NOT NULL,
-  "esJefeAcademia" boolean NOT NULL
+  "esJefeAcademia" boolean NOT NULL,
+  "intentosFallidos" integer NOT NULL DEFAULT 0,
+  "bloqueadoHasta" timestamp
 );
 
 -- 5. Rol
