@@ -3,6 +3,7 @@ import {
   ConflictException,
   ForbiddenException,
   Injectable,
+  NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
@@ -11,6 +12,7 @@ import { UsuarioEntity } from '../../auth/entities/usuario.entity';
 import { SubEventoEntity } from '../entities/subevento.entity';
 import { FechaEntity } from '../entities/fecha.entity';
 import { RecintoService } from '../../recintos/services/recinto.service';
+import { StorageService } from '../../../common/storage/storage.service';
 import {
   EstadoEvento,
   EstadoSubEvento,
@@ -25,6 +27,7 @@ export class EventosService {
   usuarioRepository: Repository<UsuarioEntity>;
   subEventoRepository: Repository<SubEventoEntity>;
   recintoService: RecintoService;
+  storageService: StorageService;
   private readonly dataSource: DataSource;
 
   constructor(
@@ -32,12 +35,14 @@ export class EventosService {
     @InjectRepository(UsuarioEntity) repoUsuario: Repository<UsuarioEntity>,
     @InjectRepository(SubEventoEntity) repoSubEvento: Repository<SubEventoEntity>,
     recintoService: RecintoService,
+    storageService: StorageService,
     dataSource: DataSource,
   ) {
     this.eventoRepository = repo;
     this.usuarioRepository = repoUsuario;
     this.subEventoRepository = repoSubEvento;
     this.recintoService = recintoService;
+    this.storageService = storageService;
     this.dataSource = dataSource;
   }
 
@@ -202,6 +207,98 @@ export class EventosService {
       where,
       order: { idEvento: 'DESC' },
     });
+  }
+
+  // Devuelve el detalle completo de una solicitud para evaluación (CU03 / UI12)
+  async obtenerDetalleSolicitud(idEvento: number) {
+    const evento = await this.eventoRepository.findOne({
+      where: { idEvento },
+      relations: {
+        subEventos: {
+          fecha: true,
+          recinto: true,
+        },
+      },
+    });
+
+    if (!evento) {
+      throw new NotFoundException(`No se encontró la solicitud con ID ${idEvento}.`);
+    }
+
+    const solicitante = await this.usuarioRepository.findOne({
+      where: { idUsuario: evento.idOrganizador },
+      select: {
+        idUsuario: true,
+        nombre: true,
+        apellidoPa: true,
+        apellidoMa: true,
+        correo: true,
+        esVerificado: true,
+        tipoCuenta: true,
+        esJefeAcademia: true,
+      },
+    });
+
+    let posterUrl: string | null = null;
+    if (evento.poster) {
+      posterUrl =
+        evento.poster.startsWith('http://') || evento.poster.startsWith('https://')
+          ? evento.poster
+          : this.storageService.publicUrl(evento.poster);
+    }
+
+    return {
+      idEvento: evento.idEvento,
+      nombre: evento.nombre,
+      descripcion: evento.descripcion,
+      justificacion: evento.justificacion,
+      idAlcance: evento.idAlcance,
+      idEstadoEvento: evento.idEstadoEvento,
+      poster: evento.poster,
+      poster_url: posterUrl,
+      posterUrl: posterUrl,
+      solicitante: solicitante
+        ? {
+            idUsuario: solicitante.idUsuario,
+            nombre: solicitante.nombre,
+            apellidoPa: solicitante.apellidoPa,
+            apellidoMa: solicitante.apellidoMa,
+            nombreCompleto: `${solicitante.nombre} ${solicitante.apellidoPa}${
+              solicitante.apellidoMa ? ' ' + solicitante.apellidoMa : ''
+            }`,
+            correo: solicitante.correo,
+            esVerificado: solicitante.esVerificado,
+            tipoCuenta: solicitante.tipoCuenta,
+            esJefeAcademia: solicitante.esJefeAcademia,
+          }
+        : null,
+      subeventos: (evento.subEventos || []).map((sub) => ({
+        idSubEvento: sub.idSubEvento,
+        nombre: sub.nombre,
+        descripcion: sub.descripcion,
+        accesoQR: sub.accesoQR,
+        estado: sub.estado,
+        idFecha: sub.idFecha,
+        fecha: sub.fecha
+          ? {
+              idFecha: sub.fecha.idFecha,
+              fecha: sub.fecha.fecha,
+              horaInicio: sub.fecha.horaInicio,
+              horaFin: sub.fecha.horaFin,
+            }
+          : null,
+        idRecinto: sub.idRecinto,
+        espacio: sub.recinto
+          ? {
+              idRecinto: sub.recinto.idRecinto,
+              nombre: sub.recinto.nombre,
+              aforo: sub.recinto.aforo,
+              computadorasDisponibles: sub.recinto.computadorasDisponibles,
+              idEstadoRecinto: sub.recinto.idEstadoRecinto,
+            }
+          : null,
+      })),
+    };
   }
 
   // Orquesta la creación de una solicitud a partir del DTO recibido y delega a la transacción crearEvento
