@@ -4,6 +4,8 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Param,
+  ParseIntPipe,
   Post,
   Query,
   Req,
@@ -36,6 +38,14 @@ export class SolicitudesController {
   @Roles(TipoCuentaUsuario.SUBDIRECCION)
   async listarSolicitudes(@Query('estado') estado?: string) {
     return await this.eventosService.listarSolicitudesPorEstado(estado);
+  }
+
+  // Detalle de solicitud para evaluación (CU03 / UI12). Protegido para Subdirección.
+  @Get(':id')
+  @UseGuards(RolesGuard)
+  @Roles(TipoCuentaUsuario.SUBDIRECCION)
+  async obtenerDetalleSolicitud(@Param('id', ParseIntPipe) id: number) {
+    return await this.eventosService.obtenerDetalleSolicitud(id);
   }
 
   @Post()
