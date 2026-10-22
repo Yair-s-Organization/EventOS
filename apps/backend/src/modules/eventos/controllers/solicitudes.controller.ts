@@ -1,20 +1,26 @@
 import {
   Body,
   Controller,
+  Get,
   HttpCode,
   HttpStatus,
   Post,
+  Query,
   Req,
   UploadedFile,
+  UseGuards,
   UseInterceptors,
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { TipoCuentaUsuario } from '@eventos/shared';
 import { EventosService } from '../services/eventos.service';
 import { CrearSolicitudDto } from '../dto/crearSolicitud.dto';
 import { StorageService } from '../../../common/storage/storage.service';
 import { posterOptions } from '../../../common/upload/upload.options';
+import { RolesGuard } from '../../auth/roles.guard';
+import { Roles } from '../../../common/decorators/roles.decorator';
 
 @Controller('solicitudes')
 @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
@@ -23,6 +29,14 @@ export class SolicitudesController {
     private readonly eventosService: EventosService,
     private readonly storageService: StorageService,
   ) {}
+
+  // Lista solicitudes filtradas por estado (ej. ?estado=Pendiente). Solo Subdirección.
+  @Get()
+  @UseGuards(RolesGuard)
+  @Roles(TipoCuentaUsuario.SUBDIRECCION)
+  async listarSolicitudes(@Query('estado') estado?: string) {
+    return await this.eventosService.listarSolicitudesPorEstado(estado);
+  }
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
