@@ -30,11 +30,12 @@ export class SubEventoEntity implements SubEvento {
   accesoQR: boolean;
 
   @Column({
-    name: 'estado',
-    type: 'int',
-    default: EstadoSubEvento.ACEPTADO,
-  })
-  estado: EstadoSubEvento;
+      name: 'estado',
+      type: 'varchar',
+      length: 50,
+      default: EstadoSubEvento.ACEPTADO,
+    })
+    estado: EstadoSubEvento;
 
   // ==========================================
   // RELACIONES (Foreign Keys)

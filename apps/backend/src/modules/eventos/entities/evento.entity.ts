@@ -9,21 +9,21 @@ import type { Evento } from '@eventos/shared';
 import { AlcanceEvento, EstadoEvento } from '@eventos/shared';
 import { SubEventoEntity } from './subevento.entity';
 
-@Entity({ name: 'eventos' })
+@Entity({ name: 'evento' }) 
 export class EventoEntity implements Evento {
-  @PrimaryGeneratedColumn({ name: 'idEvento' })
+  @PrimaryGeneratedColumn({ name: 'idEvento', type: 'int' })
   idEvento: number;
 
-  @Column({ name: 'nombre', type: 'varchar', length: 200 })
+  @Column({ name: 'nombre', type: 'varchar', length: 150 })
   nombre: string;
 
-  @Column({ name: 'descripcion', type: 'text' })
+  @Column({ name: 'descripcion', type: 'varchar', length: 500 })
   descripcion: string;
 
-  @Column({ name: 'poster', type: 'varchar', length: 500, nullable: true })
+  @Column({ name: 'poster', type: 'text' })
   poster?: string | null;
 
-  @Column({ name: 'justificacion', type: 'text', nullable: true })
+  @Column({ name: 'justificacion', type: 'text' })
   justificacion: string;
 
   @Column({ name: 'idOrganizador', type: 'int' })

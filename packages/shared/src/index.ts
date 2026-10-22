@@ -19,6 +19,8 @@ export interface SubEvento {
   idFecha: number;
   accesoQR: boolean;
   estado: EstadoSubEvento;
+  nombre?: string;       
+  descripcion?: string;  
 }
 
 export interface Fecha {
@@ -132,9 +134,9 @@ export enum EstadoEvento {
 }
 
 export enum EstadoSubEvento {
-  ACEPTADO = 1,
-  CANCELADO = 2,
-  FINALIZADO = 3
+  ACEPTADO = 'Aceptado',
+  CANCELADO = 'Cancelado',
+  FINALIZADO = 'Finalizado'
 }
 
 export enum EstadoRecinto{
