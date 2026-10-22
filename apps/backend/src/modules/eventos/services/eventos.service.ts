@@ -179,6 +179,33 @@ export class EventosService {
     });
   }
 
+  // Lista solicitudes (eventos) filtradas por estado. "Pendiente" equivale a EstadoEvento.ENPROCESO.
+  async listarSolicitudesPorEstado(estado?: string) {
+    const mapa: Record<string, EstadoEvento> = {
+      pendiente: EstadoEvento.ENPROCESO,
+      enproceso: EstadoEvento.ENPROCESO,
+      aceptado: EstadoEvento.ACEPTADO,
+      rechazado: EstadoEvento.RECHAZADO,
+      cancelado: EstadoEvento.CANCELADO,
+      finalizado: EstadoEvento.FINALIZADO,
+    };
+
+    const where: { idEstadoEvento?: EstadoEvento } = {};
+    if (estado !== undefined && estado !== '') {
+      const idEstado = mapa[estado.trim().toLowerCase()];
+      if (idEstado === undefined) {
+        throw new BadRequestException(`Estado inválido: "${estado}".`);
+      }
+      where.idEstadoEvento = idEstado;
+    }
+
+    return await this.eventoRepository.find({
+      where,
+      relations: { subEventos: true },
+      order: { idEvento: 'DESC' },
+    });
+  }
+
   // Orquesta la creación de una solicitud a partir del DTO recibido y delega a la transacción crearEvento
   async registrarSolicitud(
     idOrganizador: number,
