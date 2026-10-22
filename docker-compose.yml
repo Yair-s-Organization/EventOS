@@ -10,6 +10,7 @@ services:
       - '5433:5432' # 5433 para no chocar con un PostgreSQL local en 5432
     volumes:
       - pg_data:/var/lib/postgresql
+      - ./apps/backend/src/database/schema.sql:/docker-entrypoint-initdb.d/init.sql:ro
 
   # MinIO dejó de publicar imágenes en Docker Hub/quay.io; se usa la imagen de Chainguard.
   minio:

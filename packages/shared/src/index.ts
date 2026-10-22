@@ -21,8 +21,6 @@ export interface SubEvento {
   descripcion: string;
   accesoQR: boolean;
   estado: EstadoSubEvento;
-  nombre?: string;       
-  descripcion?: string;  
 }
 
 export interface Fecha {
