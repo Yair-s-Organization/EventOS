@@ -22,14 +22,16 @@ export function Select({
 }: SelectProps) {
   return (
     <select
-      className={`bg-white rounded-lg border-2 p-3 border-secondary font-merriweather ${
-        value === "" ? "text-gray-400 text-sm" : "text-gray-900"
-      } ${hasError ? "border-red-500 bg-red-50" : "border-gray-300 focus:border-2 focus:border-blue-700"} ${className}`}
+      className={`bg-white rounded-lg border p-3 font-merriweather text-[16px] ${
+        hasError
+          ? "border-eventos-error focus:border-eventos-error"
+          : "border-secondary focus:ring-blue-100"
+      } ${value === "" ? "text-gray-400 text-sm" : "text-gray-900"} ${className}`}
       value={value}
       disabled={disabled}
       {...restOfProps}>
       {placeholder && (
-        <option value="" disabled hidden className="text-gray">
+        <option value="" disabled hidden className="text-gray text-[16px]">
           {placeholder}
         </option>
       )}
