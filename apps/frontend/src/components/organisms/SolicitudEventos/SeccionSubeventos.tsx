@@ -6,8 +6,8 @@ import { CardSubevento } from "./CardSubevento";
 
 export function SeccionSubeventos({
   subeventos,
-  subeventErrors,
-  subeventTouched,
+  erroresSubeventos: subeventErrors,
+  subeventoTocado: subeventTouched,
   updateSubevento,
   markSubeventoTouched,
   addSubevento,

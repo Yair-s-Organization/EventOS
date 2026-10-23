@@ -1,6 +1,5 @@
 import { SeccionDatosEvento } from "../../components/organisms/SolicitudEventos/SeccionDatosEvento";
 import { useState, type FormEvent } from "react";
-//import { SeccionDatosSolicitante } from "../../components/organisms/SolicitudEventos/SeccionDatosSolicitante";
 import { SeccionSubeventos } from "../../components/organisms/SolicitudEventos/SeccionSubeventos";
 import Button from "../../components/atoms/Button/Button";
 import { Modal } from "../../components/molecules/Modal";
@@ -21,6 +20,7 @@ export interface DatosSubevento {
   horaFin: string;
   recinto: string;
   accesoBoleto: string;
+  descripcion: string;
 }
 
 export type CampoFormulario = Exclude<
@@ -37,15 +37,15 @@ export type ErroresSubevento = Partial<Record<CampoSubevento, string>>;
 export type CamposSubeventoTocados = Partial<Record<CampoSubevento, boolean>>;
 
 export interface PropsValidacionFormulario {
-  errors: ErroresFormulario;
+  errores: ErroresFormulario;
   touched: CamposTocados;
-  markTouched: (field: CampoFormulario) => void;
+  esTocado: (field: CampoFormulario) => void;
 }
 
 export interface PropsSubeventosFormulario {
   subeventos: DatosSubevento[];
-  subeventErrors: ErroresSubevento[];
-  subeventTouched: CamposSubeventoTocados[];
+  erroresSubeventos: ErroresSubevento[];
+  subeventoTocado: CamposSubeventoTocados[];
   updateSubevento: (
     index: number,
     field: CampoSubevento,
@@ -65,6 +65,7 @@ const crearSubevento = (): DatosSubevento => ({
   horaFin: "",
   recinto: "",
   accesoBoleto: "",
+  descripcion: "",
 });
 
 function validarFormulario(form: FormularioSolicitudoData): ErroresFormulario {
@@ -76,7 +77,8 @@ function validarFormulario(form: FormularioSolicitudoData): ErroresFormulario {
   }
 
   if (!form.categoria) {
-    errors.categoria = "Selecciona el alcance del evento.";
+    errors.categoria =
+      "Debe seleccionar un tipo de alcance válido para continuar";
   }
 
   if (!form.rutaPoster) {
@@ -84,36 +86,60 @@ function validarFormulario(form: FormularioSolicitudoData): ErroresFormulario {
   } else if (form.rutaPoster.size > 5 * 1024 * 1024) {
     errors.rutaPoster = "El póster no debe exceder los 5 megabytes.";
   }
-  
+
   if (!form.descripcion.trim()) {
     errors.descripcion = "La descripción del evento es obligatoria.";
   } else if (form.descripcion.trim().length > 500) {
     errors.descripcion = "La descripcion no debe exceder los 500 caracteres";
   }
-  
+
   if (!form.justificacion.trim()) {
     errors.justificacion = "La justificación del evento es obligatoria.";
   } else if (form.justificacion.trim().length > 500) {
-    errors.justificacion = "La justificacion no debe exceder los 500 caracteres"
-      "La justificacion no debe exceder los 500 caracteres";
-  } else if(!regex.test(form.justificacion)){
-      errors.justificacion = "Simbolo no valido"
+    errors.justificacion ="La justificacion no debe exceder los 500 caracteres";
+  } else if (!regex.test(form.justificacion)) {
+    errors.justificacion = "Simbolo no valido";
   }
 
   return errors;
+
 }
 
 function validarSubeventos(subeventos: DatosSubevento[]): ErroresSubevento[] {
   return subeventos.map((subevento) => {
+    
     const errors: ErroresSubevento = {};
 
-    if (!subevento.recinto) {
-      errors.recinto = "Selecciona un espacio para el evento.";
-    } else if (subevento.recinto !== "sala14" && !subevento.accesoBoleto) {
-      errors.accesoBoleto = "Indica si el evento requiere boleto.";
+    if (!subevento.fecha) {
+      errors.fecha = "Selecciona la fecha del evento";
     }
-
+    
+    if (!subevento.horaInicio) {
+      errors.horaInicio = "Selecciona la hora de inicio";
+    }
+    
+    if (!subevento.horaFin) {
+      errors.horaFin = "Selecciona la hora final";
+    }
+    
+    if (!subevento.recinto) {
+      errors.recinto = "Selecciona un espacio para el evento";
+    }
+    
+    if (
+      subevento.recinto &&
+      subevento.recinto !== "sala14" &&
+      !subevento.accesoBoleto
+    ) {
+      errors.accesoBoleto = "Indica si el evento requiere boleto";
+    }
+    
+    if(subevento.horaInicio && subevento.horaFin && subevento.horaInicio >= subevento.horaFin){
+      errors.horaFin = "La hora final debe ser posterior a la hora de inicio";
+    }
+    
     return errors;
+
   });
 }
 
@@ -132,7 +158,7 @@ export function SolicitudEvento() {
     CamposSubeventoTocados[]
   >([{}]);
 
-  const [open, setOpen] = useState(false);
+  const [modal, setModal] = useState<"confirmacion" | "error" | null>(null);
 
   const errors = validarFormulario(form);
   const subeventErrors = validarSubeventos(form.subeventos);
@@ -207,22 +233,78 @@ export function SolicitudEvento() {
       justificacion: true,
     });
     setSubeventTouched(
-      form.subeventos.map(() => ({ recinto: true, accesoBoleto: true })),
+      form.subeventos.map(() => ({
+        fecha: true,
+        horaInicio: true,
+        horaFin: true,
+        recinto: true,
+        accesoBoleto: true,
+      })),
     );
 
-    if (
+    const hayErrores =
       Object.keys(errors).length > 0 ||
-      subeventErrors.some(
-        (subeventError) => Object.keys(subeventError).length > 0,
-      )
-    )
+      subeventErrors.some((errores) => Object.keys(errores).length > 0);
+
+    if (hayErrores) {
+      setModal("error");
       return;
-    setOpen(true);
+    }
+
+    setModal("confirmacion");
   };
 
-  const confirmarModal = () => {
-    setOpen(false);
-    console.log("Datos listos para enviar al backend:", form);
+  const confirmarModal = async () => {
+    setModal(null);
+
+    const datos = new FormData();
+
+    const idAlcanceEvento: Record<string, number> = {
+      publico: 1,
+      interno: 2,
+      privado: 3,
+    };
+
+    const idRecintoEvento: Record<string, number> = {
+      auditorio: 1,
+      lab1104: 2,
+      lab1105: 3,
+      sala14: 4,
+    };
+
+    const idAccesoQR: Record<string, boolean> = {
+      si: true,
+      no: false,
+    };
+
+    const idAlcance = idAlcanceEvento[form.categoria];
+    datos.append("nombre", form.nombreEvento.trim());
+    datos.append("descripcion", form.descripcion.trim());
+    datos.append("justificacion", form.justificacion.trim());
+    datos.append("idAlcance", String(idAlcance));
+    datos.append(
+      "subeventos",
+      JSON.stringify(
+        form.subeventos.map((subevento) => ({
+          idRecinto: String(idRecintoEvento[subevento.recinto]),
+          fecha: subevento.fecha,
+          horaInicio: subevento.horaInicio,
+          horaFin: subevento.horaFin,
+          accesoQR:
+            subevento.recinto != "sala14" &&
+            idAccesoQR[subevento.accesoBoleto] == true,
+        })),
+      ),
+    );
+
+    if (form.rutaPoster) {
+      datos.append("poster", form.rutaPoster);
+    }
+
+    const response = await fetch("http://localhost:3000/api/solicitudes", {
+      method: "POST",
+      body: datos,
+    });
   };
 
   return (
@@ -231,32 +313,39 @@ export function SolicitudEvento() {
         form={form}
         actualizarCampo={updateField}
         actualizarPoster={updatePoster}
-        errors={errors}
+        errores={errors}
         touched={touched}
-        markTouched={markTouched}
+        esTocado={markTouched}
       />
       <SeccionSubeventos
         subeventos={form.subeventos}
-        subeventErrors={subeventErrors}
-        subeventTouched={subeventTouched}
+        erroresSubeventos={subeventErrors}
+        subeventoTocado={subeventTouched}
         updateSubevento={updateSubevento}
         markSubeventoTouched={markSubeventoTouched}
         addSubevento={addSubevento}
         removeSubevento={removeSubevento}
       />
       <Button text="Solicitar evento" type="submit" />
+
       <Modal
-        titulo="Confirmar solicitud"
-        contenido="¿Deseas enviar la solicitud de este evento?"
-        mostrarModal={open}
-        cerrarModal={() => setOpen(false)}
-      >
+        titulo={modal === "error" ? `Error` : "Confirmar solicitud"}
+        contenido={
+          modal === "error"
+            ? "Error en el llenado del formulario"
+            : "¿Desea enviar la solicitud de este evento?"
+        }
+        mostrarModal={modal !== null}
+        cerrarModal={() => setModal(null)}>
         <div className="flex justify-end gap-3">
-          <Button
-            text="Cancelar"
-            onClick={() => setOpen(false)}
-          />
-          <Button text="Aceptar" onClick={confirmarModal} />
+          {modal === "error" ? (
+            <Button text="Aceptar" onClick={() => setModal(null)} />
+          ) : (
+            <>
+              <Button text="Cancelar" onClick={() => setModal(null)} />
+              <Button text="Aceptar" onClick={confirmarModal} />
+            </>
+          )}
         </div>
       </Modal>
     </form>

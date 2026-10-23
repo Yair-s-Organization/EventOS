@@ -4,7 +4,7 @@ import { MainLayout } from "../components/templates/MainLayout";
 import { SolicitudEvento } from "../features/events/SolicitudEventos";
 import { LoginForm } from "../features/auth/LoginForm";
 import { Registro } from "../features/auth/Registro";
-import { DetallesEvento } from "../features/educational-services/DetallesEvento";
+import { DetallesEvento } from "../features/educational-services/DetallesSolicitud";
 
 export function AppRouter() {
   return (

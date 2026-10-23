@@ -1,4 +1,4 @@
-import { SeccionDatosPrellenados } from "../../components/organisms/DetallesEvento/SeccionDatosPrellenados";
+import { SeccionDatosPrellenados } from "../../components/organisms/DetallesSolicitud/SeccionDatosPrellenados";
 import { useLocation } from "react-router";
 import type { DatosSubevento } from "../events/SolicitudEventos";
 
@@ -30,6 +30,7 @@ const datosPrellenados: DatosPrellenados = {
       horaFin: "10am",
       recinto: "auditorio",
       accesoBoleto: "no",
+      descripcion: "Estas es la descripcion"
     },
   ],
 };

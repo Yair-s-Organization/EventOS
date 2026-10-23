@@ -5,7 +5,7 @@ export interface TextAreaProps extends TextareaHTMLAttributes<HTMLTextAreaElemen
   hasError?: boolean;
 }
 
-const textStyle = "font-merriweather";
+const textStyle = "font-merriweather text-[16px]";
 
 export function TextArea({
   className = "",
@@ -16,8 +16,8 @@ export function TextArea({
     <textarea
       className={`w-full rounded-lg border p-3 text-sm outline-none transition-colors focus:ring-2 ${
         hasError 
-            ? "border-red-500 focus:border-red-500 focus:ring-red-200" 
-            : "border-2 border-secondary focus:border-blue-700 focus:ring-blue-100"}
+            ? "border-eventos-error focus:border-eventos-error focus:ring-red-200" 
+            : "border-secondary focus:ring-blue-100"}
         ${textStyle} 
         ${className}`}
       {...restOfProps}

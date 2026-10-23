@@ -1,4 +1,4 @@
-import type { DatosPrellenados } from "../../../features/educational-services/DetallesEvento";
+import type { DatosPrellenados } from "../../../features/educational-services/DetallesSolicitud";
 import Input from "../../atoms/Input/Input";
 import Label from "../../atoms/Label/Label";
 import { FormField } from "../../molecules/FormField";
