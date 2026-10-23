@@ -8,23 +8,34 @@ export interface InfoBoleto {
     idUsuario: number;
 }
 
-@Injectable() export class QrService {
+@Injectable() 
+export class QrService {
     
     constructor(private readonly jwtService : JwtService){}    
 
-    async generateQrCode(info : InfoBoleto, eventEndDate: Date): Promise<string>{
+    async generateQrCode(info : InfoBoleto, eventEndDate: Date): Promise<{ token: string, qrBase64: string }>{
         //The event end date is converted to seconds
-        const expirationTime = Math.floor(eventEndDate.getTime() / 1000);
+        const expTime = Math.floor(eventEndDate.getTime() / 1000);
+        
         //The exp field is added to the original information
         const newInfo = {
             ...info,
-            exp: expirationTime
+            exp: expTime
         };
-        //Sign the information
+        
+        //Sign the information 
         const signedToken = await this.jwtService.signAsync(newInfo);
+        
         //Generate the QR code image in Base64 format
         const base64Image = await qrcode.toDataURL(signedToken);
-        return base64Image;
+        
+        return {
+            token: signedToken,
+            qrBase64: base64Image
+        };
     }
 
+    async generateImageFromToken(token: string): Promise<string> {
+        return await qrcode.toDataURL(token);
+    }
 }

@@ -1,17 +1,35 @@
-import { Controller, Post, Body } from '@nestjs/common';
+import { Controller, Post, Body, Get, Param, ParseIntPipe, Patch } from '@nestjs/common';
 import { ReservationsService } from '../services/reservations.service';
 import { CreateReservationDto } from '../dto/createReservation.dto';
+
 @Controller('reservations')
 export class ReservationsController {
   
   constructor(private readonly reservationsService: ReservationsService) {}
 
+  //Endpoint para consultar lugares y asientos libres
+  @Get('disponibilidad/:idSubEvento')
+  async consultarDisponibilidad(
+    @Param('idSubEvento', ParseIntPipe) idSubEvento: number,
+  ) {
+    return await this.reservationsService.consultarDisponibilidad(idSubEvento);
+  }
+
+  //Endpoint para crear una reserva y generar boleto/QR
   @Post()
   async crearReserva(@Body() dto: CreateReservationDto) {
-    // IMPORTANTE: Como aún no conectamos la seguridad real (Guards), 
-    // se va a simular temporalmente que el usuario que hace la petición tiene el ID 1.
-    // Cuando se integre el JWT, esto se extraerá automáticamente de la petición 
-    const idUsuarioMock = 1; 
-    return await this.reservationsService.crearReserva(idUsuarioMock, dto);
+    // Reemplazar el "1" con el ID real del usuario extraído del token JWT (AuthModule)
+    const idUsuario = 1; 
+    
+    return await this.reservationsService.crearReserva(idUsuario, dto);
   }
+
+  @Patch(':idBoleto/cancelar')
+  async cancelarReserva(
+    @Param('idBoleto', ParseIntPipe) idBoleto: number,
+  ) {
+    const idUsuario = 1; // Reemplazar con token JWT
+    return await this.reservationsService.cancelarReserva(idUsuario, idBoleto);
+  }
+  
 }

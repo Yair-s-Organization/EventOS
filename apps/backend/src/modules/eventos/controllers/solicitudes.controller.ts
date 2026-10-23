@@ -1,20 +1,28 @@
 import {
   Body,
   Controller,
+  Get,
   HttpCode,
   HttpStatus,
+  Param,
+  ParseIntPipe,
   Post,
+  Query,
   Req,
   UploadedFile,
+  UseGuards,
   UseInterceptors,
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { TipoCuentaUsuario } from '@eventos/shared';
 import { EventosService } from '../services/eventos.service';
 import { CrearSolicitudDto } from '../dto/crearSolicitud.dto';
 import { StorageService } from '../../../common/storage/storage.service';
 import { posterOptions } from '../../../common/upload/upload.options';
+import { RolesGuard } from '../../auth/roles.guard';
+import { Roles } from '../../../common/decorators/roles.decorator';
 
 @Controller('solicitudes')
 @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
@@ -23,6 +31,22 @@ export class SolicitudesController {
     private readonly eventosService: EventosService,
     private readonly storageService: StorageService,
   ) {}
+
+  // Lista solicitudes filtradas por estado (ej. ?estado=Pendiente). Solo Subdirección.
+  @Get()
+  @UseGuards(RolesGuard)
+  @Roles(TipoCuentaUsuario.SUBDIRECCION)
+  async listarSolicitudes(@Query('estado') estado?: string) {
+    return await this.eventosService.listarSolicitudesPorEstado(estado);
+  }
+
+  // Detalle de solicitud para evaluación (CU03 / UI12). Protegido para Subdirección.
+  @Get(':id')
+  @UseGuards(RolesGuard)
+  @Roles(TipoCuentaUsuario.SUBDIRECCION)
+  async obtenerDetalleSolicitud(@Param('id', ParseIntPipe) id: number) {
+    return await this.eventosService.obtenerDetalleSolicitud(id);
+  }
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
