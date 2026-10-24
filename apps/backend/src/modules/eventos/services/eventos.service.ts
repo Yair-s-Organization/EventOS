@@ -301,7 +301,7 @@ export class EventosService {
     };
   }
 
-  // Aprueba una solicitud: solo permitido si está Pendiente (ENPROCESO). Cambia el estado a ACEPTADO.
+  // Aprueba una solicitud: valida que exista y esté Pendiente, y cambia el estado a ACEPTADO.
   async aprobarSolicitud(idEvento: number) {
     const evento = await this.eventoRepository.findOneBy({ idEvento });
     if (!evento) {
@@ -312,20 +312,42 @@ export class EventosService {
         'Solo se pueden aprobar solicitudes en estado Pendiente.',
       );
     }
-    // Update condicionado para evitar aprobaciones concurrentes duplicadas
-    const resultado = await this.eventoRepository.update(
-      { idEvento, idEstadoEvento: EstadoEvento.ENPROCESO },
-      { idEstadoEvento: EstadoEvento.ACEPTADO },
-    );
-    if (!resultado.affected) {
-      throw new ConflictException(
-        'Solo se pueden aprobar solicitudes en estado Pendiente.',
-      );
-    }
+
+    await this.eventoRepository.update(idEvento, {
+      idEstadoEvento: EstadoEvento.ACEPTADO,
+    });
+
     return {
       mensaje: 'Solicitud aprobada con éxito.',
       idEvento,
       idEstadoEvento: EstadoEvento.ACEPTADO,
+    };
+  }
+
+  // Rechaza una solicitud: valida que exista y esté Pendiente, pasa a RECHAZADO y cancela subeventos para liberar espacios.
+  async rechazarSolicitud(idEvento: number) {
+    const evento = await this.eventoRepository.findOneBy({ idEvento });
+    if (!evento) {
+      throw new NotFoundException(`No se encontró la solicitud con ID ${idEvento}.`);
+    }
+    if (evento.idEstadoEvento !== EstadoEvento.ENPROCESO) {
+      throw new ConflictException(
+        'Solo se pueden rechazar solicitudes en estado Pendiente.',
+      );
+    }
+
+    await this.eventoRepository.update(idEvento, {
+      idEstadoEvento: EstadoEvento.RECHAZADO,
+    });
+    await this.subEventoRepository.update(
+      { idEvento },
+      { estado: EstadoSubEvento.CANCELADO },
+    );
+
+    return {
+      mensaje: 'Solicitud rechazada con éxito.',
+      idEvento,
+      idEstadoEvento: EstadoEvento.RECHAZADO,
     };
   }
 

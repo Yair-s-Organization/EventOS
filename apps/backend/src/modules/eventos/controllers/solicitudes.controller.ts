@@ -57,6 +57,14 @@ export class SolicitudesController {
     return await this.eventosService.aprobarSolicitud(id);
   }
 
+  // Rechaza una solicitud Pendiente y libera horarios/recintos de sus subeventos. Solo Subdirección.
+  @Patch(':id/rechazar')
+  @UseGuards(RolesGuard)
+  @Roles(TipoCuentaUsuario.SUBDIRECCION)
+  async rechazarSolicitud(@Param('id', ParseIntPipe) id: number) {
+    return await this.eventosService.rechazarSolicitud(id);
+  }
+
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @UseInterceptors(FileInterceptor('poster', posterOptions))
