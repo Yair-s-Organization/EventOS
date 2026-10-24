@@ -1,6 +1,7 @@
 import type { DatosPrellenados } from "../../../features/educational-services/DetallesSolicitud";
 import Input from "../../atoms/Input/Input";
 import Label from "../../atoms/Label/Label";
+import { TextArea } from "../../atoms/TextArea/TextArea";
 import { FormField } from "../../molecules/FormField";
 import { FormHeader } from "../../molecules/FormHeader";
 import { CardSubevento } from "../SolicitudEventos/CardSubevento";
@@ -22,28 +23,25 @@ export function SeccionDatosPrellenados({ datos }: DatosPrellenadosProps) {
         <FormField>
           <div className="space-y-10">
             <p className="font-merriweather">{datos.descripcion}</p>
-            <p className="font-merriweather">{datos.justificacion}</p>
-            <a>Ver justificacion politecnica</a>
           </div>
         </FormField>
       </div>
       <div className="grid grid-cols-2 gap-2">
         <div className="col-span-2">
-          <FormField label="Solicitante" htmlFor="campoSolicitante">
-            <Input
-              id="campoSolicitante"
-              type="text"
+          <FormField label="Justificación" htmlFor="campoJustificacion">
+            <TextArea
+              id="campoJustificacion"
+              value={alcances[datos.justificacion] ?? datos.justificacion}
               disabled
-              value={datos.nombreSolicitante}
-            />
+           />
           </FormField>
         </div>
-        <FormField label="Etiqueta del evento" htmlFor="campoEtiqueta">
+        <FormField label="Solicitante" htmlFor="campoSolicitante">
           <Input
-            id="campoEtiqueta"
+            id="campoSolicitante"
             type="text"
             disabled
-            value={datos.etiquetaEvento}
+            value={datos.nombreSolicitante}
           />
         </FormField>
 

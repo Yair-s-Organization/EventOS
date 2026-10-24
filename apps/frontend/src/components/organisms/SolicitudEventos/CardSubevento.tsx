@@ -77,6 +77,7 @@ const HORASFIN = [
   { value: "19:00", label: "19:00" },
   { value: "20:00", label: "20:00" },
   { value: "21:00", label: "21:00" },
+  { value: "22:00", label: "22:00" },
 ];
 
 export function CardSubevento(props: CardSubeventoProps) {
@@ -213,10 +214,25 @@ export function CardSubevento(props: CardSubeventoProps) {
         />
       </FormField>
       <FormField>
-        <Button 
-        text="Ver detalles de espacio" type="button" 
-        disabled={subevento.recinto === "sala14" || subevento.recinto === "auditorio" || subevento.recinto === ""}
-        />
+        {readOnly && (
+          <Button
+            text="Ver descripcion del subevento"
+            id={`botonVerInformacion-${subevento.id}`}
+            type="button"
+            onClick={() => console.log(subevento.horaInicio)}
+          />
+        )}
+        {!readOnly && (
+          <Button
+            text="Ver detalles de espacio"
+            type="button"
+            disabled={
+              subevento.recinto === "sala14" ||
+              subevento.recinto === "auditorio" ||
+              subevento.recinto === ""
+            }
+          />
+        )}
       </FormField>
       {!readOnly && (
         <div className="col-span-full flex justify-between">
@@ -226,7 +242,7 @@ export function CardSubevento(props: CardSubeventoProps) {
             type="button"
             onClick={() => console.log(subevento.horaInicio)}
           />
-          
+
           <Button
             text="Eliminar fecha"
             id={`botonEliminarFecha-${subevento.id}`}
