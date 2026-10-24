@@ -17,10 +17,10 @@ export function Input({
       type={type}
       disabled={disabled}
       aria-invalid={hasError}
-      className={`font-merriweather bg-white w-full rounded-lg border p-3 text-sm transition-colors outline-none focus:ring-2 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400 ${
+      className={`font-merriweather text-[16px] bg-white w-full rounded-lg border p-3 text-sm transition-colors outline-none focus:ring-2 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400 ${
         hasError
-          ? "border-red-500 bg-red-50 focus:border-red-500 focus:ring-red-200"
-          : "border-2 border-secondary focus:border-blue-700 focus:ring-blue-100"
+          ? "border-eventos-error focus:border-eventos-error focus:ring-red-200"
+          : "border-secondary focus:ring-blue-100"
       } ${className}`}
       {...restOfProps}
     />

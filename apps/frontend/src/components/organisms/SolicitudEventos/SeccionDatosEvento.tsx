@@ -18,6 +18,7 @@ interface SeccionDatosEventoProps extends PropsValidacionFormulario {
 
 const CATEGORIAS = [
   { value: "publico", label: "Público" },
+  { value: "interno", label: "Interno" },
   { value: "privado", label: "Privado" },
 ];
 
@@ -25,9 +26,9 @@ export function SeccionDatosEvento({
   form,
   actualizarCampo,
   actualizarPoster,
-  errors,
+  errores: errors,
   touched,
-  markTouched,
+  esTocado: markTouched,
 }: SeccionDatosEventoProps) {
   return (
     <section className="space-y-5">
@@ -83,9 +84,7 @@ export function SeccionDatosEvento({
               id="campoPoster"
               accept=".jpg"
               hasError={Boolean(touched.rutaPoster && errors.rutaPoster)}
-              onChange={(e) =>
-                actualizarPoster(e.target.files?.[0] ?? null)
-              }
+              onChange={(e) => actualizarPoster(e.target.files?.[0] ?? null)}
               onBlur={() => markTouched("rutaPoster")}
             />
           </FormField>

@@ -36,21 +36,19 @@ export function InputFile({
 
   return (
     <label
-      className={`flex w-full items-center rounded-lg border-2 p-3 text-sm transition-colors focus-within:ring-2 ${
+      className={`text-[16px] flex w-full items-center rounded-lg border p-3 text-sm transition-colors focus-within:ring-2 ${
         disabled
           ? "cursor-not-allowed bg-gray-100 text-gray-400"
           : "cursor-pointer bg-white"
       } ${
         hasError
-          ? "border-red-500 bg-red-50 focus-within:border-red-500 focus-within:ring-red-200"
+          ? "border-eventos-error focus:border-eventos-error focus:ring-red-200"
           : "border-secondary focus-within:border-blue-700 focus-within:ring-blue-100"
-      } ${className}`}
-    >
+      } ${className}`}>
       <span
         className={`truncate ${
           fileName && !disabled ? "text-gray-900" : "text-gray-400"
-        }`}
-      >
+        }`}>
         {fileName || placeholder}
       </span>
       <input
