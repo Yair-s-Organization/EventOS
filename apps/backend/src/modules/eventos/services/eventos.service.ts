@@ -17,6 +17,7 @@ import {
   EstadoEvento,
   EstadoSubEvento,
   EstadoVerificacion,
+  TipoCuentaUsuario,
   type SubeventoPayload,
 } from '@eventos/shared';
 import type { CrearSolicitudDto } from '../dto/crearSolicitud.dto';
@@ -315,6 +316,12 @@ export class EventosService {
       poster: posterKey ?? dto.poster ?? null,
       idOrganizador,
     });
+
+    // RN-13: las solicitudes de Subdirección y Jefe se aprueban por default; el resto queda Pendiente
+    const solicitante = await this.usuarioRepository.findOneBy({ idUsuario: idOrganizador });
+    if (solicitante?.tipoCuenta === TipoCuentaUsuario.SUBDIRECCION || solicitante?.esJefeAcademia) {
+      nuevoEvento.idEstadoEvento = EstadoEvento.ACEPTADO;
+    }
 
     return await this.crearEvento(nuevoEvento, dto.subeventos);
   }
