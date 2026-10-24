@@ -23,7 +23,7 @@ export function FieldMessage({
         <p
             id={id}
             role={variant==="success" ? "alert" : "status"}
-            className={`mt-1 text-xs ${variantStyles[variant]} ${className}`}
+            className={`mt-0 text-[10px] ${variantStyles[variant]} ${className}`}
             {...restOfProps}>
                 {children}
             </p>

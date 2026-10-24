@@ -26,7 +26,7 @@ export function FormField({
       {children}
       <span
         aria-live="polite"
-        className={`mt-1 block min-h-5 text-xs leading-4 ${
+        className={`mt-0 block min-h-1 text-xs leading-4 ${
           errorMessage ? "text-red-600" : "text-gray-500"
         }`}>
         {errorMessage ?? mensajeAyuda}
