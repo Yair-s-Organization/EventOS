@@ -329,6 +329,47 @@ export class EventosService {
     };
   }
 
+  // Rechaza una solicitud Pendiente (ENPROCESO). Pasa el evento a RECHAZADO y cancela todos sus
+  // subeventos, liberando horarios y recintos (consultarColisionBD ignora subeventos CANCELADO).
+  async rechazarSolicitud(idEvento: number) {
+    const evento = await this.eventoRepository.findOneBy({ idEvento });
+    if (!evento) {
+      throw new NotFoundException(`No se encontró la solicitud con ID ${idEvento}.`);
+    }
+    if (evento.idEstadoEvento !== EstadoEvento.ENPROCESO) {
+      throw new ConflictException(
+        'Solo se pueden rechazar solicitudes en estado Pendiente.',
+      );
+    }
+
+    return await this.dataSource.transaction(async (manager) => {
+      // Update condicionado para evitar rechazos/aprobaciones concurrentes
+      const resultado = await manager.update(
+        EventoEntity,
+        { idEvento, idEstadoEvento: EstadoEvento.ENPROCESO },
+        { idEstadoEvento: EstadoEvento.RECHAZADO },
+      );
+      if (!resultado.affected) {
+        throw new ConflictException(
+          'Solo se pueden rechazar solicitudes en estado Pendiente.',
+        );
+      }
+
+      const subeventos = await manager.update(
+        SubEventoEntity,
+        { idEvento },
+        { estado: EstadoSubEvento.CANCELADO },
+      );
+
+      return {
+        mensaje: 'Solicitud rechazada con éxito. Horarios y recintos liberados.',
+        idEvento,
+        idEstadoEvento: EstadoEvento.RECHAZADO,
+        subeventosLiberados: subeventos.affected ?? 0,
+      };
+    });
+  }
+
   // Orquesta la creación de una solicitud a partir del DTO recibido y delega a la transacción crearEvento
   async registrarSolicitud(
     idOrganizador: number,
