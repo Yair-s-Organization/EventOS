@@ -301,7 +301,7 @@ export class EventosService {
     };
   }
 
-  // Aprueba una solicitud: solo permitido si está Pendiente (ENPROCESO). Cambia el estado a ACEPTADO.
+  // Aprueba una solicitud: valida que exista y esté Pendiente, y cambia el estado a ACEPTADO.
   async aprobarSolicitud(idEvento: number) {
     const evento = await this.eventoRepository.findOneBy({ idEvento });
     if (!evento) {
@@ -312,16 +312,11 @@ export class EventosService {
         'Solo se pueden aprobar solicitudes en estado Pendiente.',
       );
     }
-    // Update condicionado para evitar aprobaciones concurrentes duplicadas
-    const resultado = await this.eventoRepository.update(
-      { idEvento, idEstadoEvento: EstadoEvento.ENPROCESO },
-      { idEstadoEvento: EstadoEvento.ACEPTADO },
-    );
-    if (!resultado.affected) {
-      throw new ConflictException(
-        'Solo se pueden aprobar solicitudes en estado Pendiente.',
-      );
-    }
+
+    await this.eventoRepository.update(idEvento, {
+      idEstadoEvento: EstadoEvento.ACEPTADO,
+    });
+
     return {
       mensaje: 'Solicitud aprobada con éxito.',
       idEvento,
@@ -329,8 +324,7 @@ export class EventosService {
     };
   }
 
-  // Rechaza una solicitud Pendiente (ENPROCESO). Pasa el evento a RECHAZADO y cancela todos sus
-  // subeventos, liberando horarios y recintos (consultarColisionBD ignora subeventos CANCELADO).
+  // Rechaza una solicitud: valida que exista y esté Pendiente, pasa a RECHAZADO y cancela subeventos para liberar espacios.
   async rechazarSolicitud(idEvento: number) {
     const evento = await this.eventoRepository.findOneBy({ idEvento });
     if (!evento) {
@@ -342,32 +336,19 @@ export class EventosService {
       );
     }
 
-    return await this.dataSource.transaction(async (manager) => {
-      // Update condicionado para evitar rechazos/aprobaciones concurrentes
-      const resultado = await manager.update(
-        EventoEntity,
-        { idEvento, idEstadoEvento: EstadoEvento.ENPROCESO },
-        { idEstadoEvento: EstadoEvento.RECHAZADO },
-      );
-      if (!resultado.affected) {
-        throw new ConflictException(
-          'Solo se pueden rechazar solicitudes en estado Pendiente.',
-        );
-      }
-
-      const subeventos = await manager.update(
-        SubEventoEntity,
-        { idEvento },
-        { estado: EstadoSubEvento.CANCELADO },
-      );
-
-      return {
-        mensaje: 'Solicitud rechazada con éxito. Horarios y recintos liberados.',
-        idEvento,
-        idEstadoEvento: EstadoEvento.RECHAZADO,
-        subeventosLiberados: subeventos.affected ?? 0,
-      };
+    await this.eventoRepository.update(idEvento, {
+      idEstadoEvento: EstadoEvento.RECHAZADO,
     });
+    await this.subEventoRepository.update(
+      { idEvento },
+      { estado: EstadoSubEvento.CANCELADO },
+    );
+
+    return {
+      mensaje: 'Solicitud rechazada con éxito.',
+      idEvento,
+      idEstadoEvento: EstadoEvento.RECHAZADO,
+    };
   }
 
   // Orquesta la creación de una solicitud a partir del DTO recibido y delega a la transacción crearEvento
