@@ -22,7 +22,7 @@ export function Select({
 }: SelectProps) {
   return (
     <select
-      className={`bg-white rounded-lg border p-3 font-merriweather text-[16px] ${
+      className={`border-2 bg-white rounded-lg border p-3 font-merriweather text-[16px] ${
         hasError
           ? "border-eventos-error focus:border-eventos-error"
           : "border-secondary focus:ring-blue-100"

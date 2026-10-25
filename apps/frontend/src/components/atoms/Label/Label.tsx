@@ -3,6 +3,7 @@ import type {LabelHTMLAttributes, ReactNode } from "react";
 export interface LabelProps extends LabelHTMLAttributes<HTMLLabelElement>{
     children: ReactNode;
     required?: boolean;
+    readOnly?: boolean;
 }
 
 export function Label({
@@ -10,6 +11,7 @@ export function Label({
     htmlFor,
     required = false,
     className = "",
+    readOnly,
     ...restOfProps
 } : LabelProps){
     return(
@@ -17,7 +19,7 @@ export function Label({
         className={`font-merriweather font-medium text-[16px] text-gray-700 mb-1 ${className}`}
         {...restOfProps}>
             {children}
-            {required && <span className="ml-1 text-red-500 font-bold" aria-hidden="true">*</span>}
+            {required && !readOnly &&(<span className="ml-1 text-red-500 font-bold" aria-hidden="true">*</span>)}
         </label>
     );
 }

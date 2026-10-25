@@ -8,7 +8,7 @@ export interface ButtonProps
   icon?: ReactNode;
   loading?: boolean;
   loadingText?: string;
-  variant?: "primary" | "secondary" | "outline" | "danger";
+  variant?: "primary" | "secondary" | "outline" | "danger"|"success";
   size?: "sm" | "md" | "lg";
   fullWidth?: boolean;
 }
@@ -17,6 +17,7 @@ const variantStyles = {
   primary: "bg-eventos-primary text-white hover:bg-eventos-primary/90",
   secondary: "bg-secondary text-white hover:bg-secondary/90",
   outline: "border-2 border-eventos-primary bg-white text-eventos-primary hover:bg-eventos-primary-light",
+  success: "bg-eventos-success text-white hover:bg-eventos-success/90",
   danger: "bg-eventos-error text-white hover:bg-eventos-error/90",
 };
 

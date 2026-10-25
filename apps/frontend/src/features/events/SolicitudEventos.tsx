@@ -96,36 +96,35 @@ function validarFormulario(form: FormularioSolicitudoData): ErroresFormulario {
   if (!form.justificacion.trim()) {
     errors.justificacion = "La justificación del evento es obligatoria.";
   } else if (form.justificacion.trim().length > 500) {
-    errors.justificacion ="La justificacion no debe exceder los 500 caracteres";
+    errors.justificacion =
+      "La justificacion no debe exceder los 500 caracteres";
   } else if (!regex.test(form.justificacion)) {
     errors.justificacion = "Simbolo no valido";
   }
 
   return errors;
-
 }
 
 function validarSubeventos(subeventos: DatosSubevento[]): ErroresSubevento[] {
   return subeventos.map((subevento) => {
-    
     const errors: ErroresSubevento = {};
 
     if (!subevento.fecha) {
       errors.fecha = "Selecciona la fecha del evento";
     }
-    
+
     if (!subevento.horaInicio) {
       errors.horaInicio = "Selecciona la hora de inicio";
     }
-    
+
     if (!subevento.horaFin) {
       errors.horaFin = "Selecciona la hora final";
     }
-    
+
     if (!subevento.recinto) {
       errors.recinto = "Selecciona un espacio para el evento";
     }
-    
+
     if (
       subevento.recinto &&
       subevento.recinto !== "sala14" &&
@@ -133,13 +132,16 @@ function validarSubeventos(subeventos: DatosSubevento[]): ErroresSubevento[] {
     ) {
       errors.accesoBoleto = "Indica si el evento requiere boleto";
     }
-    
-    if(subevento.horaInicio && subevento.horaFin && subevento.horaInicio >= subevento.horaFin){
+
+    if (
+      subevento.horaInicio &&
+      subevento.horaFin &&
+      subevento.horaInicio >= subevento.horaFin
+    ) {
       errors.horaFin = "La hora final debe ser posterior a la hora de inicio";
     }
-    
-    return errors;
 
+    return errors;
   });
 }
 
@@ -277,6 +279,9 @@ export function SolicitudEvento() {
       no: false,
     };
 
+    {
+      /*Conexion con ENDPOINT */
+    }
     const idAlcance = idAlcanceEvento[form.categoria];
     datos.append("nombre", form.nombreEvento.trim());
     datos.append("descripcion", form.descripcion.trim());
@@ -308,46 +313,49 @@ export function SolicitudEvento() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-7">
-      <SeccionDatosEvento
-        form={form}
-        actualizarCampo={updateField}
-        actualizarPoster={updatePoster}
-        errores={errors}
-        touched={touched}
-        esTocado={markTouched}
-      />
-      <SeccionSubeventos
-        subeventos={form.subeventos}
-        erroresSubeventos={subeventErrors}
-        subeventoTocado={subeventTouched}
-        updateSubevento={updateSubevento}
-        markSubeventoTouched={markSubeventoTouched}
-        addSubevento={addSubevento}
-        removeSubevento={removeSubevento}
-      />
-      <Button text="Solicitar evento" type="submit" />
+    <section className="mx-[clamp(1rem,8vw,6rem)] space-y-6 px-4">
+      <h1 className="font-merriweather text-[36px] text-bold">Solicitud de evento</h1>
+      <form onSubmit={handleSubmit} className="space-y-7">
+        <SeccionDatosEvento
+          form={form}
+          actualizarCampo={updateField}
+          actualizarPoster={updatePoster}
+          errores={errors}
+          touched={touched}
+          esTocado={markTouched}
+        />
+        <SeccionSubeventos
+          subeventos={form.subeventos}
+          erroresSubeventos={subeventErrors}
+          subeventoTocado={subeventTouched}
+          updateSubevento={updateSubevento}
+          markSubeventoTouched={markSubeventoTouched}
+          addSubevento={addSubevento}
+          removeSubevento={removeSubevento}
+        />
+        <Button text="Solicitar evento" type="submit" />
 
-      <Modal
-        titulo={modal === "error" ? `Error` : "Confirmar solicitud"}
-        contenido={
-          modal === "error"
-            ? "Error en el llenado del formulario"
-            : "¿Desea enviar la solicitud de este evento?"
-        }
-        mostrarModal={modal !== null}
-        cerrarModal={() => setModal(null)}>
-        <div className="flex justify-end gap-3">
-          {modal === "error" ? (
-            <Button text="Aceptar" onClick={() => setModal(null)} />
-          ) : (
-            <>
-              <Button text="Cancelar" onClick={() => setModal(null)} />
-              <Button text="Aceptar" onClick={confirmarModal} />
-            </>
-          )}
-        </div>
-      </Modal>
-    </form>
+        <Modal
+          titulo={modal === "error" ? `Error` : "Confirmar solicitud"}
+          contenido={
+            modal === "error"
+              ? "Por favor, completa todos los campos obligatorios resaltados para continuar"
+              : "¿Desea enviar la solicitud de este evento?"
+          }
+          mostrarModal={modal !== null}
+          cerrarModal={() => setModal(null)}>
+          <div className="flex justify-end gap-3">
+            {modal === "error" ? (
+              <Button text="Aceptar" onClick={() => setModal(null)} />
+            ) : (
+              <>
+                <Button text="Cancelar" variant="danger" onClick={() => setModal(null)} />
+                <Button text="Aceptar" variant="success" onClick={confirmarModal} />
+              </>
+            )}
+          </div>
+        </Modal>
+      </form>
+    </section>
   );
 }
