@@ -6,6 +6,7 @@ import {
   HttpStatus,
   Param,
   ParseIntPipe,
+  Patch,
   Post,
   Query,
   Req,
@@ -46,6 +47,22 @@ export class SolicitudesController {
   @Roles(TipoCuentaUsuario.SUBDIRECCION)
   async obtenerDetalleSolicitud(@Param('id', ParseIntPipe) id: number) {
     return await this.eventosService.obtenerDetalleSolicitud(id);
+  }
+
+  // Aprueba una solicitud Pendiente. Solo Subdirección.
+  @Patch(':id/aprobar')
+  @UseGuards(RolesGuard)
+  @Roles(TipoCuentaUsuario.SUBDIRECCION)
+  async aprobarSolicitud(@Param('id', ParseIntPipe) id: number) {
+    return await this.eventosService.aprobarSolicitud(id);
+  }
+
+  // Rechaza una solicitud Pendiente y libera horarios/recintos de sus subeventos. Solo Subdirección.
+  @Patch(':id/rechazar')
+  @UseGuards(RolesGuard)
+  @Roles(TipoCuentaUsuario.SUBDIRECCION)
+  async rechazarSolicitud(@Param('id', ParseIntPipe) id: number) {
+    return await this.eventosService.rechazarSolicitud(id);
   }
 
   @Post()

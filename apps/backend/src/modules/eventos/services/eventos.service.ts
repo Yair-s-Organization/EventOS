@@ -17,6 +17,7 @@ import {
   EstadoEvento,
   EstadoSubEvento,
   EstadoVerificacion,
+  TipoCuentaUsuario,
   type SubeventoPayload,
 } from '@eventos/shared';
 import type { CrearSolicitudDto } from '../dto/crearSolicitud.dto';
@@ -301,6 +302,56 @@ export class EventosService {
     };
   }
 
+  // Aprueba una solicitud: valida que exista y esté Pendiente, y cambia el estado a ACEPTADO.
+  async aprobarSolicitud(idEvento: number) {
+    const evento = await this.eventoRepository.findOneBy({ idEvento });
+    if (!evento) {
+      throw new NotFoundException(`No se encontró la solicitud con ID ${idEvento}.`);
+    }
+    if (evento.idEstadoEvento !== EstadoEvento.ENPROCESO) {
+      throw new ConflictException(
+        'Solo se pueden aprobar solicitudes en estado Pendiente.',
+      );
+    }
+
+    await this.eventoRepository.update(idEvento, {
+      idEstadoEvento: EstadoEvento.ACEPTADO,
+    });
+
+    return {
+      mensaje: 'Solicitud aprobada con éxito.',
+      idEvento,
+      idEstadoEvento: EstadoEvento.ACEPTADO,
+    };
+  }
+
+  // Rechaza una solicitud: valida que exista y esté Pendiente, pasa a RECHAZADO y cancela subeventos para liberar espacios.
+  async rechazarSolicitud(idEvento: number) {
+    const evento = await this.eventoRepository.findOneBy({ idEvento });
+    if (!evento) {
+      throw new NotFoundException(`No se encontró la solicitud con ID ${idEvento}.`);
+    }
+    if (evento.idEstadoEvento !== EstadoEvento.ENPROCESO) {
+      throw new ConflictException(
+        'Solo se pueden rechazar solicitudes en estado Pendiente.',
+      );
+    }
+
+    await this.eventoRepository.update(idEvento, {
+      idEstadoEvento: EstadoEvento.RECHAZADO,
+    });
+    await this.subEventoRepository.update(
+      { idEvento },
+      { estado: EstadoSubEvento.CANCELADO },
+    );
+
+    return {
+      mensaje: 'Solicitud rechazada con éxito.',
+      idEvento,
+      idEstadoEvento: EstadoEvento.RECHAZADO,
+    };
+  }
+
   // Orquesta la creación de una solicitud a partir del DTO recibido y delega a la transacción crearEvento
   async registrarSolicitud(
     idOrganizador: number,
@@ -315,6 +366,12 @@ export class EventosService {
       poster: posterKey ?? dto.poster ?? null,
       idOrganizador,
     });
+
+    // RN-13: las solicitudes de Subdirección y Jefe se aprueban por default; el resto queda Pendiente
+    const solicitante = await this.usuarioRepository.findOneBy({ idUsuario: idOrganizador });
+    if (solicitante?.tipoCuenta === TipoCuentaUsuario.SUBDIRECCION || solicitante?.esJefeAcademia) {
+      nuevoEvento.idEstadoEvento = EstadoEvento.ACEPTADO;
+    }
 
     return await this.crearEvento(nuevoEvento, dto.subeventos);
   }
