@@ -10,7 +10,8 @@
     "migration:run": "bun --bun run typeorm migration:run -d src/database/data-source.ts",
     "migration:revert": "bun --bun run typeorm migration:revert -d src/database/data-source.ts",
     "db:init": "bun src/database/init-db.ts",
-    "db:verify": "bun src/database/verify-schema.ts"
+    "db:verify": "bun src/database/verify-schema.ts",
+    "seed": "bun src/database/seeds/seed.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1152.0",
