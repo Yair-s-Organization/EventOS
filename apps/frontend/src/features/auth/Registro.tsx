@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { Input } from "../../components/atoms/Input/Input";
-import { Label } from "../../components/atoms/Label/Label";
-import { TextLink } from "../../components/atoms/TextLink/TextLink";
+import { Button } from "../../components/atoms/Button/Button";
 import { FieldMessage } from "../../components/atoms/FieldMessage/FieldMessage";
+import { TextLink } from "../../components/atoms/TextLink/TextLink";
+import { FormField } from "../../components/molecules/FormField";
+import { PasswordField } from "../../components/molecules/PasswordField";
 
 export function Registro() {
   const navigate = useNavigate();
@@ -23,9 +25,9 @@ export function Registro() {
     general: "",
   });
 
-  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const ValidacionContra = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;
+  const ValidacionContra = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,64}$/;
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -104,6 +106,8 @@ export function Registro() {
 
     if (hasError) return;
 
+    setLoading(true);
+
     try {
       const payloadBackend = {
         nombre: formData.nombre,
@@ -128,19 +132,20 @@ export function Registro() {
       }
 
       console.log("Usuario registrado con éxito:", data);
-      
       navigate("/login");
 
     } catch (error: any) {
       setErrors((prev) => ({ ...prev, general: error.message || "Error al conectar con el servidor." }));
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <div className="flex min-h-[calc(100vh-160px)] items-center justify-center p-4">
-      <div className="w-full max-w-2xl rounded-lg bg-white p-8">
+      <div className="w-full max-w-2xl rounded-lg bg-white p-8 shadow-sm border border-gray-100">
         
-        <h1 className="mb-8 text-center text-3xl font-serif font-merriweather font-bold text-[36px]">
+        <h1 className="mb-8 text-center text-3xl font-serif font-merriweather font-bold text-[36px] text-gray-900">
           Registro
         </h1>
 
@@ -151,139 +156,119 @@ export function Registro() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 font-merriweather font-regular text-[16px]">
-            
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="nombre">Nombre(s)</Label>
-                <Input
-                  id="nombre"
-                  name="nombre"
-                  type="text"
-                  value={formData.nombre}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="apellidoPa">Apellido Paterno</Label>
-                <Input
-                  id="apellidoPa"
-                  name="apellidoPa"
-                  type="text"
-                  value={formData.apellidoPa}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="apellidoMaterno">Apellido Materno</Label>
-                <Input
-                  id="apellidoMaterno"
-                  name="apellidoMaterno"
-                  type="text"
-                  value={formData.apellidoMaterno}
-                  onChange={handleChange}
-                />
-              </div>
+          <div className="space-y-4 font-merriweather font-regular text-[16px]">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 items-start">
+              <h2 className="mb-4 text-3xl font-serif font-merriweather font-medium text-[20px] text-gray-900">
+          Datos de la Cuenta</h2>
+              <h2 className="mb-1 text-3xl font-serif font-merriweather font-medium text-[20px] text-gray-900">
+          Datos Personales</h2>
             </div>
-
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="correo">Correo Electrónico</Label>
-                <Input
-                  id="correo"
-                  name="correo"
-                  type="email"
-                  placeholder="ejemplo@dominio.extensión"
+            {/* Fila 1: Nombre y Correo */}
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 items-start">
+              <FormField label="Correo Electrónico" htmlFor="correo" required errorMessage={errors.correo}>
+                <Input 
+                  id="correo" 
+                  name="correo" 
+                  type="email" 
+                  placeholder="Ingresa tu correo electrónico" 
                   value={formData.correo}
                   onChange={handleChange}
                   hasError={!!errors.correo}
                   aria-describedby="email-error"
                 />
-                {errors.correo && (
-                  <FieldMessage id="email-error" variant="error" className="mt-1">
-                    {errors.correo}
-                  </FieldMessage>
-                )}  
-              </div>
+                <FieldMessage variant="helper" className="mt-1">
+                  Usa tu correo institucional (@ipn.mx, @alumno.ipn.mx) o tu cuenta personal. 
+                </FieldMessage>
+              </FormField>
+              <FormField label="Nombre(s)" htmlFor="nombre" required>
+                <Input 
+                  id="nombre" 
+                  name="nombre" 
+                  type="text" 
+                  placeholder="Ingresa tu nombre" 
+                  value={formData.nombre}
+                  onChange={handleChange}
+                  required
+                />
+              </FormField>
 
+            </div>
+
+            {/* Fila 2: Apellido Paterno y Contraseña */}
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 items-start">
               <div>
-                <Label htmlFor="contrasena">Contraseña</Label>
-                <div className="relative">
-                  <Input
-                    id="contrasena"
-                    name="contrasena"
-                    type={showPassword ? "text" : "password"}
-                    value={formData.contrasena}
-                    placeholder="••••••••"
-                    onChange={handleChange}
-                    hasError={!!errors.contrasena}
-                    aria-describedby="password-error"
-                    className="pr-10"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
-                    aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
-                  >
-                    {showPassword ? (
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243M12 9.75l2.25 2.25" /></svg>
-                    ) : (
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                    )}
-                  </button>
-                </div>
-
-                {errors.contrasena ? (
-                  <FieldMessage id="password-error" variant="error" className="mt-1">
-                    {errors.contrasena}
-                  </FieldMessage>
-                ) : (
+                <PasswordField 
+                  id="contrasena" 
+                  name="contrasena" 
+                  label="Contraseña" 
+                  placeholder="●●●●●●●" 
+                  value={formData.contrasena}
+                  onChange={handleChange}
+                  required
+                  error={errors.contrasena}
+                />
+                {!errors.contrasena && (
                   <FieldMessage variant="helper" className="mt-1">
-                    Mín. 8 caracteres (Incluir mayúsculas, minúsculas, números y caracteres especiales)
+                    La contraseña debe de tener entre 8 y 64 caracteres (Incluir mayúsculas, minúsculas, números y caracteres especiales)
                   </FieldMessage>
                 )}
               </div>
+              <FormField label="Apellido Paterno" htmlFor="apellidoPa" required>
+                <Input 
+                  id="apellidoPa" 
+                  name="apellidoPa" 
+                  type="text" 
+                  placeholder="Ingresa tu apellido paterno"
+                  value={formData.apellidoPa}
+                  onChange={handleChange}
+                  required
+                />
+              </FormField>
 
-              <div>
-                <Label htmlFor="confirmarContrasena">Confirmar contraseña</Label>
-                <div className="relative">
-                  <Input
-                    id="confirmarContrasena"
-                    name="confirmarContrasena"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="Repetir Contraseña"
-                    value={formData.confirmarContrasena}
-                    onChange={handleChange}
-                    hasError={!!errors.confirmarContrasena}
-                    aria-describedby="confirm-error"
-                    className="pr-10"
-                  />
-                </div>
-                {errors.confirmarContrasena && (
-                  <FieldMessage id="confirm-error" variant="error" className="mt-1">
-                    {errors.confirmarContrasena}
-                  </FieldMessage>
-                )}
-              </div>
+            </div>
+
+            {/* Fila 3: Apellido Materno y Confirmar contraseña */}
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 items-start">
+              <PasswordField 
+                id="confirmarContrasena" 
+                name="confirmarContrasena" 
+                label="Confirmar contraseña" 
+                placeholder="●●●●●●●"
+                value={formData.confirmarContrasena}
+                onChange={handleChange}
+                required
+                error={errors.confirmarContrasena}
+              />
+              <FormField label="Apellido Materno" htmlFor="apellidoMaterno">
+                <Input 
+                  id="apellidoMaterno" 
+                  name="apellidoMaterno" 
+                  placeholder="Ingresa tu apellido materno" 
+                  type="text"
+                  value={formData.apellidoMaterno}
+                  onChange={handleChange}
+                />
+              </FormField>
+
             </div>
 
           </div>
 
           <div className="flex justify-center pt-2">
-            <button
-              type="submit"
-              className="w-full max-w-xs rounded-lg bg-[#2D3748] px-6 py-2.5 text-sm font-merriweather font-bold text-[16px] text-white transition-colors hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-500">
-              Registrar
-            </button>
+            <Button 
+              type="submit" 
+              text="Registrar" 
+              loadingText="Registrando..." 
+              loading={loading} 
+              fullWidth 
+              size="md"
+              variant="primary"
+              className="max-w-xs"
+            />
           </div>
 
           <div className="mt-4 text-center">
-            <TextLink to="/login" className="text-sky-500 font-merriweather font-semibold text-[16px] hover:text-sky-600 italic">
+            <TextLink to="/login" className="text-sky-500 font-merriweather font-semibold text-[16px] hover:text-sky-600">
               ¿Ya tienes cuenta? Inicia sesión
             </TextLink>
           </div>
