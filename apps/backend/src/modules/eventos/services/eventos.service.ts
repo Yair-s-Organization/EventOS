@@ -11,6 +11,7 @@ import { EventoEntity } from '../entities/evento.entity';
 import { UsuarioEntity } from '../../auth/entities/usuario.entity';
 import { SubEventoEntity } from '../entities/subevento.entity';
 import { FechaEntity } from '../entities/fecha.entity';
+import { BitacoraEventoEntity } from '../entities/bitacoraEvento.entity';
 import { RecintoService } from '../../recintos/services/recinto.service';
 import { StorageService } from '../../../common/storage/storage.service';
 import {
@@ -27,6 +28,7 @@ export class EventosService {
   eventoRepository: Repository<EventoEntity>;
   usuarioRepository: Repository<UsuarioEntity>;
   subEventoRepository: Repository<SubEventoEntity>;
+  bitacoraEventoRepository: Repository<BitacoraEventoEntity>;
   recintoService: RecintoService;
   storageService: StorageService;
   private readonly dataSource: DataSource;
@@ -35,6 +37,7 @@ export class EventosService {
     @InjectRepository(EventoEntity) repo: Repository<EventoEntity>,
     @InjectRepository(UsuarioEntity) repoUsuario: Repository<UsuarioEntity>,
     @InjectRepository(SubEventoEntity) repoSubEvento: Repository<SubEventoEntity>,
+    @InjectRepository(BitacoraEventoEntity) repoBitacora: Repository<BitacoraEventoEntity>,
     recintoService: RecintoService,
     storageService: StorageService,
     dataSource: DataSource,
@@ -42,6 +45,7 @@ export class EventosService {
     this.eventoRepository = repo;
     this.usuarioRepository = repoUsuario;
     this.subEventoRepository = repoSubEvento;
+    this.bitacoraEventoRepository = repoBitacora;
     this.recintoService = recintoService;
     this.storageService = storageService;
     this.dataSource = dataSource;
@@ -187,11 +191,12 @@ export class EventosService {
     });
   }
 
-  // Lista solicitudes (eventos) filtradas por estado. "Pendiente" equivale a EstadoEvento.ENPROCESO.
+  // Lista solicitudes (eventos) filtradas por estado. "Pendiente" equivale a EstadoEvento.ENPROCESO, "Aprobado" a EstadoEvento.ACEPTADO.
   async listarSolicitudesPorEstado(estado?: string) {
     const mapa: Record<string, EstadoEvento> = {
       pendiente: EstadoEvento.ENPROCESO,
       enproceso: EstadoEvento.ENPROCESO,
+      aprobado: EstadoEvento.ACEPTADO,
       aceptado: EstadoEvento.ACEPTADO,
       rechazado: EstadoEvento.RECHAZADO,
       cancelado: EstadoEvento.CANCELADO,
@@ -262,18 +267,17 @@ export class EventosService {
       posterUrl: posterUrl,
       solicitante: solicitante
         ? {
-            idUsuario: solicitante.idUsuario,
-            nombre: solicitante.nombre,
-            apellidoPa: solicitante.apellidoPa,
-            apellidoMa: solicitante.apellidoMa,
-            nombreCompleto: `${solicitante.nombre} ${solicitante.apellidoPa}${
-              solicitante.apellidoMa ? ' ' + solicitante.apellidoMa : ''
+          idUsuario: solicitante.idUsuario,
+          nombre: solicitante.nombre,
+          apellidoPa: solicitante.apellidoPa,
+          apellidoMa: solicitante.apellidoMa,
+          nombreCompleto: `${solicitante.nombre} ${solicitante.apellidoPa}${solicitante.apellidoMa ? ' ' + solicitante.apellidoMa : ''
             }`,
-            correo: solicitante.correo,
-            esVerificado: solicitante.esVerificado,
-            tipoCuenta: solicitante.tipoCuenta,
-            esJefeAcademia: solicitante.esJefeAcademia,
-          }
+          correo: solicitante.correo,
+          esVerificado: solicitante.esVerificado,
+          tipoCuenta: solicitante.tipoCuenta,
+          esJefeAcademia: solicitante.esJefeAcademia,
+        }
         : null,
       subeventos: (evento.subEventos || []).map((sub) => ({
         idSubEvento: sub.idSubEvento,
@@ -284,21 +288,21 @@ export class EventosService {
         idFecha: sub.idFecha,
         fecha: sub.fecha
           ? {
-              idFecha: sub.fecha.idFecha,
-              fecha: sub.fecha.fecha,
-              horaInicio: sub.fecha.horaInicio,
-              horaFin: sub.fecha.horaFin,
-            }
+            idFecha: sub.fecha.idFecha,
+            fecha: sub.fecha.fecha,
+            horaInicio: sub.fecha.horaInicio,
+            horaFin: sub.fecha.horaFin,
+          }
           : null,
         idRecinto: sub.idRecinto,
         espacio: sub.recinto
           ? {
-              idRecinto: sub.recinto.idRecinto,
-              nombre: sub.recinto.nombre,
-              aforo: sub.recinto.aforo,
-              computadorasDisponibles: sub.recinto.computadorasDisponibles,
-              idEstadoRecinto: sub.recinto.idEstadoRecinto,
-            }
+            idRecinto: sub.recinto.idRecinto,
+            nombre: sub.recinto.nombre,
+            aforo: sub.recinto.aforo,
+            computadorasDisponibles: sub.recinto.computadorasDisponibles,
+            idEstadoRecinto: sub.recinto.idEstadoRecinto,
+          }
           : null,
       })),
     };
@@ -351,6 +355,53 @@ export class EventosService {
       mensaje: 'Solicitud rechazada con éxito.',
       idEvento,
       idEstadoEvento: EstadoEvento.RECHAZADO,
+    };
+  }
+
+  // Cancela un evento Aprobado exigiendo motivo (RN-25), liberando subeventos (RN-22) y registrando en bitácora (RNF-26).
+  async cancelarSolicitud(idEvento: number, motivo: string, idUsuarioActor?: number) {
+    if (!motivo || motivo.trim() === '') {
+      throw new BadRequestException('El motivo de cancelación es obligatorio.');
+    }
+
+    const evento = await this.eventoRepository.findOneBy({ idEvento });
+    if (!evento) {
+      throw new NotFoundException(`No se encontró la solicitud con ID ${idEvento}.`);
+    }
+
+    if (evento.idEstadoEvento === EstadoEvento.CANCELADO) {
+      throw new ConflictException('El evento ya se encuentra cancelado.');
+    }
+    if (evento.idEstadoEvento === EstadoEvento.FINALIZADO) {
+      throw new ConflictException('El evento ya ha concluido.');
+    }
+    if (evento.idEstadoEvento !== EstadoEvento.ACEPTADO) {
+      throw new ConflictException('Solo se pueden cancelar eventos en estado Aprobado.');
+    }
+
+    await this.eventoRepository.update(idEvento, {
+      idEstadoEvento: EstadoEvento.CANCELADO,
+    });
+    await this.subEventoRepository.update(
+      { idEvento },
+      { estado: EstadoSubEvento.CANCELADO },
+    );
+
+    const subeventos = await this.subEventoRepository.findBy({ idEvento });
+    for (const sub of subeventos) {
+      await this.bitacoraEventoRepository.save({
+        idEvento,
+        idSubEvento: sub.idSubEvento,
+        idUsuarioActor: idUsuarioActor ?? null,
+        idEstadoEvento: EstadoEvento.CANCELADO,
+      });
+    }
+
+    return {
+      mensaje: 'El evento se ha cancelado exitosamente.',
+      idEvento,
+      idEstadoEvento: EstadoEvento.CANCELADO,
+      motivo: motivo.trim(),
     };
   }
 

@@ -18,13 +18,16 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { TipoCuentaUsuario } from '@eventos/shared';
+import { ApiBearerAuth } from '@nestjs/swagger';
 import { EventosService } from '../services/eventos.service';
 import { CrearSolicitudDto } from '../dto/crearSolicitud.dto';
+import { CancelarSolicitudDto } from '../dto/cancelarSolicitud.dto';
 import { StorageService } from '../../../common/storage/storage.service';
 import { posterOptions } from '../../../common/upload/upload.options';
 import { RolesGuard } from '../../auth/roles.guard';
 import { Roles } from '../../../common/decorators/roles.decorator';
 
+@ApiBearerAuth()
 @Controller('solicitudes')
 @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
 export class SolicitudesController {
@@ -33,7 +36,7 @@ export class SolicitudesController {
     private readonly storageService: StorageService,
   ) {}
 
-  // Lista solicitudes filtradas por estado (ej. ?estado=Pendiente). Solo Subdirección.
+  // Lista solicitudes filtradas por estado (ej. ?estado=Pendiente o ?estado=Aprobado). Solo Subdirección.
   @Get()
   @UseGuards(RolesGuard)
   @Roles(TipoCuentaUsuario.SUBDIRECCION)
@@ -63,6 +66,23 @@ export class SolicitudesController {
   @Roles(TipoCuentaUsuario.SUBDIRECCION)
   async rechazarSolicitud(@Param('id', ParseIntPipe) id: number) {
     return await this.eventosService.rechazarSolicitud(id);
+  }
+
+  // Cancela un evento Aprobado exigiendo motivo (RN-25), liberando subeventos (RN-22) y registrando en bitácora (RNF-26). Solo Subdirección.
+  @Patch(':id/cancelar')
+  @UseGuards(RolesGuard)
+  @Roles(TipoCuentaUsuario.SUBDIRECCION)
+  async cancelarSolicitud(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: CancelarSolicitudDto,
+    @Req() req: any,
+  ) {
+    const idUsuarioActor = req.user?.sub;
+    return await this.eventosService.cancelarSolicitud(
+      id,
+      dto.motivo,
+      idUsuarioActor,
+    );
   }
 
   @Post()

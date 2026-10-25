@@ -122,6 +122,7 @@ export class ReservationsService {
                 throw new NotFoundException('El subevento no existe');
             }
             
+
             if (subEvento.estado !== EstadoSubEvento.ACEPTADO) {
                 throw new ConflictException('El registro para este evento se encuentra cerrado o cancelado');
             }
@@ -411,7 +412,7 @@ export class ReservationsService {
 
     // Aplicar Cancelacion Logica
     boleto.idEstadoBoleto = EstadoBoleto.CANCELADO;
-    await this.boletoRepo.save(boleto);
+    await this.boletoRepo.save(boleto); //boleto cancelado
 
     return {
       mensaje: 'Reserva cancelada exitosamente. Tu lugar ha sido liberado.',

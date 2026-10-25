@@ -7,7 +7,23 @@ export class ReservationsController {
   
   constructor(private readonly reservationsService: ReservationsService) {}
 
-  //Endpoint para consultar lugares y asientos libres
+  // Lista de eventos del usuario
+  @Get('mis-boletos')
+  async obtenerMisBoletos() {
+    const idUsuario = 1; // TODO: Reemplazar con token JWT
+    return await this.reservationsService.obtenerMisBoletos(idUsuario);
+  }
+
+  // Detalle de un boleto específico con QR al vuelo
+  @Get('mis-boletos/:idBoleto')
+  async obtenerDetalleBoleto(
+    @Param('idBoleto', ParseIntPipe) idBoleto: number,
+  ) {
+    const idUsuario = 1; // TODO: Reemplazar con token JWT
+    return await this.reservationsService.obtenerDetalleBoleto(idUsuario, idBoleto);
+  }
+
+  // Consultar lugares y asientos libres
   @Get('disponibilidad/:idSubEvento')
   async consultarDisponibilidad(
     @Param('idSubEvento', ParseIntPipe) idSubEvento: number,
@@ -15,21 +31,19 @@ export class ReservationsController {
     return await this.reservationsService.consultarDisponibilidad(idSubEvento);
   }
 
-  //Endpoint para crear una reserva y generar boleto/QR
+  // Crear una reserva con transacción atómica y QR
   @Post()
   async crearReserva(@Body() dto: CreateReservationDto) {
-    // Reemplazar el "1" con el ID real del usuario extraído del token JWT (AuthModule)
-    const idUsuario = 1; 
-    
+    const idUsuario = 1; // TODO: Reemplazar con token JWT
     return await this.reservationsService.crearReserva(idUsuario, dto);
   }
 
+  // Cancelación lógica y liberación de lugar
   @Patch(':idBoleto/cancelar')
   async cancelarReserva(
     @Param('idBoleto', ParseIntPipe) idBoleto: number,
   ) {
-    const idUsuario = 1; // Reemplazar con token JWT
+    const idUsuario = 1; // TODO: Reemplazar con token JWT
     return await this.reservationsService.cancelarReserva(idUsuario, idBoleto);
   }
-  
 }

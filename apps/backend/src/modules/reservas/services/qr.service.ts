@@ -15,16 +15,15 @@ export class QrService {
 
     async generateQrCode(info : InfoBoleto, eventEndDate: Date): Promise<{ token: string, qrBase64: string }>{
         //The event end date is converted to seconds
-        const expTime = Math.floor(eventEndDate.getTime() / 1000);
+        let expTime = Math.floor((eventEndDate.getTime() - Date.now()) / 1000);
         
-        //The exp field is added to the original information
-        const newInfo = {
-            ...info,
-            exp: expTime
-        };
+        if(expTime <= 0){
+            expTime = 1;
+        }
+
         
         //Sign the information 
-        const signedToken = await this.jwtService.signAsync(newInfo);
+        const signedToken = await this.jwtService.signAsync(info, {expiresIn: expTime});
         
         //Generate the QR code image in Base64 format
         const base64Image = await qrcode.toDataURL(signedToken);
