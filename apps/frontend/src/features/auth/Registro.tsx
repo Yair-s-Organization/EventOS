@@ -6,6 +6,7 @@ import { FieldMessage } from "../../components/atoms/FieldMessage/FieldMessage";
 import { TextLink } from "../../components/atoms/TextLink/TextLink";
 import { FormField } from "../../components/molecules/FormField";
 import { PasswordField } from "../../components/molecules/PasswordField";
+import { Modal } from "../../components/molecules/Modal";
 
 export function Registro() {
   const navigate = useNavigate();
@@ -26,6 +27,8 @@ export function Registro() {
   });
 
   const [loading, setLoading] = useState(false);
+  
+  const [modalExitoAbierto, setModalExitoAbierto] = useState(false);
 
   const ValidacionContra = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,64}$/;
 
@@ -131,8 +134,7 @@ export function Registro() {
         throw new Error(data.message || "Error al registrar el usuario.");
       }
 
-      console.log("Usuario registrado con éxito:", data);
-      navigate("/login");
+      setModalExitoAbierto(true);
 
     } catch (error: any) {
       setErrors((prev) => ({ ...prev, general: error.message || "Error al conectar con el servidor." }));
@@ -163,7 +165,7 @@ export function Registro() {
               <h2 className="mb-1 text-3xl font-serif font-merriweather font-medium text-[20px] text-gray-900">
           Datos Personales</h2>
             </div>
-            {/* Fila 1: Nombre y Correo */}
+            
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2 items-start">
               <FormField label="Correo Electrónico" htmlFor="correo" required errorMessage={errors.correo}>
                 <Input 
@@ -191,10 +193,8 @@ export function Registro() {
                   required
                 />
               </FormField>
-
             </div>
 
-            {/* Fila 2: Apellido Paterno y Contraseña */}
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2 items-start">
               <div>
                 <PasswordField 
@@ -227,7 +227,6 @@ export function Registro() {
 
             </div>
 
-            {/* Fila 3: Apellido Materno y Confirmar contraseña */}
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2 items-start">
               <PasswordField 
                 id="confirmarContrasena" 
@@ -249,9 +248,7 @@ export function Registro() {
                   onChange={handleChange}
                 />
               </FormField>
-
             </div>
-
           </div>
 
           <div className="flex justify-center pt-2">
@@ -274,6 +271,29 @@ export function Registro() {
           </div>
         </form>
       </div>
+
+      <Modal
+        titulo="¡Registro exitoso!"
+        contenido="Tu cuenta ha sido creada correctamente. Ya puedes iniciar sesión en la plataforma."
+        mostrarModal={modalExitoAbierto}
+        cerrarModal={() => {
+          setModalExitoAbierto(false);
+          navigate("/login");
+        }}
+      >
+        <div className="flex justify-end pt-4">
+          <Button
+            text="Aceptar"
+            type="button"
+            onClick={() => {
+              setModalExitoAbierto(false);
+              navigate("/login");
+            }}
+            className="bg-[#5c1d33] hover:bg-[#4a1c2d] text-white font-merriweather text-sm px-6 py-2.5 rounded-md transition-colors shadow"
+          />
+        </div>
+      </Modal>
+
     </div>
   );
 }
