@@ -77,6 +77,7 @@ const HORASFIN = [
   { value: "19:00", label: "19:00" },
   { value: "20:00", label: "20:00" },
   { value: "21:00", label: "21:00" },
+  { value: "22:00", label: "22:00" },
 ];
 
 export function CardSubevento(props: CardSubeventoProps) {
@@ -86,10 +87,11 @@ export function CardSubevento(props: CardSubeventoProps) {
   const touched = readOnly ? {} : props.touched;
 
   return (
-    <div className="mx-[clamp(1rem,8vw,6rem)] grid grid-cols-1 gap-4 rounded-md bg-eventos-primary-light p-4 md:grid-cols-3 md:py-11 md:px-20">
+    <div className="grid grid-cols-1 gap-4 rounded-md bg-eventos-primary-light p-4 md:grid-cols-3 md:py-11 md:px-20">
       <FormField
         label="Fecha"
         htmlFor={`selectFecha-${index}`}
+        readOnly={readOnly}
         required
         errorMessage={touched.fecha ? errors.fecha : undefined}>
         <Input
@@ -114,6 +116,7 @@ export function CardSubevento(props: CardSubeventoProps) {
       <FormField
         label="Hora inicio"
         htmlFor={`selectHoraInicio-${index}`}
+        readOnly={readOnly}
         required
         errorMessage={touched.horaInicio ? errors.horaInicio : undefined}>
         <Select
@@ -140,6 +143,7 @@ export function CardSubevento(props: CardSubeventoProps) {
       <FormField
         label="Hora Fin"
         htmlFor={`selectHoraFinal-${index}`}
+        readOnly={readOnly}
         required
         errorMessage={touched.horaFin ? errors.horaFin : undefined}>
         <Select
@@ -165,6 +169,7 @@ export function CardSubevento(props: CardSubeventoProps) {
       <FormField
         label="Espacio deseado"
         htmlFor={`selectRecinto-${index}`}
+        readOnly={readOnly}
         required
         errorMessage={touched.recinto ? errors.recinto : undefined}>
         <Select
@@ -190,6 +195,7 @@ export function CardSubevento(props: CardSubeventoProps) {
       <FormField
         label="Acceso con boleto"
         htmlFor={`selectBoleto-${index}`}
+        readOnly={readOnly}
         required={subevento.recinto !== "sala14"}
         errorMessage={touched.accesoBoleto ? errors.accesoBoleto : undefined}>
         <Select
@@ -212,11 +218,26 @@ export function CardSubevento(props: CardSubeventoProps) {
           }
         />
       </FormField>
-      <FormField>
-        <Button 
-        text="Ver detalles de espacio" type="button" 
-        disabled={subevento.recinto === "sala14" || subevento.recinto === "auditorio" || subevento.recinto === ""}
-        />
+      <FormField readOnly={readOnly}>
+        {readOnly && (
+          <Button
+            text="Ver descripcion del subevento"
+            id={`botonVerInformacion-${subevento.id}`}
+            type="button"
+            onClick={() => console.log(subevento.horaInicio)}
+          />
+        )}
+        {!readOnly && (
+          <Button
+            text="Ver detalles de espacio"
+            type="button"
+            disabled={
+              subevento.recinto === "sala14" ||
+              subevento.recinto === "auditorio" ||
+              subevento.recinto === ""
+            }
+          />
+        )}
       </FormField>
       {!readOnly && (
         <div className="col-span-full flex justify-between">
@@ -226,11 +247,12 @@ export function CardSubevento(props: CardSubeventoProps) {
             type="button"
             onClick={() => console.log(subevento.horaInicio)}
           />
-          
+
           <Button
             text="Eliminar fecha"
             id={`botonEliminarFecha-${subevento.id}`}
             type="button"
+            variant="danger"
             disabled={!props.canRemove}
             onClick={props.onRemove}
           />

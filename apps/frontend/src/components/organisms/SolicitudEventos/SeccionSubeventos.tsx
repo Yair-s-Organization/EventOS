@@ -70,7 +70,7 @@ export function SeccionSubeventos({
         );
       })}
 
-      <div className="mx-[clamp(1rem,8vw,6rem)] flex flex-wrap justify-end gap-4">
+      <div className="flex justify-end">
         <Button
           text="Agregar nueva fecha"
           id="botonAgregarFecha"
