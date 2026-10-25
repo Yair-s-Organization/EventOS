@@ -8,7 +8,7 @@ export interface Evento {
   idEstadoEvento?: EstadoEvento;
   etiquetas?: TipoEtiqueta[];
   subEventos?: SubEvento[];
-  justificacion: string;
+  justificacion?: string | null;
   idOrganizador: number;
 }
 
@@ -34,7 +34,7 @@ export interface Recinto {
   idRecinto: number;
   nombre: string;
   aforo: number;
-  computadorasDisponibles?: number; 
+  computadorasDisponibles?: number;
   idEstadoRecinto?: EstadoRecinto;
 }
 
@@ -56,7 +56,7 @@ export interface Boleto {
 export interface AsistenteEvento {
   idSubEvento: number;
   idUsuario: number;
-  idBoleto: number;
+  idBoleto?: number | null;
 }
 
 export interface AsientoDisponible {
@@ -95,6 +95,7 @@ export interface DetalleBoletoUsuario {
   filaAsiento?: string | null;
   numeroAsiento?: number | null;
 }
+
 export interface Usuario {
   idUsuario: number;
   nombre: string;
@@ -106,11 +107,70 @@ export interface Usuario {
   esVerificado?: EstadoVerificacion;
   tipoCuenta?: TipoCuentaUsuario;
   esJefeAcademia?: boolean;
+  intentosFallidos?: number;
+  bloqueadoHasta?: string | Date | null;
+}
+
+export interface Ponente {
+  idPonente: number;
+  nombre: string;
+  apellidoPa: string;
+  apellidoMa?: string | null;
+  correo: string;
+  idSubEvento: number;
+}
+
+export interface Verificacion {
+  idVerificacion: number;
+  informacionAdicional: string;
+  archivo: string;
+  idRol: number;
+  idUsuario: number;
+}
+
+export interface Rol {
+  idRol: number;
+  rol: number;
+}
+
+export interface BitacoraEvento {
+  idBitacoraEvento: number;
+  idEvento: number;
+  idSubEvento: number;
+  idUsuarioActor?: number | null;
+  idEstadoEvento: EstadoEvento;
+  fechaHoraCambio: string;
+}
+
+export interface EstadoEquipo {
+  idEstadoEquipo: number;
+  numeroEquipo: number;
+  estado: boolean;
+  idRecinto: number;
+}
+
+export interface EventoPersonalLogistica {
+  idEvento: number;
+  idUsuario: number;
+}
+
+export interface EventoEtiqueta {
+  idEvento: number;
+  idTipoEtiqueta: number;
+}
+
+export interface SubeventoPayload {
+  nombre: string;
+  descripcion: string;
+  idRecinto: number;
+  accesoQR?: boolean;
+  fecha: string;
+  horaInicio: string;
+  horaFin: string;
 }
 
 
-//Enums
-
+// Enums
 export enum TipoEtiqueta {
   IA = 1,
   TECNOLOGIA = 2,
@@ -130,26 +190,29 @@ export enum EstadoEvento {
   ACEPTADO = 2,
   ENPROCESO = 3,
   CANCELADO = 4,
-  FINALIZADO = 5
+  FINALIZADO = 5,
 }
 
 export enum EstadoSubEvento {
+  RECHAZADO = 'Rechazado',
   ACEPTADO = 'Aceptado',
+  EN_PROCESO = 'En Proceso',
+  ENPROCESO = 'En Proceso',
   CANCELADO = 'Cancelado',
-  FINALIZADO = 'Finalizado'
+  FINALIZADO = 'Finalizado',
 }
 
-export enum EstadoRecinto{
+export enum EstadoRecinto {
   HABILITADO = 1,
   INHABILITADO = 2,
-  MANTENIMIENTO = 3
+  MANTENIMIENTO = 3,
 }
 
 //el estado cancelado se va a usar? -> habria que revisarlo
 export enum EstadoBoleto {
   VALIDO = 1,
   UTILIZADO = 2,
-  CANCELADO = 3
+  CANCELADO = 3,
 }
 
 export enum TipoCuentaUsuario {
@@ -171,12 +234,3 @@ export enum RecintoId {
   LABORATORIO_B = 3,
   SALA_14 = 4,
 }
-
-export interface SubeventoPayload {
-  idRecinto: number;
-  accesoQR?: boolean;
-  fecha: string;
-  horaInicio: string;
-  horaFin: string;
-}
-
