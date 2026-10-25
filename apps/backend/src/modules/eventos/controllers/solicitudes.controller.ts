@@ -33,7 +33,7 @@ export class SolicitudesController {
     private readonly storageService: StorageService,
   ) {}
 
-  // Lista solicitudes filtradas por estado (ej. ?estado=Pendiente). Solo Subdirección.
+  // Lista solicitudes filtradas por estado (ej. ?estado=Pendiente o ?estado=Aprobado). Solo Subdirección.
   @Get()
   @UseGuards(RolesGuard)
   @Roles(TipoCuentaUsuario.SUBDIRECCION)

@@ -187,11 +187,12 @@ export class EventosService {
     });
   }
 
-  // Lista solicitudes (eventos) filtradas por estado. "Pendiente" equivale a EstadoEvento.ENPROCESO.
+  // Lista solicitudes (eventos) filtradas por estado. "Pendiente" equivale a EstadoEvento.ENPROCESO, "Aprobado" a EstadoEvento.ACEPTADO.
   async listarSolicitudesPorEstado(estado?: string) {
     const mapa: Record<string, EstadoEvento> = {
       pendiente: EstadoEvento.ENPROCESO,
       enproceso: EstadoEvento.ENPROCESO,
+      aprobado: EstadoEvento.ACEPTADO,
       aceptado: EstadoEvento.ACEPTADO,
       rechazado: EstadoEvento.RECHAZADO,
       cancelado: EstadoEvento.CANCELADO,
@@ -262,18 +263,17 @@ export class EventosService {
       posterUrl: posterUrl,
       solicitante: solicitante
         ? {
-            idUsuario: solicitante.idUsuario,
-            nombre: solicitante.nombre,
-            apellidoPa: solicitante.apellidoPa,
-            apellidoMa: solicitante.apellidoMa,
-            nombreCompleto: `${solicitante.nombre} ${solicitante.apellidoPa}${
-              solicitante.apellidoMa ? ' ' + solicitante.apellidoMa : ''
+          idUsuario: solicitante.idUsuario,
+          nombre: solicitante.nombre,
+          apellidoPa: solicitante.apellidoPa,
+          apellidoMa: solicitante.apellidoMa,
+          nombreCompleto: `${solicitante.nombre} ${solicitante.apellidoPa}${solicitante.apellidoMa ? ' ' + solicitante.apellidoMa : ''
             }`,
-            correo: solicitante.correo,
-            esVerificado: solicitante.esVerificado,
-            tipoCuenta: solicitante.tipoCuenta,
-            esJefeAcademia: solicitante.esJefeAcademia,
-          }
+          correo: solicitante.correo,
+          esVerificado: solicitante.esVerificado,
+          tipoCuenta: solicitante.tipoCuenta,
+          esJefeAcademia: solicitante.esJefeAcademia,
+        }
         : null,
       subeventos: (evento.subEventos || []).map((sub) => ({
         idSubEvento: sub.idSubEvento,
@@ -284,21 +284,21 @@ export class EventosService {
         idFecha: sub.idFecha,
         fecha: sub.fecha
           ? {
-              idFecha: sub.fecha.idFecha,
-              fecha: sub.fecha.fecha,
-              horaInicio: sub.fecha.horaInicio,
-              horaFin: sub.fecha.horaFin,
-            }
+            idFecha: sub.fecha.idFecha,
+            fecha: sub.fecha.fecha,
+            horaInicio: sub.fecha.horaInicio,
+            horaFin: sub.fecha.horaFin,
+          }
           : null,
         idRecinto: sub.idRecinto,
         espacio: sub.recinto
           ? {
-              idRecinto: sub.recinto.idRecinto,
-              nombre: sub.recinto.nombre,
-              aforo: sub.recinto.aforo,
-              computadorasDisponibles: sub.recinto.computadorasDisponibles,
-              idEstadoRecinto: sub.recinto.idEstadoRecinto,
-            }
+            idRecinto: sub.recinto.idRecinto,
+            nombre: sub.recinto.nombre,
+            aforo: sub.recinto.aforo,
+            computadorasDisponibles: sub.recinto.computadorasDisponibles,
+            idEstadoRecinto: sub.recinto.idEstadoRecinto,
+          }
           : null,
       })),
     };
