@@ -18,6 +18,7 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { TipoCuentaUsuario } from '@eventos/shared';
+import { ApiBearerAuth } from '@nestjs/swagger';
 import { EventosService } from '../services/eventos.service';
 import { CrearSolicitudDto } from '../dto/crearSolicitud.dto';
 import { StorageService } from '../../../common/storage/storage.service';
@@ -25,6 +26,7 @@ import { posterOptions } from '../../../common/upload/upload.options';
 import { RolesGuard } from '../../auth/roles.guard';
 import { Roles } from '../../../common/decorators/roles.decorator';
 
+@ApiBearerAuth()
 @Controller('solicitudes')
 @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
 export class SolicitudesController {

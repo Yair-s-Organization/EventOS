@@ -63,22 +63,24 @@ export class AuthService {
   }
 
   async login(dto: { correo: string; contrasena: string; captchaToken?: string }) {
-    if (!dto.captchaToken) {
-      throw new UnauthorizedException('Por favor, completa la verificación del CAPTCHA.');
-    }
-
-    const secretKey = process.env.RECAPTCHA_SECRET_KEY;
-    const verifyUrl = `https://www.google.com/recaptcha/api/siteverify?secret=${secretKey}&response=${dto.captchaToken}`;
-    
-    try {
-      const response = await fetch(verifyUrl, { method: 'POST' });
-      const captchaResult = await response.json();
-
-      if (!captchaResult.success) {
-        throw new UnauthorizedException('Validación de CAPTCHA fallida o inválida.');
+    if (process.env.RECAPTCHA_SECRET_KEY) {
+      if (!dto.captchaToken) {
+        throw new UnauthorizedException('Por favor, completa la verificación del CAPTCHA.');
       }
-    } catch (error) {
-      throw new UnauthorizedException('No se pudo verificar el CAPTCHA con los servidores externos.');
+
+      const secretKey = process.env.RECAPTCHA_SECRET_KEY;
+      const verifyUrl = `https://www.google.com/recaptcha/api/siteverify?secret=${secretKey}&response=${dto.captchaToken}`;
+      
+      try {
+        const response = await fetch(verifyUrl, { method: 'POST' });
+        const captchaResult = await response.json();
+
+        if (!captchaResult.success) {
+          throw new UnauthorizedException('Validación de CAPTCHA fallida o inválida.');
+        }
+      } catch (error) {
+        throw new UnauthorizedException('No se pudo verificar el CAPTCHA con los servidores externos.');
+      }
     }
 
     const usuario = await this.usuarioRepository.findOne({

@@ -1,5 +1,6 @@
 import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
 import { AuthService } from './auth.service';
+import { LoginDto } from './dto/login.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -22,14 +23,7 @@ export class AuthController {
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  async iniciarSesion(
-    @Body()
-    body: {
-      correo: string;
-      contrasena: string;
-      captchaToken?: string;
-    },
-  ) {
+  async iniciarSesion(@Body() body: LoginDto) {
     return await this.authService.login(body);
   }
 
