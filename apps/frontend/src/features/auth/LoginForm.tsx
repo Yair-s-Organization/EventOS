@@ -127,7 +127,15 @@ export function LoginForm() {
       localStorage.setItem("token", data.access_token);
       localStorage.setItem("usuario", JSON.stringify(data.usuario));
 
-      navigate("/dashboard");
+      const rol = data.usuario?.tipoCuenta; // revisar con back
+
+      if (rol === "admin" || rol === "Administrador") {
+        navigate("/lista-solicitudes");
+      } else if (rol === "subdireccion") {
+        navigate("/detalles-solicitud"); 
+      } else {
+        navigate("/menu-asistente");
+      }
 
     } catch (error: any) {
       setErrors((prev) => ({
