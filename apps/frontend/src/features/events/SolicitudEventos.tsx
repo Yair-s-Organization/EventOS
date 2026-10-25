@@ -4,36 +4,29 @@ import { SeccionSubeventos } from "../../components/organisms/SolicitudEventos/S
 import Button from "../../components/atoms/Button/Button";
 import { Modal } from "../../components/molecules/Modal";
 import Badge from "../../components/atoms/Badge/Badge";
+import { AlcanceEvento, RecintoId, type SubeventoPayload } from "@eventos/shared";
 
-export interface FormularioSolicitudoData {
-  categoria: string;
+export type SubeventoFormData = SubeventoPayload & { id: number };
+
+export interface FormularioSolicitudData {
+  nombre: string;
+  idAlcance: string;
   justificacion: string;
   descripcion: string;
-  nombreEvento: string;
   rutaPoster: File | null;
-  subeventos: DatosSubevento[];
-}
-
-export interface DatosSubevento {
-  id: number;
-  fecha: string;
-  horaInicio: string;
-  horaFin: string;
-  recinto: string;
-  accesoBoleto: string;
-  descripcion: string;
+  subEventos: SubeventoFormData[];
 }
 
 export type CampoFormulario = Exclude<
-  keyof FormularioSolicitudoData,
-  "subeventos"
+  keyof FormularioSolicitudData,
+  "subEventos"
 >;
 export type CampoTextoFormulario = Exclude<CampoFormulario, "rutaPoster">;
 
 export type ErroresFormulario = Partial<Record<CampoFormulario, string>>;
 export type mensajesAyuda = Partial<Record<CampoFormulario, string>>;
 export type CamposTocados = Partial<Record<CampoFormulario, boolean>>;
-export type CampoSubevento = keyof DatosSubevento;
+export type CampoSubevento = Exclude<keyof SubeventoFormData, "id">;
 export type ErroresSubevento = Partial<Record<CampoSubevento, string>>;
 export type CamposSubeventoTocados = Partial<Record<CampoSubevento, boolean>>;
 
@@ -44,7 +37,7 @@ export interface PropsValidacionFormulario {
 }
 
 export interface PropsSubeventosFormulario {
-  subeventos: DatosSubevento[];
+  subEventos: SubeventoFormData[];
   erroresSubeventos: ErroresSubevento[];
   subeventoTocado: CamposSubeventoTocados[];
   updateSubevento: (
@@ -59,26 +52,26 @@ export interface PropsSubeventosFormulario {
 
 let siguienteIdSubevento = 0;
 
-const crearSubevento = (): DatosSubevento => ({
+const crearSubevento = (): SubeventoFormData => ({
   id: siguienteIdSubevento++,
+  nombre: "",
+  descripcion: "",
+  idRecinto: 0,
   fecha: "",
   horaInicio: "",
   horaFin: "",
-  recinto: "",
-  accesoBoleto: "",
-  descripcion: "",
 });
 
-function validarFormulario(form: FormularioSolicitudoData): ErroresFormulario {
+function validarFormulario(form: FormularioSolicitudData): ErroresFormulario {
   const errors: ErroresFormulario = {};
   const regex = /[a-zA-Z0-9,:;¡!¿?'"()&+-/#]/;
 
-  if (!form.nombreEvento.trim()) {
-    errors.nombreEvento = "El nombre del evento es obligatorio.";
+  if (!form.nombre.trim()) {
+    errors.nombre = "El nombre del evento es obligatorio.";
   }
 
-  if (!form.categoria) {
-    errors.categoria =
+  if (!form.idAlcance) {
+    errors.idAlcance =
       "Debe seleccionar un tipo de alcance válido para continuar";
   }
 
@@ -106,8 +99,8 @@ function validarFormulario(form: FormularioSolicitudoData): ErroresFormulario {
   return errors;
 }
 
-function validarSubeventos(subeventos: DatosSubevento[]): ErroresSubevento[] {
-  return subeventos.map((subevento) => {
+function validarSubeventos(subEventos: SubeventoFormData[]): ErroresSubevento[] {
+  return subEventos.map((subevento) => {
     const errors: ErroresSubevento = {};
 
     if (!subevento.fecha) {
@@ -122,16 +115,16 @@ function validarSubeventos(subeventos: DatosSubevento[]): ErroresSubevento[] {
       errors.horaFin = "Selecciona la hora final";
     }
 
-    if (!subevento.recinto) {
-      errors.recinto = "Selecciona un espacio para el evento";
+    if (!subevento.idRecinto) {
+      errors.idRecinto = "Selecciona un espacio para el evento";
     }
 
     if (
-      subevento.recinto &&
-      subevento.recinto !== "sala14" &&
-      !subevento.accesoBoleto
+      subevento.idRecinto &&
+      subevento.idRecinto !== RecintoId.SALA_14 &&
+      subevento.accesoQR === undefined
     ) {
-      errors.accesoBoleto = "Indica si el evento requiere boleto";
+      errors.accesoQR = "Indica si el evento requiere boleto";
     }
 
     if (
@@ -147,13 +140,13 @@ function validarSubeventos(subeventos: DatosSubevento[]): ErroresSubevento[] {
 }
 
 export function SolicitudEvento() {
-  const [form, setForm] = useState<FormularioSolicitudoData>({
-    categoria: "",
+  const [form, setForm] = useState<FormularioSolicitudData>({
+    nombre: "",
+    idAlcance: "",
     justificacion: "",
     descripcion: "",
-    nombreEvento: "",
     rutaPoster: null,
-    subeventos: [crearSubevento()],
+    subEventos: [crearSubevento()],
   });
 
   const [touched, setTouched] = useState<CamposTocados>({});
@@ -164,7 +157,7 @@ export function SolicitudEvento() {
   const [modal, setModal] = useState<"confirmacion" | "error" | null>(null);
 
   const errors = validarFormulario(form);
-  const subeventErrors = validarSubeventos(form.subeventos);
+  const subeventErrors = validarSubeventos(form.subEventos);
 
   const updateField = (field: CampoTextoFormulario, value: string) =>
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -179,17 +172,26 @@ export function SolicitudEvento() {
   ) => {
     setForm((prev) => ({
       ...prev,
-      subeventos: prev.subeventos.map((subevento, currentIndex) => {
+      subEventos: prev.subEventos.map((subevento, currentIndex) => {
         if (currentIndex !== index) return subevento;
 
-        const updatedSubevento: DatosSubevento = {
-          ...subevento,
-          [field]: value,
-        };
-        if (field === "recinto" && value === "sala14") {
-          updatedSubevento.accesoBoleto = "";
+        if (field === "idRecinto") {
+          const idRecinto = Number(value);
+          const updated: SubeventoFormData = {
+            ...subevento,
+            idRecinto,
+          };
+          if (idRecinto === RecintoId.SALA_14) {
+            updated.accesoQR = undefined;
+          }
+          return updated;
         }
-        return updatedSubevento;
+
+        if (field === "accesoQR") {
+          return { ...subevento, accesoQR: value === "true" };
+        }
+
+        return { ...subevento, [field]: value };
       }),
     }));
   };
@@ -208,7 +210,7 @@ export function SolicitudEvento() {
   const addSubevento = () => {
     setForm((prev) => ({
       ...prev,
-      subeventos: [...prev.subeventos, crearSubevento()],
+      subEventos: [...prev.subEventos, crearSubevento()],
     }));
     setSubeventTouched((prev) => [...prev, {}]);
   };
@@ -216,7 +218,7 @@ export function SolicitudEvento() {
   const removeSubevento = (index: number) => {
     setForm((prev) => ({
       ...prev,
-      subeventos: prev.subeventos.filter(
+      subEventos: prev.subEventos.filter(
         (_, currentIndex) => currentIndex !== index,
       ),
     }));
@@ -229,19 +231,19 @@ export function SolicitudEvento() {
     e.preventDefault();
 
     setTouched({
-      nombreEvento: true,
-      categoria: true,
+      nombre: true,
+      idAlcance: true,
       rutaPoster: true,
       descripcion: true,
       justificacion: true,
     });
     setSubeventTouched(
-      form.subeventos.map(() => ({
+      form.subEventos.map(() => ({
         fecha: true,
         horaInicio: true,
         horaFin: true,
-        recinto: true,
-        accesoBoleto: true,
+        idRecinto: true,
+        accesoQR: true,
       })),
     );
 
@@ -262,43 +264,23 @@ export function SolicitudEvento() {
 
     const datos = new FormData();
 
-    const idAlcanceEvento: Record<string, number> = {
-      publico: 1,
-      interno: 2,
-      privado: 3,
-    };
-
-    const idRecintoEvento: Record<string, number> = {
-      auditorio: 1,
-      lab1104: 2,
-      lab1105: 3,
-      sala14: 4,
-    };
-
-    const idAccesoQR: Record<string, boolean> = {
-      si: true,
-      no: false,
-    };
-
-    {
-      /*Conexion con ENDPOINT */
-    }
-    const idAlcance = idAlcanceEvento[form.categoria];
-    datos.append("nombre", form.nombreEvento.trim());
+    datos.append("nombre", form.nombre.trim());
     datos.append("descripcion", form.descripcion.trim());
     datos.append("justificacion", form.justificacion.trim());
-    datos.append("idAlcance", String(idAlcance));
+    datos.append("idAlcance", form.idAlcance);
     datos.append(
       "subeventos",
       JSON.stringify(
-        form.subeventos.map((subevento) => ({
-          idRecinto: String(idRecintoEvento[subevento.recinto]),
+        form.subEventos.map((subevento): SubeventoPayload => ({
+          nombre: subevento.nombre,
+          descripcion: subevento.descripcion,
+          idRecinto: subevento.idRecinto,
           fecha: subevento.fecha,
           horaInicio: subevento.horaInicio,
           horaFin: subevento.horaFin,
           accesoQR:
-            subevento.recinto != "sala14" &&
-            idAccesoQR[subevento.accesoBoleto] == true,
+            subevento.idRecinto !== RecintoId.SALA_14 &&
+            subevento.accesoQR === true,
         })),
       ),
     );
@@ -326,7 +308,7 @@ export function SolicitudEvento() {
           esTocado={markTouched}
         />
         <SeccionSubeventos
-          subeventos={form.subeventos}
+          subEventos={form.subEventos}
           erroresSubeventos={subeventErrors}
           subeventoTocado={subeventTouched}
           updateSubevento={updateSubevento}
