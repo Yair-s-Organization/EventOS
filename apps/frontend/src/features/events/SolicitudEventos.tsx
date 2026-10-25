@@ -3,6 +3,7 @@ import { useState, type FormEvent } from "react";
 import { SeccionSubeventos } from "../../components/organisms/SolicitudEventos/SeccionSubeventos";
 import Button from "../../components/atoms/Button/Button";
 import { Modal } from "../../components/molecules/Modal";
+import Badge from "../../components/atoms/Badge/Badge";
 
 export interface FormularioSolicitudoData {
   categoria: string;

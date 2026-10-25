@@ -40,10 +40,10 @@ export function InputFile({
         disabled
           ? "cursor-not-allowed bg-gray-100 text-gray-400"
           : "cursor-pointer bg-white"
-      } ${
+      } ${  
         hasError
           ? "border-eventos-error focus:border-eventos-error focus:ring-red-200"
-          : "border-secondary focus-within:border-blue-700 focus-within:ring-blue-100"
+          : "border-secondary focus-within:ring-blue-100"
       } ${className}`}>
       <span
         className={`truncate ${
