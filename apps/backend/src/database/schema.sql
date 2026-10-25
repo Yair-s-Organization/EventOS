@@ -105,7 +105,7 @@ CREATE TABLE evento (
   nombre varchar(150) NOT NULL,
   descripcion varchar(500) NOT NULL,
   poster text NOT NULL,
-  justificacion text NOT NULL,
+  justificacion text,
   "idAlcance" integer NOT NULL REFERENCES alcance("idAlcance"),
   "idEstadoEvento" integer NOT NULL REFERENCES "estadoEvento"("idEstadoEvento"),
   "idOrganizador" integer NOT NULL REFERENCES usuario("idUsuario")
