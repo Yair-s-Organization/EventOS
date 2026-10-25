@@ -5,6 +5,7 @@ import Button from "../../components/atoms/Button/Button";
 import { CardSubevento } from "../../components/organisms/SolicitudEventos/CardSubevento";
 import { SeccionDatosPrellenados } from "../../components/organisms/DetallesSolicitud/SeccionDatosPrellenados";
 import type { DatosSubevento } from "../events/SolicitudEventos";
+import { Modal } from "../../components/molecules/Modal";
 
 export interface DatosPrellenados {
   nombreSolicitante: string;
@@ -19,18 +20,28 @@ function esRegistro(valor: unknown): valor is Record<string, unknown> {
   return typeof valor === "object" && valor !== null;
 }
 
-function obtenerTexto(registro: Record<string, unknown>, campo: string): string {
+function obtenerTexto(
+  registro: Record<string, unknown>,
+  campo: string,
+): string {
   const valor = registro[campo];
   if (typeof valor !== "string") {
-    throw new Error(`La respuesta del servidor no contiene un texto válido para "${campo}".`);
+    throw new Error(
+      `La respuesta no contiene un texto válido para "${campo}".`,
+    );
   }
   return valor;
 }
 
-function obtenerNumero(registro: Record<string, unknown>, campo: string): number {
+function obtenerNumero(
+  registro: Record<string, unknown>,
+  campo: string,
+): number {
   const valor = registro[campo];
   if (typeof valor !== "number") {
-    throw new Error(`La respuesta del servidor no contiene un número válido para "${campo}".`);
+    throw new Error(
+      `La respuesta no contiene un número válido para "${campo}".`,
+    );
   }
   return valor;
 }
@@ -59,16 +70,16 @@ function convertirSubevento(valor: unknown): DatosSubevento {
   }
 
   const idRecinto = obtenerNumero(valor, "idRecinto");
-  
+
   const recintos: Record<number, string> = {
     [RecintoId.AUDITORIO]: "auditorio",
     [RecintoId.LABORATORIO_A]: "lab1104",
     [RecintoId.LABORATORIO_B]: "lab1105",
     [RecintoId.SALA_14]: "sala14",
   };
-  
+
   const recinto = recintos[idRecinto];
-  
+
   if (!recinto) {
     throw new Error(`Recinto desconocido: ${idRecinto}.`);
   }
@@ -122,6 +133,8 @@ export function DetallesSolicitud() {
   const [datos, setDatos] = useState<DatosPrellenados | null>(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [accion, setAccion] = useState<"aprobar" | "rechazar" | null>(null);
+  const [errorAccion, setErrorAccion] = useState<string | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -183,7 +196,44 @@ export function DetallesSolicitud() {
 
   if (cargando) return <p>Cargando solicitud...</p>;
   if (error) return <p role="alert">{error}</p>;
-  if (!datos) return <p role="alert">No se recibió información de la solicitud.</p>;
+  if (!datos)
+    return <p role="alert">No se recibió información de la solicitud.</p>;
+
+  const confirmarAccion = async () => {
+    if (!id || !accion) return;
+
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setErrorAccion("No hay sesión iniciada.");
+      return;
+    }
+
+    setErrorAccion(null);
+
+    try {
+      const response = await fetch(
+        `http://localhost:3000/api/solicitudes/${id}/${accion}`,
+        {
+          method: "PATCH",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      if (!response.ok) {
+        throw new Error(`La acción falló (HTTP ${response.status}).`);
+      }
+
+      setAccion(null);
+    } catch (error) {
+      setErrorAccion(
+        error instanceof Error
+          ? error.message
+          : "No se pudo actualizar la solicitud.",
+      );
+    }
+  };
 
   return (
     <section className="mx-[clamp(1rem,8vw,6rem)] space-y-6 px-4">
@@ -198,20 +248,60 @@ export function DetallesSolicitud() {
           </div>
         ))}
       </div>
-      <div id="botonesSolicitud" className="space-x-9">
+      <div id="botonesSolicitud" className="flex justify-end gap-3">
         <Button
           id="botonRechazar"
           type="button"
           text="Rechazar"
           variant="danger"
+          onClick={() => {
+            setErrorAccion(null);
+            setAccion("rechazar");
+          }}
         />
         <Button
-          id="botonAceptar"
+          id="botonAprobar"
           type="button"
-          text="Aceptar"
+          text="Aprobar"
           variant="success"
+          onClick={() => {
+            setErrorAccion(null);
+            setAccion("aprobar");
+          }}
         />
       </div>
+      {accion && (
+        <Modal
+          titulo="Atención"
+          contenido={
+            accion === "aprobar"
+              ? "¿Desea aprobar el evento?"
+              : "¿Desea rechazar el evento?"
+          }
+          mostrarModal
+          cerrarModal={() => {
+            setAccion(null);
+            setErrorAccion(null);
+          }}>
+          {errorAccion && <p role="alert">{errorAccion}</p>}
+          <div className="flex justify-end gap-3">
+            <Button
+              text="Cancelar"
+              type="button"
+              onClick={() => {
+                setAccion(null);
+                setErrorAccion(null);
+              }}
+            />
+            <Button
+              text={accion === "aprobar" ? "Aprobar" : "Rechazar"}
+              type="button"
+              variant={accion === "aprobar" ? "success" : "danger"}
+              onClick={confirmarAccion}
+            />
+          </div>
+        </Modal>
+      )}
     </section>
   );
 }
