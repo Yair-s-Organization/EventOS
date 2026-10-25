@@ -165,6 +165,8 @@ export class EventosService {
 
         // Guarda en la tabla 'subeventos' asociando idEvento e idFecha
         const nuevoSubEvento = await manager.save(SubEventoEntity, {
+          nombre: sub.nombre,
+          descripcion: sub.descripcion,
           idEvento: eventoGuardado.idEvento,
           idRecinto: sub.idRecinto,
           idFecha: fechaGuardada.idFecha,

@@ -5,12 +5,24 @@ import {
   IsNotEmpty,
   IsOptional,
   IsPositive,
+  IsString,
   Matches,
+  MaxLength,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
 import type { SubeventoPayload } from '@eventos/shared';
 
 export class CrearSubEventoDto implements SubeventoPayload {
+  @IsNotEmpty({ message: 'El nombre del subevento es obligatorio.' })
+  @IsString({ message: 'El nombre del subevento debe ser una cadena de texto.' })
+  @MaxLength(150, { message: 'El nombre del subevento no puede exceder 150 caracteres.' })
+  nombre: string;
+
+  @IsNotEmpty({ message: 'La descripción del subevento es obligatoria.' })
+  @IsString({ message: 'La descripción del subevento debe ser una cadena de texto.' })
+  @MaxLength(500, { message: 'La descripción del subevento no puede exceder 500 caracteres.' })
+  descripcion: string;
+
   @IsNotEmpty({ message: 'El idRecinto es obligatorio.' })
   @Transform(({ value }: { value: unknown }) => (value !== undefined ? Number(value) : value))
   @IsInt({ message: 'El idRecinto debe ser un número entero.' })

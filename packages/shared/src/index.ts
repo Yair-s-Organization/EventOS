@@ -160,6 +160,8 @@ export interface EventoEtiqueta {
 }
 
 export interface SubeventoPayload {
+  nombre: string;
+  descripcion: string;
   idRecinto: number;
   accesoQR?: boolean;
   fecha: string;
