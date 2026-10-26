@@ -5,7 +5,7 @@ import type { PropsSubeventosFormulario } from "../../../features/events/Solicit
 import { CardSubevento } from "./CardSubevento";
 
 export function SeccionSubeventos({
-  subeventos,
+  subEventos,
   erroresSubeventos: subeventErrors,
   subeventoTocado: subeventTouched,
   updateSubevento,
@@ -27,7 +27,7 @@ export function SeccionSubeventos({
     setDeletingId(id);
 
     timeoutRef.current = setTimeout(() => {
-      const currentIndex = subeventos.findIndex(
+      const currentIndex = subEventos.findIndex(
         (subevento) => subevento.id === id,
       );
       if (currentIndex !== -1) {
@@ -44,7 +44,7 @@ export function SeccionSubeventos({
         descripcion="Selecciona el recinto, la fecha, el horario y la modalidad de acceso. El sistema validará que el espacio no esté ocupado en ese horario. Si tu evento dura varios días o tiene varias sesiones, usa el botón [Agregar nueva fecha] para registrar cada bloque."
       />
 
-      {subeventos.map((subevento, index) => {
+      {subEventos.map((subevento, index) => {
         const isDeleting = deletingId === subevento.id;
         return (
           <div
@@ -62,7 +62,7 @@ export function SeccionSubeventos({
                 touched={subeventTouched[index] ?? {}}
                 updateSubevento={updateSubevento}
                 markSubeventoTouched={markSubeventoTouched}
-                canRemove={deletingId === null && subeventos.length > 1}
+                canRemove={deletingId === null && subEventos.length > 1}
                 onRemove={() => handleRemove(subevento.id)}
               />              
             </div>

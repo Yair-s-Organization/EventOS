@@ -1,3 +1,4 @@
+import { AlcanceEvento } from "@eventos/shared";
 import { FormField } from "../../molecules/FormField";
 import { FormHeader } from "../../molecules/FormHeader";
 import { Select } from "../../atoms/Select/Select";
@@ -6,20 +7,20 @@ import { Input } from "../../atoms/Input/Input";
 import { InputFile } from "../../atoms/InputFile/InputFile";
 import type {
   CampoTextoFormulario,
-  FormularioSolicitudoData,
+  FormularioSolicitudData,
   PropsValidacionFormulario,
 } from "../../../features/events/SolicitudEventos";
 
 interface SeccionDatosEventoProps extends PropsValidacionFormulario {
-  form: FormularioSolicitudoData;
+  form: FormularioSolicitudData;
   actualizarCampo: (field: CampoTextoFormulario, value: string) => void;
   actualizarPoster: (poster: File | null) => void;
 }
 
 const CATEGORIAS = [
-  { value: "publico", label: "Público" },
-  { value: "interno", label: "Interno" },
-  { value: "privado", label: "Privado" },
+  { value: String(AlcanceEvento.PUBLICO), label: "Público" },
+  { value: String(AlcanceEvento.INTERNO), label: "Interno" },
+  { value: String(AlcanceEvento.PRIVADO), label: "Privado" },
 ];
 
 export function SeccionDatosEvento({
@@ -44,17 +45,17 @@ export function SeccionDatosEvento({
             //mensajeAyuda="Nombre del solicitante"
             required
             errorMessage={
-              touched.nombreEvento ? errors.nombreEvento : undefined
+              touched.nombre ? errors.nombre : undefined
             }>
             <Input
               id="campoNombreEvento"
               type="text"
               placeholder="Ingresa el nombre del evento"
-              value={form.nombreEvento}
+              value={form.nombre}
               maxLength={100}
-              hasError={Boolean(touched.nombreEvento && errors.nombreEvento)}
-              onChange={(e) => actualizarCampo("nombreEvento", e.target.value)}
-              onBlur={() => markTouched("nombreEvento")}
+              hasError={Boolean(touched.nombre && errors.nombre)}
+              onChange={(e) => actualizarCampo("nombre", e.target.value)}
+              onBlur={() => markTouched("nombre")}
             />
           </FormField>
 
@@ -62,15 +63,15 @@ export function SeccionDatosEvento({
             label="Alcance del evento"
             htmlFor="selectCategoria"
             required
-            errorMessage={touched.categoria ? errors.categoria : undefined}>
+            errorMessage={touched.idAlcance ? errors.idAlcance : undefined}>
             <Select
               id="selectCategoria"
               placeholder="Ingresa el alcance del evento"
               options={CATEGORIAS}
-              value={form.categoria}
-              hasError={Boolean(touched.categoria && errors.categoria)}
-              onChange={(e) => actualizarCampo("categoria", e.target.value)}
-              onBlur={() => markTouched("categoria")}
+              value={form.idAlcance}
+              hasError={Boolean(touched.idAlcance && errors.idAlcance)}
+              onChange={(e) => actualizarCampo("idAlcance", e.target.value)}
+              onBlur={() => markTouched("idAlcance")}
             />
           </FormField>
 

@@ -1,10 +1,17 @@
 import pg from 'pg';
-import * as bcrypt from 'bcrypt';
-import { TipoCuentaUsuario, EstadoVerificacion } from '@eventos/shared';
+import bcrypt from 'bcrypt';
+import {
+  AlcanceEvento,
+  EstadoEvento,
+  EstadoSubEvento,
+  EstadoVerificacion,
+  RecintoId,
+  TipoCuentaUsuario,
+} from '@eventos/shared';
 
 const { Client } = pg;
 
-export async function runSeeds() {
+export async function runSeed() {
   const client = new Client({
     host: process.env.DB_HOST ?? 'localhost',
     port: Number(process.env.DB_PORT ?? 5433),
@@ -15,72 +22,134 @@ export async function runSeeds() {
 
   try {
     await client.connect();
-    console.log(`🔌 Conectado a PostgreSQL (${client.database}) para insertar semillas...`);
+    console.log(`🔌 Conectado a PostgreSQL (${client.database}) para sembrar datos de prueba...`);
 
     const saltRounds = 10;
-    const passwordHashOrganizador = await bcrypt.hash('Organizador123!', saltRounds);
-    const passwordHashSubdireccion = await bcrypt.hash('Subdireccion123!', saltRounds);
+    const passwordHash = await bcrypt.hash('Admin123!', saltRounds);
 
-    const query = `
-      INSERT INTO usuario (
-        "idUsuario", nombre, "apellidoPa", "apellidoMa", correo,
-        contrasena, estatus, "esVerificado", "tipoCuenta", "esJefeAcademia"
-      ) OVERRIDING SYSTEM VALUE VALUES 
-      (
-        1,
-        'Carlos',
-        'González',
-        'López',
-        'carlos.organizador@alumno.ipn.mx',
-        $1,
+    console.log('🌱 Creando usuarios de prueba...');
+
+    // 1. Usuarios
+    const usuarios = [
+      {
+        nombre: 'Claudia',
+        apellidoPa: 'Mendoza',
+        apellidoMa: 'García',
+        correo: 'subdireccion@ipn.mx',
+        contrasena: passwordHash,
+        estatus: true,
+        esVerificado: EstadoVerificacion.VERIFICADO,
+        tipoCuenta: TipoCuentaUsuario.SUBDIRECCION,
+        esJefeAcademia: false,
+      },
+      {
+        nombre: 'Carlos',
+        apellidoPa: 'Ramírez',
+        apellidoMa: 'Hernández',
+        correo: 'admin@ipn.mx',
+        contrasena: passwordHash,
+        estatus: true,
+        esVerificado: EstadoVerificacion.VERIFICADO,
+        tipoCuenta: TipoCuentaUsuario.ADMINISTRADOR,
+        esJefeAcademia: false,
+      },
+      {
+        nombre: 'Víctor',
+        apellidoPa: 'Pérez',
+        apellidoMa: 'López',
+        correo: 'organizador@ipn.mx',
+        contrasena: passwordHash,
+        estatus: true,
+        esVerificado: EstadoVerificacion.VERIFICADO,
+        tipoCuenta: TipoCuentaUsuario.INTERNO,
+        esJefeAcademia: false,
+      },
+    ];
+
+    const idsUsuarios: Record<string, number> = {};
+
+    for (const u of usuarios) {
+      const res = await client.query(
+        `INSERT INTO usuario (nombre, "apellidoPa", "apellidoMa", correo, contrasena, estatus, "esVerificado", "tipoCuenta", "esJefeAcademia")
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+         ON CONFLICT (correo) DO UPDATE 
+         SET contrasena = EXCLUDED.contrasena, 
+             "tipoCuenta" = EXCLUDED."tipoCuenta", 
+             "esVerificado" = EXCLUDED."esVerificado",
+             estatus = EXCLUDED.estatus
+         RETURNING "idUsuario", correo;`,
+        [
+          u.nombre,
+          u.apellidoPa,
+          u.apellidoMa,
+          u.correo,
+          u.contrasena,
+          u.estatus,
+          u.esVerificado,
+          u.tipoCuenta,
+          u.esJefeAcademia,
+        ],
+      );
+      idsUsuarios[res.rows[0].correo] = res.rows[0].idUsuario;
+      console.log(`   ✓ Usuario listo: ${u.correo} (ID: ${res.rows[0].idUsuario}, Rol: ${u.tipoCuenta})`);
+    }
+
+    // 2. Evento de prueba en estado "En Proceso" (Pendiente de evaluación por Subdirección)
+    console.log('🌱 Creando solicitud de evento de prueba...');
+    const organizadorId = idsUsuarios['organizador@ipn.mx'];
+
+    const resEvento = await client.query(
+      `INSERT INTO evento (nombre, descripcion, poster, justificacion, "idAlcance", "idEstadoEvento", "idOrganizador")
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
+       RETURNING "idEvento";`,
+      [
+        'Semana de la Inteligencia Artificial 2026',
+        'Ciclo de conferencias y talleres sobre IA generativa, redes neuronales y robótica autónoma.',
+        'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=600',
+        'Acercar las últimas innovaciones tecnológicas en IA a la comunidad estudiantil de la ESCOM.',
+        AlcanceEvento.PUBLICO,
+        EstadoEvento.ENPROCESO,
+        organizadorId,
+      ],
+    );
+
+    const idEvento = resEvento.rows[0].idEvento;
+    console.log(`   ✓ Evento creado con ID: ${idEvento}`);
+
+    // 3. Fecha para el subevento
+    const resFecha = await client.query(
+      `INSERT INTO fecha (fecha, "horaInicio", "horaFin")
+       VALUES ($1, $2, $3)
+       RETURNING "idFecha";`,
+      ['2026-11-20', '10:00:00', '12:00:00'],
+    );
+    const idFecha = resFecha.rows[0].idFecha;
+
+    // 4. Subevento
+    const resSub = await client.query(
+      `INSERT INTO "subEvento" ("accesoQR", estado, nombre, descripcion, "idEvento", "idRecinto", "idFecha")
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
+       RETURNING "idSubEvento";`,
+      [
         true,
-        $2,
-        $3,
-        false
-      ),
-      (
-        2,
-        'Personal',
-        'Subdirección',
-        'Académica',
-        'subdireccion@escom.ipn.mx',
-        $4,
-        true,
-        $2,
-        $5,
-        false
-      )
-      ON CONFLICT (correo) DO UPDATE SET
-        contrasena = EXCLUDED.contrasena,
-        "tipoCuenta" = EXCLUDED."tipoCuenta",
-        "esVerificado" = EXCLUDED."esVerificado",
-        estatus = EXCLUDED.estatus;
-    `;
+        EstadoSubEvento.EN_PROCESO,
+        'Conferencia Magistral: Modelos Fundacionales y Agentes Autónomos',
+        'Charla de apertura con investigadores invitados de la industria tech.',
+        idEvento,
+        RecintoId.AUDITORIO,
+        idFecha,
+      ],
+    );
+    console.log(`   ✓ Subevento creado con ID: ${resSub.rows[0].idSubEvento}`);
 
-    await client.query(query, [
-      passwordHashOrganizador,
-      EstadoVerificacion.VERIFICADO,
-      TipoCuentaUsuario.INTERNO,
-      passwordHashSubdireccion,
-      TipoCuentaUsuario.SUBDIRECCION,
-    ]);
-
-    // Sincronizar secuencia de identity
-    await client.query(`
-      SELECT setval(pg_get_serial_sequence('"usuario"', 'idUsuario'), COALESCE(MAX("idUsuario"), 1)) FROM "usuario";
-    `);
-
-    console.log('✅ Semillas de usuarios insertadas exitosamente:');
-    console.log('   - ID 1: carlos.organizador@alumno.ipn.mx (Usuario Interno / Verificado)');
-    console.log('   - ID 2: subdireccion@escom.ipn.mx (Subdirección / Verificado)');
+    console.log('\n✨ ¡Semillas de prueba insertadas con éxito!');
   } catch (error) {
-    console.error('❌ Error al ejecutar semillas:', error);
-    process.exit(1);
+    console.error('❌ Error al sembrar datos de prueba:', error);
   } finally {
     await client.end();
   }
 }
 
 if (import.meta.main) {
-  runSeeds();
+  runSeed();
 }

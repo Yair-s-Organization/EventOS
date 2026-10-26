@@ -21,6 +21,8 @@ export function AppRouter() {
           <Route path="/registro" element={<Registro />} />
           {/*Colocar aqui rutas para probar sin tener que hacer login(no apareceran con el navbar correspondiente 
              pero solo es para probar visualización)*/}
+          <Route path="/solicitud-evento" element={<SolicitudEvento/>}/>
+          <Route path="/detalles-solicitud/" element={<DetallesSolicitud/>}/>
         </Route>
 
         {/* Rutas para asistente*/}

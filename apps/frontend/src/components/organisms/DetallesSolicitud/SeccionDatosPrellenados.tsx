@@ -1,3 +1,4 @@
+import { AlcanceEvento } from "@eventos/shared";
 import type { DatosPrellenados } from "../../../features/educational-services/DetallesSolicitud";
 import Input from "../../atoms/Input/Input";
 import { TextArea } from "../../atoms/TextArea/TextArea";
@@ -9,16 +10,16 @@ interface DatosPrellenadosProps {
 }
 
 const alcances: Record<string, string> = {
-  publico: "Público",
-  interno: "Interno",
-  privado: "Privado",
+  [AlcanceEvento.PUBLICO]: "Público",
+  [AlcanceEvento.INTERNO]: "Interno",
+  [AlcanceEvento.PRIVADO]: "Privado",
 };
 
 export function SeccionDatosPrellenados({ datos }: DatosPrellenadosProps) {
   return (
     <div className="grid grid-cols-1 gap-5 text-justify md:grid-cols-2 md:space-x-20">
       <div className="space-y-5">
-        <FormHeader titulo={datos.nombreEvento} />
+        <FormHeader titulo={datos.nombre} />
         <FormField readOnly>
           <div className="space-y-10">
             <p className="font-merriweather">{datos.descripcion}</p>
@@ -50,7 +51,7 @@ export function SeccionDatosPrellenados({ datos }: DatosPrellenadosProps) {
               id="campoAlcance"
               type="text"
               disabled
-              value={alcances[datos.alcanceEvento] ?? datos.alcanceEvento}
+              value={alcances[datos.idAlcance] ?? datos.idAlcance}
             />
           </FormField>
         </div>

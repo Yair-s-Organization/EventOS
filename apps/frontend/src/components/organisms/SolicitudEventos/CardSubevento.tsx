@@ -1,16 +1,17 @@
+import { RecintoId } from "@eventos/shared";
 import { FormField } from "../../molecules/FormField";
 import { Select } from "../../atoms/Select/Select";
 import type {
   CamposSubeventoTocados,
   CampoSubevento,
-  DatosSubevento,
+  SubeventoFormData,
   ErroresSubevento,
 } from "../../../features/events/SolicitudEventos";
 import Input from "../../atoms/Input/Input";
 import Button from "../../atoms/Button/Button";
 
 interface CardSubeventoBaseProps {
-  subevento: DatosSubevento;
+  subevento: SubeventoFormData;
   index: number;
 }
 
@@ -33,15 +34,15 @@ type CardSubeventoProps = CardSubeventoBaseProps &
   );
 
 const ACCESOS = [
-  { value: "si", label: "Sí" },
-  { value: "no", label: "No" },
+  { value: "true", label: "Sí" },
+  { value: "false", label: "No" },
 ];
 
 const RECINTOS = [
-  { value: "auditorio", label: "Auditorio" },
-  { value: "sala14", label: "Sala 14" },
-  { value: "lab1104", label: "Laboratorio 1104" },
-  { value: "lab1105", label: "Laboratorio 1105" },
+  { value: String(RecintoId.AUDITORIO), label: "Auditorio" },
+  { value: String(RecintoId.SALA_14), label: "Sala 14" },
+  { value: String(RecintoId.LABORATORIO_A), label: "Laboratorio 1104" },
+  { value: String(RecintoId.LABORATORIO_B), label: "Laboratorio 1105" },
 ];
 
 const HORASINICIO = [
@@ -171,23 +172,23 @@ export function CardSubevento(props: CardSubeventoProps) {
         htmlFor={`selectRecinto-${index}`}
         readOnly={readOnly}
         required
-        errorMessage={touched.recinto ? errors.recinto : undefined}>
+        errorMessage={touched.idRecinto ? errors.idRecinto : undefined}>
         <Select
           id={`selectRecinto-${index}`}
           placeholder="Selecciona un espacio"
           options={RECINTOS}
-          value={subevento.recinto}
+          value={subevento.idRecinto ? String(subevento.idRecinto) : ""}
           disabled={readOnly}
-          hasError={Boolean(touched.recinto && errors.recinto)}
+          hasError={Boolean(touched.idRecinto && errors.idRecinto)}
           onChange={
             readOnly
               ? undefined
-              : (e) => props.updateSubevento(index, "recinto", e.target.value)
+              : (e) => props.updateSubevento(index, "idRecinto", e.target.value)
           }
           onBlur={
             readOnly
               ? undefined
-              : () => props.markSubeventoTouched(index, "recinto")
+              : () => props.markSubeventoTouched(index, "idRecinto")
           }
         />
       </FormField>
@@ -196,25 +197,25 @@ export function CardSubevento(props: CardSubeventoProps) {
         label="Acceso con boleto"
         htmlFor={`selectBoleto-${index}`}
         readOnly={readOnly}
-        required={subevento.recinto !== "sala14"}
-        errorMessage={touched.accesoBoleto ? errors.accesoBoleto : undefined}>
+        required={subevento.idRecinto !== RecintoId.SALA_14}
+        errorMessage={touched.accesoQR ? errors.accesoQR : undefined}>
         <Select
           id={`selectBoleto-${index}`}
           placeholder={"Selecciona una opción"}
           options={ACCESOS}
-          value={subevento.accesoBoleto}
-          disabled={readOnly || subevento.recinto === "sala14"}
-          hasError={Boolean(touched.accesoBoleto && errors.accesoBoleto)}
+          value={subevento.accesoQR !== undefined ? String(subevento.accesoQR) : ""}
+          disabled={readOnly || subevento.idRecinto === RecintoId.SALA_14}
+          hasError={Boolean(touched.accesoQR && errors.accesoQR)}
           onChange={
             readOnly
               ? undefined
               : (e) =>
-                  props.updateSubevento(index, "accesoBoleto", e.target.value)
+                  props.updateSubevento(index, "accesoQR", e.target.value)
           }
           onBlur={
             readOnly
               ? undefined
-              : () => props.markSubeventoTouched(index, "accesoBoleto")
+              : () => props.markSubeventoTouched(index, "accesoQR")
           }
         />
       </FormField>
@@ -232,9 +233,9 @@ export function CardSubevento(props: CardSubeventoProps) {
             text="Ver detalles de espacio"
             type="button"
             disabled={
-              subevento.recinto === "sala14" ||
-              subevento.recinto === "auditorio" ||
-              subevento.recinto === ""
+              subevento.idRecinto === RecintoId.SALA_14 ||
+              subevento.idRecinto === RecintoId.AUDITORIO ||
+              !subevento.idRecinto
             }
           />
         )}

@@ -1,19 +1,19 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router";
-import { AlcanceEvento, RecintoId } from "@eventos/shared";
+import { AlcanceEvento } from "@eventos/shared";
 import Button from "../../components/atoms/Button/Button";
 import { CardSubevento } from "../../components/organisms/SolicitudEventos/CardSubevento";
 import { SeccionDatosPrellenados } from "../../components/organisms/DetallesSolicitud/SeccionDatosPrellenados";
-import type { DatosSubevento } from "../events/SolicitudEventos";
+import type { SubeventoFormData } from "../events/SolicitudEventos";
 import { Modal } from "../../components/molecules/Modal";
 
 export interface DatosPrellenados {
   nombreSolicitante: string;
-  alcanceEvento: string;
+  idAlcance: string;
   descripcion: string;
-  nombreEvento: string;
+  nombre: string;
   justificacion: string;
-  subeventos: DatosSubevento[];
+  subEventos: SubeventoFormData[];
 }
 
 function esRegistro(valor: unknown): valor is Record<string, unknown> {
@@ -47,19 +47,18 @@ function obtenerNumero(
 }
 
 function convertirAlcance(idAlcance: number): string {
-  const alcances: Record<number, string> = {
-    [AlcanceEvento.PUBLICO]: "publico",
-    [AlcanceEvento.INTERNO]: "interno",
-    [AlcanceEvento.PRIVADO]: "privado",
-  };
-  const alcance = alcances[idAlcance];
-  if (!alcance) {
+  const alcancesValidos = [
+    AlcanceEvento.PUBLICO,
+    AlcanceEvento.INTERNO,
+    AlcanceEvento.PRIVADO,
+  ];
+  if (!alcancesValidos.includes(idAlcance)) {
     throw new Error(`Alcance desconocido: ${idAlcance}.`);
   }
-  return alcance;
+  return String(idAlcance);
 }
 
-function convertirSubevento(valor: unknown): DatosSubevento {
+function convertirSubevento(valor: unknown): SubeventoFormData {
   if (!esRegistro(valor)) {
     throw new Error("La respuesta contiene un subevento inválido.");
   }
@@ -69,33 +68,19 @@ function convertirSubevento(valor: unknown): DatosSubevento {
     throw new Error("La respuesta contiene un subevento sin fecha.");
   }
 
-  const idRecinto = obtenerNumero(valor, "idRecinto");
-
-  const recintos: Record<number, string> = {
-    [RecintoId.AUDITORIO]: "auditorio",
-    [RecintoId.LABORATORIO_A]: "lab1104",
-    [RecintoId.LABORATORIO_B]: "lab1105",
-    [RecintoId.SALA_14]: "sala14",
-  };
-
-  const recinto = recintos[idRecinto];
-
-  if (!recinto) {
-    throw new Error(`Recinto desconocido: ${idRecinto}.`);
-  }
-
   if (typeof valor.accesoQR !== "boolean") {
     throw new Error("La respuesta contiene un acceso QR inválido.");
   }
 
   return {
     id: obtenerNumero(valor, "idSubEvento"),
+    nombre: typeof valor.nombre === "string" ? valor.nombre : "",
+    descripcion: obtenerTexto(valor, "descripcion"),
+    idRecinto: obtenerNumero(valor, "idRecinto"),
+    accesoQR: valor.accesoQR,
     fecha: obtenerTexto(fecha, "fecha"),
     horaInicio: obtenerTexto(fecha, "horaInicio"),
     horaFin: obtenerTexto(fecha, "horaFin"),
-    recinto,
-    accesoBoleto: valor.accesoQR ? "si" : "no",
-    descripcion: obtenerTexto(valor, "descripcion"),
   };
 }
 
@@ -120,11 +105,11 @@ function convertirSolicitud(valor: unknown): DatosPrellenados {
 
   return {
     nombreSolicitante,
-    alcanceEvento: convertirAlcance(obtenerNumero(valor, "idAlcance")),
+    idAlcance: convertirAlcance(obtenerNumero(valor, "idAlcance")),
     descripcion: obtenerTexto(valor, "descripcion"),
-    nombreEvento: obtenerTexto(valor, "nombre"),
+    nombre: obtenerTexto(valor, "nombre"),
     justificacion: obtenerTexto(valor, "justificacion"),
-    subeventos: valor.subeventos.map(convertirSubevento),
+    subEventos: valor.subeventos.map(convertirSubevento),
   };
 }
 
@@ -242,13 +227,13 @@ export function DetallesSolicitud() {
       </h1>
       <SeccionDatosPrellenados datos={datos} />
       <div className="col-span-full mt-8 space-y-4">
-        {datos.subeventos.map((subevento, index) => (
+        {datos.subEventos.map((subevento, index) => (
           <div key={subevento.id}>
             <CardSubevento subevento={subevento} index={index} readOnly />
           </div>
         ))}
       </div>
-      <div id="botonesSolicitud" className="flex justify-end gap-3">
+      <div id="botonesSolicitud" className="flex justify-start gap-3">
         <Button
           id="botonRechazar"
           type="button"
@@ -288,15 +273,16 @@ export function DetallesSolicitud() {
             <Button
               text="Cancelar"
               type="button"
+              variant="danger"
               onClick={() => {
                 setAccion(null);
                 setErrorAccion(null);
               }}
             />
             <Button
-              text={accion === "aprobar" ? "Aprobar" : "Rechazar"}
+              text="Aceptar"
               type="button"
-              variant={accion === "aprobar" ? "success" : "danger"}
+              variant="success"
               onClick={confirmarAccion}
             />
           </div>
