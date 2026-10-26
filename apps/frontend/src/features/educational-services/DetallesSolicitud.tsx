@@ -233,7 +233,7 @@ export function DetallesSolicitud() {
           </div>
         ))}
       </div>
-      <div id="botonesSolicitud" className="flex justify-end gap-3">
+      <div id="botonesSolicitud" className="flex justify-start gap-3">
         <Button
           id="botonRechazar"
           type="button"
@@ -273,15 +273,16 @@ export function DetallesSolicitud() {
             <Button
               text="Cancelar"
               type="button"
+              variant="danger"
               onClick={() => {
                 setAccion(null);
                 setErrorAccion(null);
               }}
             />
             <Button
-              text={accion === "aprobar" ? "Aprobar" : "Rechazar"}
+              text="Aceptar"
               type="button"
-              variant={accion === "aprobar" ? "success" : "danger"}
+              variant="success"
               onClick={confirmarAccion}
             />
           </div>
