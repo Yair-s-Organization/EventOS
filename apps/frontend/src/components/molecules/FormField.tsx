@@ -30,7 +30,7 @@ export function FormField({
         <span
           aria-live="polite"
           className={`mt-1 block min-h-5 text-xs leading-4 ${
-            errorMessage ? "text-eventos-error" : "text-gray-500"
+            errorMessage ? "text-eventos-error" : "text-black"
           }`}>
           {errorMessage ?? mensajeAyuda}
         </span>

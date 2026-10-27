@@ -68,6 +68,8 @@ function validarFormulario(form: FormularioSolicitudData): ErroresFormulario {
 
   if (!form.nombre.trim()) {
     errors.nombre = "El nombre del evento es obligatorio.";
+  }else if(form.nombre.trim().length > 150){
+    errors.nombre = "El nombre del evento no debe exceder los 150 caracteres"
   }
 
   if (!form.idAlcance) {
@@ -90,8 +92,7 @@ function validarFormulario(form: FormularioSolicitudData): ErroresFormulario {
   if (!form.justificacion.trim()) {
     errors.justificacion = "La justificación del evento es obligatoria.";
   } else if (form.justificacion.trim().length > 500) {
-    errors.justificacion =
-      "La justificacion no debe exceder los 500 caracteres";
+    errors.justificacion ="La justificacion no debe exceder los 500 caracteres";
   } else if (!regex.test(form.justificacion)) {
     errors.justificacion = "Simbolo no valido";
   }
@@ -296,8 +297,10 @@ export function SolicitudEvento() {
   };
 
   return (
-    <section className="mx-[clamp(1rem,8vw,6rem)] space-y-6 px-4">
-      <h1 className="font-merriweather text-[36px] text-bold">Solicitud de evento</h1>
+    <section className="mx-auto w-full max-w-7xl space-y-6 px-4 sm:px-6 lg:px-8">
+      <h1 className="font-merriweather text-2xl font-bold sm:text-[36px]">
+        Solicitud de evento
+      </h1>
       <form onSubmit={handleSubmit} className="space-y-7">
         <SeccionDatosEvento
           form={form}
@@ -316,7 +319,13 @@ export function SolicitudEvento() {
           addSubevento={addSubevento}
           removeSubevento={removeSubevento}
         />
-        <Button text="Solicitar evento" type="submit" />
+        <div className="flex sm:justify-start">
+          <Button
+            text="Solicitar evento"
+            type="submit"
+            className="w-full sm:w-auto"
+          />
+        </div>
 
         <Modal
           titulo={modal === "error" ? `Error` : "Confirmar solicitud"}
@@ -327,13 +336,27 @@ export function SolicitudEvento() {
           }
           mostrarModal={modal !== null}
           cerrarModal={() => setModal(null)}>
-          <div className="flex justify-end gap-3">
+          <div className="flex flex-col-reverse justify-end gap-3 sm:flex-row">
             {modal === "error" ? (
-              <Button text="Aceptar" onClick={() => setModal(null)} />
+              <Button
+                text="Aceptar"
+                onClick={() => setModal(null)}
+                className="w-full sm:w-auto"
+              />
             ) : (
               <>
-                <Button text="Cancelar" variant="danger" onClick={() => setModal(null)} />
-                <Button text="Aceptar" variant="success" onClick={confirmarModal} />
+                <Button
+                  text="Cancelar"
+                  variant="danger"
+                  onClick={() => setModal(null)}
+                  className="w-full sm:w-auto"
+                />
+                <Button
+                  text="Aceptar"
+                  variant="success"
+                  onClick={confirmarModal}
+                  className="w-full sm:w-auto"
+                />
               </>
             )}
           </div>
