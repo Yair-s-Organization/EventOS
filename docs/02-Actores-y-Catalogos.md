@@ -26,7 +26,7 @@ Este actor interactúa con la plataforma para consultar la cartelera y gestionar
 
 ### 👤 Organizador
 
-Este actor es responsable de la propuesta, creación y administración operativa de los eventos bajo su responsabilidad (privilegio otorgado por evento conforme a `RN-02`), pudiendo pertenecer a la comunidad institucional, a un club estudiantil o a una entidad externa. Sus capacidades incluyen consultar y administrar sus eventos, reprogramar o reubicar su logística (fecha, hora, espacio), actualizar la información general (descripción, alcance público/interno/privado y etiquetas temáticas), solicitar requerimientos técnicos de cómputo en laboratorios, agregar ponentes, emitir boletos directos (consultables dentro de la aplicación sin envío de correo), asignar o registrar personal de logística y cancelar sus eventos especificando un motivo obligatorio que se notifica internamente en la aplicación.
+Este actor es responsable de la propuesta, creación y administración operativa de los eventos bajo su responsabilidad (privilegio otorgado por evento conforme a `RN-02`), pudiendo pertenecer a la comunidad institucional, a un club estudiantil o a una entidad externa. Sus capacidades incluyen consultar y administrar sus eventos, reprogramar o reubicar su logística (fecha, hora, espacio), actualizar la información general (descripción y alcance público/interno/privado), solicitar requerimientos técnicos de cómputo en laboratorios, agregar ponentes, emitir boletos directos (consultables dentro de la aplicación sin envío de correo), asignar o registrar personal de logística y cancelar sus eventos especificando un motivo obligatorio que se notifica internamente en la aplicación.
 
 ### 👤 Subdirección de Servicios Educativos
 
@@ -77,7 +77,7 @@ Este actor cuenta con privilegios de gestión sobre las cuentas de usuario, la i
 | Asistente | **UI08** | Consultar Mis Eventos |
 | Asistente | **UI09** | Boleto Digital y Código QR |
 | Asistente | **UI10** | Bitácora de Eventos Realizados |
-| Asistente | **UI30** | Agregar Etiquetas al Evento |
+| Asistente | **UI30** | *(Eliminada — Agregar Etiquetas al Evento descartado)* |
 | Asistente | **UI32** | Panel de Verificación de Usuario |
 | Subdirección de Servicios Educativos | **UI07** | Formulario de Solicitud de Evento |
 | Subdirección de Servicios Educativos | **UI11** | Panel de Solicitudes Pendientes |
@@ -124,8 +124,8 @@ Este actor cuenta con privilegios de gestión sobre las cuentas de usuario, la i
 | **MSG-E-13** | Dato requerido faltante. La descripción no puede estar vacía. |
 | **MSG-E-14** | La descripción excede el límite máximo de caracteres permitidos. |
 | **MSG-E-15** | Debe seleccionar un tipo de alcance válido para continuar. |
-| **MSG-E-16** | Formato de etiqueta inválido. Por favor, verifique los caracteres ingresados. |
-| **MSG-E-17** | Límite de etiquetas excedido. No es posible asignar más etiquetas a este evento. |
+| **MSG-E-16** | *(Eliminado — Formato de etiqueta inválido; los eventos ya no manejan etiquetas)* |
+| **MSG-E-17** | *(Eliminado — Límite de etiquetas excedido; los eventos ya no manejan etiquetas)* |
 | **MSG-E-18** | Error de conexión con la base de datos al cargar las tarjetas. |
 | **MSG-E-19** | Operación fallida al intentar actualizar el estado del equipo. |
 | **MSG-E-20** | Error: Ya tienes una reserva para este evento. |
@@ -176,7 +176,7 @@ Este actor cuenta con privilegios de gestión sobre las cuentas de usuario, la i
 | **MSG-I-09** | Operación realizada con éxito. Evento en espera de revisión debido a cambio de duración. |
 | **MSG-I-10** | Operación exitosa al actualizar la descripción del evento. |
 | **MSG-I-11** | Operación exitosa al actualizar el alcance del evento |
-| **MSG-I-12** | Operación exitosa al asignar las etiquetas del evento. |
+| **MSG-I-12** | *(Eliminado — Asignación de etiquetas descartada)* |
 | **MSG-I-13** | Operación realizada con éxito. Recinto actualizado. |
 | **MSG-I-14** | No hay eventos disponibles, consulte más tarde. |
 | **MSG-I-15** | No hay eventos disponibles que cumplan con los filtros seleccionados. |

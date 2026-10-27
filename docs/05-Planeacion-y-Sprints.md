@@ -36,11 +36,14 @@ Adicionalmente, existe una organización por área, que agrupa a quienes compart
 
 | Área | Líder | Integrantes |
 | --- | --- | --- |
-| Diseño | Lore | Lore, Santiago, Enrique |
-| Front | Miguel | Miguel, Víctor, Daniel |
+| Diseño (Apoyo activo a Front) | Lore | Lore, Santiago, Enrique |
+| Front | Miguel | Miguel, Víctor, Daniel *(+ apoyo directo de Lore, Santiago y Enrique en maquetación y componentes React)* |
 | Back | Boisson | Boisson, Yair, Raúl |
 | Pruebas | Benítez | Benítez, Jorge, Leo |
 | Base de Datos | Daniel | Lore, Leo, Yair, Daniel |
+
+> [!TIP] Integración Diseño + Frontend
+> Una vez concluidos los mockups base en Figma, el equipo de **Diseño (Lorena, Santiago y Enrique)** se incorpora al desarrollo de **Frontend** para apoyar a **Miguel, Víctor y Daniel** en la construcción de componentes bajo Atomic Design y maquetación de pantallas en React + Tailwind CSS.
 
 
 ### Sprint 1 — Semana 1 (mié 23 sep 6pm – lun 28 sep 8am)
@@ -451,8 +454,7 @@ Asistencia a Dailys
 | Actividad | Responsable(s) | % Cumplimiento |
 | --- | --- | --- |
 | Iniciar módulo de panel administrativo | Equipo A |  |
-| Cerrar módulo de inventario y conectarlo con la disponibilidad de espacios (Equipo A) | Equipo B |  |
-| Iniciar módulo de cartelera de eventos (listado, filtros y etiquetas temáticas) | Equipo B |  |
+| Desarrollar módulo de Gestión y Modificación de Eventos — Organizador (`CU25`–`CU30`: Mis Eventos `UI14`/`UI15`, Modificar Logística, Información General, Requerimientos Técnicos `UI17` y Cancelar Evento Propio) | Equipo B (Yair, Lorena, Víctor, Leonardo) |  |
 | Cerrar módulo de reserva de boletos e iniciar módulo de emisión de QR | Equipo C |  |
 | Pruebas de lo avanzado en cada equipo | Pruebas (A, B, C) |  |
 

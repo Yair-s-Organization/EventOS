@@ -54,7 +54,7 @@ tags:
 | **CU18** | [[CU18-Cancelar-su-asistencia\|CU18 - Cancelar su asistencia (extend de CU-17)]] | Asistente | Cancelar su reserva de lugar en un evento activo, liberando el cupo o lugar específico ocupado. |
 | **CU19** | [[CU19-Visualizar-QR-de-acceso\|CU19 - Visualizar QR de acceso (extend de CU-17)]] | Asistente | Visualizar el código QR de su boleto digital (`UI09`) para presentarlo al personal de logística el día del evento. |
 | **CU20** | [[CU20-Solicitar-evento\|CU20 - Solicitar evento]] | Asistente | Solicitar un evento de una o varias fechas (subeventos) en `UI07`, adjuntando documento según tipo de solicitante. |
-| **CU21** | [[CU21-Agregar-etiquetas\|CU21 - Agregar etiquetas (extend de CU-20)]] | Asistente | Incorporar etiquetas temáticas o áreas de conocimiento a un evento (`UI30`). |
+| **CU21** | *(Eliminado)* ~~[[CU21-Agregar-etiquetas\|CU21 - Agregar etiquetas]]~~ | Asistente | *(Descartado: los eventos ya no manejan etiquetas temáticas).* |
 
 ### 🪪 Personal de Logística
 
@@ -71,7 +71,7 @@ tags:
 | **CU25** | [[CU25-Consultar-mis-eventos\|CU25 - Consultar mis eventos]] | Organizador | Listar los eventos administrados por el organizador (`UI14`) y acceder a su panel de administración (`UI15`). |
 | **CU26** | [[CU26-Modificar-logistica-del-evento\|CU26 - Modificar logística del evento (extend de CU-25)]] | Organizador | Reprogramar o reubicar fecha, hora o espacio de un evento con motivo obligatorio y notificación interna en la aplicación. |
 | **CU27** | [[CU27-Modificar-detalles-de-un-evento\|CU27 - Modificar detalles de un evento (extend de CU-25)]] | Organizador | Acceder a la edición de especificaciones generales, requerimientos técnicos o ponentes de un evento (`UI15`). |
-| **CU28** | [[CU28-Actualizar-informacion-general-del-evento\|CU28 - Actualizar información general del evento (extend de CU-27)]] | Organizador | Modificar descripción, alcance (Público, Interno, Privado) y etiquetas temáticas del evento (`UI16`). |
+| **CU28** | [[CU28-Actualizar-informacion-general-del-evento\|CU28 - Actualizar información general del evento (extend de CU-27)]] | Organizador | Modificar descripción y alcance (Público, Interno, Privado) del evento (`UI16`). |
 | **CU29** | [[CU29-Solicitar-requerimientos-tecnicos\|CU29 - Solicitar requerimientos técnicos (extend de CU-27)]] | Organizador | Registrar la cantidad de computadoras necesarias para un evento en laboratorio (`UI17`). |
 | **CU08** | [[CU08-Agregar-ponente\|CU08 - Agregar ponente (extend de CU-27)]] | Organizador / Subdirección | Registrar y asociar ponentes a un evento aprobado (`UI29`). |
 | **CU30** | [[CU30-Cancelar-evento-propio\|CU30 - Cancelar evento propio (extend de CU-25)]] | Organizador | Cancelar un evento propio especificando justificación obligatoria, notificando internamente a los asistentes. |
