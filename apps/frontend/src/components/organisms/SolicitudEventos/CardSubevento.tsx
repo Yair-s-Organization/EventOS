@@ -13,6 +13,7 @@ import Button from "../../atoms/Button/Button";
 interface CardSubeventoBaseProps {
   subevento: SubeventoFormData;
   index: number;
+  isDeleting?: boolean;
 }
 
 type CardSubeventoProps = CardSubeventoBaseProps &
@@ -82,13 +83,13 @@ const HORASFIN = [
 ];
 
 export function CardSubevento(props: CardSubeventoProps) {
-  const { subevento, index } = props;
   const readOnly = props.readOnly === true;
   const errors = readOnly ? {} : props.errors;
   const touched = readOnly ? {} : props.touched;
+  const { subevento, index } = props;
 
   return (
-    <div className="grid grid-cols-1 gap-4 rounded-md bg-eventos-primary-light p-4 md:grid-cols-3 md:py-11 md:px-20">
+    <div className="grid min-w-0 grid-cols-1 gap-4 rounded-md bg-eventos-primary-light p-4 sm:grid-cols-2 sm:p-6 lg:grid-cols-3 lg:px-10 lg:py-8">
       <FormField
         label="Fecha"
         htmlFor={`selectFecha-${index}`}
@@ -203,14 +204,15 @@ export function CardSubevento(props: CardSubeventoProps) {
           id={`selectBoleto-${index}`}
           placeholder={"Selecciona una opción"}
           options={ACCESOS}
-          value={subevento.accesoQR !== undefined ? String(subevento.accesoQR) : ""}
+          value={
+            subevento.accesoQR !== undefined ? String(subevento.accesoQR) : ""
+          }
           disabled={readOnly || subevento.idRecinto === RecintoId.SALA_14}
           hasError={Boolean(touched.accesoQR && errors.accesoQR)}
           onChange={
             readOnly
               ? undefined
-              : (e) =>
-                  props.updateSubevento(index, "accesoQR", e.target.value)
+              : (e) => props.updateSubevento(index, "accesoQR", e.target.value)
           }
           onBlur={
             readOnly
@@ -225,6 +227,7 @@ export function CardSubevento(props: CardSubeventoProps) {
             text="Ver descripcion del subevento"
             id={`botonVerInformacion-${subevento.id}`}
             type="button"
+            className="w-full sm:w-auto"
             onClick={() => console.log(subevento.horaInicio)}
           />
         )}
@@ -237,26 +240,30 @@ export function CardSubevento(props: CardSubeventoProps) {
               subevento.idRecinto === RecintoId.AUDITORIO ||
               !subevento.idRecinto
             }
+            className="w-full sm:w-auto"
           />
         )}
       </FormField>
       {!readOnly && (
-        <div className="col-span-full flex justify-between">
+        <div className="col-span-full flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <Button
             text="Agregar información del subevento"
             id={`botonVerInformacion-${subevento.id}`}
             type="button"
+            className="w-full sm:w-auto"
             onClick={() => console.log(subevento.horaInicio)}
           />
 
-          <Button
-            text="Eliminar fecha"
-            id={`botonEliminarFecha-${subevento.id}`}
-            type="button"
-            variant="danger"
-            disabled={!props.canRemove}
-            onClick={props.onRemove}
-          />
+          {!readOnly && props.canRemove && !props.isDeleting && (
+            <Button
+              text="Eliminar fecha"
+              id={`botonEliminarFecha-${subevento.id}`}
+              type="button"
+              variant="danger"
+              className="w-full sm:w-auto"
+              onClick={props.onRemove}
+            />
+          )}
         </div>
       )}
     </div>
