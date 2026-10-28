@@ -18,7 +18,7 @@ export function DashboardLayout() {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col font-merriweather">
       <Navbar userRole={rolNavbar} />
-      <main className="flex-1 px-7 py-8">
+      <main className="flex flex-1 flex-col px-7 py-8">
         <Outlet />
       </main>
     </div>
