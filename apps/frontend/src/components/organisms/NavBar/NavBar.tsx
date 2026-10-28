@@ -35,7 +35,7 @@ export function Navbar({ userRole }: NavbarProps) {
   };
 
   return (
-    <nav className="w-full bg-[#4a1c2d] border-b border-[#60253a] px-8 py-4 flex items-center justify-between font-merriweather text-white shadow-md">
+    <nav className="w-full bg-eventos-primary border-b border-[#60253a] px-8 py-4 flex items-center justify-between font-merriweather text-white shadow-md">
       <div className="flex items-center">
         <span className="font-bold text-xl tracking-wide text-stone-100 font-merriweather">
           Event-Os

@@ -1,3 +1,4 @@
+
 export type SeatStatus = "available" | "occupied" | "selected";
 
 export interface SeatProps {
@@ -5,16 +6,8 @@ export interface SeatProps {
   label: string;
   status: SeatStatus;
   onSelect: (idAsiento: number) => void;
+  compact?: boolean;
 }
-
-const statusStyles: Record<SeatStatus, string> = {
-  available:
-    "bg-eventos-success text-white hover:brightness-90",
-  occupied:
-    "bg-eventos-error text-white",
-  selected:
-    "bg-eventos-primary text-white ring-2 ring-eventos-primary ring-offset-2",
-};
 
 const statusLabels: Record<SeatStatus, string> = {
   available: "disponible",
@@ -22,11 +15,26 @@ const statusLabels: Record<SeatStatus, string> = {
   selected: "seleccionado",
 };
 
+const normalStyles: Record<SeatStatus, string> = {
+  available: "bg-eventos-success text-white hover:brightness-90",
+  occupied: "bg-eventos-error text-white",
+  selected:
+    "bg-eventos-primary text-white ring-2 ring-eventos-primary ring-offset-2",
+};
+
+const compactStyles: Record<SeatStatus, string> = {
+  available: "bg-eventos-secondary-light hover:brightness-95",
+  occupied: "bg-secondary",
+  selected:
+    "bg-eventos-primary ring-2 ring-eventos-primary ring-offset-2",
+};
+
 export function Seat({
                        idAsiento,
                        label,
                        status,
                        onSelect,
+                       compact = false,
                      }: SeatProps) {
   const isOccupied = status === "occupied";
 
@@ -38,20 +46,20 @@ export function Seat({
       aria-label={`Asiento ${label}, ${statusLabels[status]}`}
       onClick={() => onSelect(idAsiento)}
       className={`
-        inline-flex h-10 w-10 shrink-0
-        items-center justify-center
-        rounded-md font-merriweather
-        text-sm font-semibold
-        transition-colors
+        inline-flex shrink-0 items-center justify-center
+        font-merriweather font-semibold transition-colors
         focus-visible:outline-none
         focus-visible:ring-2
         focus-visible:ring-eventos-primary
         focus-visible:ring-offset-2
         disabled:cursor-not-allowed
-        ${statusStyles[status]}
+        ${compact
+        ? "h-7 w-7 rounded-full"
+        : "h-10 w-10 rounded-md text-sm"}
+        ${compact ? compactStyles[status] : normalStyles[status]}
       `}
     >
-      {label}
+      {compact ? null : label}
     </button>
   );
 }
