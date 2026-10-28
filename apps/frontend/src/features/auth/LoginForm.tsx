@@ -130,7 +130,7 @@ export function LoginForm() {
       const rol = data.usuario?.tipoCuenta; // revisar con back
 
       if (rol === "admin" || rol === "Administrador") {
-        navigate("/lista-solicitudes");
+        navigate("/gestion-espacios");
       } else if (rol === "subdireccion") {
         navigate("/detalles-solicitud"); 
       } else {
@@ -164,24 +164,13 @@ export function LoginForm() {
           </FieldMessage>
         </FormField>
 
-        <PasswordField id="contrasena" name="contrasena" label="Contraseña" placeholder="●●●●●●●"
-          value={formData.contrasena}
-          onChange={handleChange}
-          error={errors.contrasena}
-        />
+        <PasswordField id="contrasena" name="contrasena" label="Contraseña" placeholder="●●●●●●●" value={formData.contrasena} onChange={handleChange} error={errors.contrasena}/>
 
-        <CaptchaField
-          recaptchaRef={recaptchaRef}
+        <CaptchaField recaptchaRef={recaptchaRef} onChange={handleCaptchaChange} error={captchaError}
           sitekey="6LddCvktAAAAAM980VTf7Y1lBBjUbjKEIOqMEXBi"
-          onChange={handleCaptchaChange}
-          error={captchaError}
         />
 
-        <Button fullWidth size="md" variant="primary" className="mt-2" type="submit"
-          text="Iniciar Sesión"
-          loadingText="Iniciando sesión..."
-          loading={loading}
-        />
+        <Button fullWidth size="md" variant="primary" className="mt-2" type="submit" text="Iniciar Sesión" loadingText="Iniciando sesión..." loading={loading}/>
 
         <div className="mt-1 text-center">
           <TextLink to="/registro" className="text-sky-500 hover:text-sky-600 font-merriweather font-semibold text-[16px]">

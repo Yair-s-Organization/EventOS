@@ -37,7 +37,7 @@ export function AppRouter() {
         <Route element={<ProtectedRoute allowedRoles={["Administrador"]} />}>
           <Route element={<DashboardLayout />}>
             <Route path="/gestion-espacios" element={<GestionEspacios />} />
-            <Route path="/gestion-equipos" element={<GestionEquipos />} />
+            <Route path="/gestion-equipos/:id" element={<GestionEquipos />} />
           </Route>
         </Route>
 
