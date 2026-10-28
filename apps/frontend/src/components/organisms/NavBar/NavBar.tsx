@@ -27,9 +27,11 @@ export function Navbar({ userRole }: NavbarProps) {
       case "subdireccion":
       default:
         return [
-          { label: "Panel General", to: "/subdireccion/dashboard" },
-          { label: "Aprobaciones", to: "/subdireccion/aprobaciones" },
-          { label: "Reportes", to: "/subdireccion/reportes" },
+          { label: "Menú", to: "/subdireccion/menu-principal" },
+          { label: "Mis eventos", to: "/subdireccion/menu-principal" },
+          { label: "Solicitudes Aprobadas", to: "/subdireccion/menu-principal" },
+          { label: "Solicitudes Pendientes", to: "/subdireccion/lista-solicitudes" },
+          { label: "Solicitar evento", to: "/solicitud-evento" },
         ];
     }
   };

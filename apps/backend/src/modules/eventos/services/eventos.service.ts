@@ -211,10 +211,26 @@ export class EventosService {
       }
       where.idEstadoEvento = idEstado;
     }
-    return await this.eventoRepository.find({
+    const eventos = await this.eventoRepository.find({
       where,
+      relations: {
+        subEventos: {
+          fecha: true,
+          recinto: true,
+        },
+      },
       order: { idEvento: 'DESC' },
     });
+
+    return eventos.map((evento) => ({
+      ...evento,
+      posterUrl: evento.poster
+        ? evento.poster.startsWith('http://') ||
+          evento.poster.startsWith('https://')
+          ? evento.poster
+          : this.storageService.publicUrl(evento.poster)
+        : null,
+    }));
   }
 
   // Devuelve el detalle completo de una solicitud para evaluación (CU03 / UI12)
