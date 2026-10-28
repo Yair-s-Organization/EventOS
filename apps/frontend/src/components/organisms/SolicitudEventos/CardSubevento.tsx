@@ -9,11 +9,13 @@ import type {
 } from "../../../features/events/SolicitudEventos";
 import Input from "../../atoms/Input/Input";
 import Button from "../../atoms/Button/Button";
+import { TextArea } from "../../atoms/TextArea/TextArea";
 
 interface CardSubeventoBaseProps {
   subevento: SubeventoFormData;
   index: number;
   isDeleting?: boolean;
+  nombreRecinto?: string;
 }
 
 type CardSubeventoProps = CardSubeventoBaseProps &
@@ -82,6 +84,17 @@ const HORASFIN = [
   { value: "22:00", label: "22:00" },
 ];
 
+function opcionesConValor(
+  opciones: typeof HORASINICIO,
+  valor: string,
+): typeof HORASINICIO {
+  if (!valor || opciones.some((opcion) => opcion.value === valor)) {
+    return opciones;
+  }
+
+  return [...opciones, { value: valor, label: valor }];
+}
+
 export function CardSubevento(props: CardSubeventoProps) {
   const readOnly = props.readOnly === true;
   const errors = readOnly ? {} : props.errors;
@@ -90,6 +103,13 @@ export function CardSubevento(props: CardSubeventoProps) {
 
   return (
     <div className="grid min-w-0 grid-cols-1 gap-4 rounded-md bg-eventos-primary-light p-4 sm:grid-cols-2 sm:p-6 lg:grid-cols-3 lg:px-10 lg:py-8">
+    {/*   {readOnly && (
+        <>
+          <FormField label="Nombre del subevento" readOnly>
+            <Input value={subevento.nombre} disabled />
+          </FormField>
+        </>
+      )} */}
       <FormField
         label="Fecha"
         htmlFor={`selectFecha-${index}`}
@@ -124,7 +144,7 @@ export function CardSubevento(props: CardSubeventoProps) {
         <Select
           id={`selectHoraInicio-${index}`}
           placeholder="Selecciona la hora de inicio"
-          options={HORASINICIO}
+          options={opcionesConValor(HORASINICIO, subevento.horaInicio)}
           value={subevento.horaInicio}
           disabled={readOnly}
           hasError={Boolean(touched.horaInicio && errors.horaInicio)}
@@ -151,7 +171,7 @@ export function CardSubevento(props: CardSubeventoProps) {
         <Select
           id={`selectHoraFinal-${index}`}
           placeholder="Selecciona la hora final"
-          options={HORASFIN}
+          options={opcionesConValor(HORASFIN, subevento.horaFin)}
           value={subevento.horaFin}
           disabled={readOnly}
           hasError={Boolean(touched.horaFin && errors.horaFin)}
@@ -221,14 +241,21 @@ export function CardSubevento(props: CardSubeventoProps) {
           }
         />
       </FormField>
-      <FormField readOnly={readOnly}>
+      <FormField
+        label={readOnly ? "Espacio" : undefined}
+        htmlFor={readOnly ? `recintoDetalle-${index}` : undefined}
+        readOnly={readOnly}>
         {readOnly && (
-          <Button
-            text="Ver descripcion del subevento"
-            id={`botonVerInformacion-${subevento.id}`}
-            type="button"
-            className="w-full sm:w-auto"
-            onClick={() => console.log(subevento.horaInicio)}
+          <Input
+            id={`recintoDetalle-${index}`}
+            value={
+              props.nombreRecinto ??
+              RECINTOS.find(
+                (recinto) => recinto.value === String(subevento.idRecinto),
+              )?.label ??
+              "No disponible"
+            }
+            disabled
           />
         )}
         {!readOnly && (
@@ -251,7 +278,6 @@ export function CardSubevento(props: CardSubeventoProps) {
             id={`botonVerInformacion-${subevento.id}`}
             type="button"
             className="w-full sm:w-auto"
-            onClick={() => console.log(subevento.horaInicio)}
           />
 
           {!readOnly && props.canRemove && !props.isDeleting && (

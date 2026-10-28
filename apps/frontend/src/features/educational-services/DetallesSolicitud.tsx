@@ -13,7 +13,11 @@ export interface DatosPrellenados {
   descripcion: string;
   nombre: string;
   justificacion: string;
-  subEventos: SubeventoFormData[];
+  subEventos: SubeventoDetalle[];
+}
+
+interface SubeventoDetalle extends SubeventoFormData {
+  nombreRecinto?: string;
 }
 
 function esRegistro(valor: unknown): valor is Record<string, unknown> {
@@ -46,6 +50,16 @@ function obtenerNumero(
   return valor;
 }
 
+function obtenerHora(registro: Record<string, unknown>, campo: string): string {
+  const valor = obtenerTexto(registro, campo);
+  if (!/^([01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?$/.test(valor)) {
+    throw new Error(
+      `La respuesta no contiene una hora válida para "${campo}".`,
+    );
+  }
+  return valor.slice(0, 5);
+}
+
 function convertirAlcance(idAlcance: number): string {
   const alcancesValidos = [
     AlcanceEvento.PUBLICO,
@@ -58,7 +72,7 @@ function convertirAlcance(idAlcance: number): string {
   return String(idAlcance);
 }
 
-function convertirSubevento(valor: unknown): SubeventoFormData {
+function convertirSubevento(valor: unknown): SubeventoDetalle {
   if (!esRegistro(valor)) {
     throw new Error("La respuesta contiene un subevento inválido.");
   }
@@ -72,15 +86,22 @@ function convertirSubevento(valor: unknown): SubeventoFormData {
     throw new Error("La respuesta contiene un acceso QR inválido.");
   }
 
+  const espacio = valor.espacio;
+  const nombreRecinto =
+    esRegistro(espacio) && typeof espacio.nombre === "string"
+      ? espacio.nombre
+      : undefined;
+
   return {
     id: obtenerNumero(valor, "idSubEvento"),
     nombre: typeof valor.nombre === "string" ? valor.nombre : "",
     descripcion: obtenerTexto(valor, "descripcion"),
     idRecinto: obtenerNumero(valor, "idRecinto"),
+    nombreRecinto,
     accesoQR: valor.accesoQR,
     fecha: obtenerTexto(fecha, "fecha"),
-    horaInicio: obtenerTexto(fecha, "horaInicio"),
-    horaFin: obtenerTexto(fecha, "horaFin"),
+    horaInicio: obtenerHora(fecha, "horaInicio"),
+    horaFin: obtenerHora(fecha, "horaFin"),
   };
 }
 
@@ -229,7 +250,12 @@ export function DetallesSolicitud() {
       <div className="col-span-full mt-8 space-y-4">
         {datos.subEventos.map((subevento, index) => (
           <div key={subevento.id}>
-            <CardSubevento subevento={subevento} index={index} readOnly />
+            <CardSubevento
+              subevento={subevento}
+              index={index}
+              nombreRecinto={subevento.nombreRecinto}
+              readOnly
+            />
           </div>
         ))}
       </div>
