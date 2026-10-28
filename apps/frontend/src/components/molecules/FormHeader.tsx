@@ -6,8 +6,8 @@ interface FormHeaderProps {
 export function FormHeader({ titulo, descripcion }: FormHeaderProps) {
   return (
     <div className="space-y-5">
-      <h2 className="font-merriweather font-bold text-[24px]">{titulo}</h2>
-      <p className="font-merriweather font-medium text-[16px]">{descripcion}</p>
+      <h2 className="font-merriweather text-xl font-bold sm:text-[24px]">{titulo}</h2>
+      <p className="font-merriweather text-justify text-sm font-medium sm:text-[16px]">{descripcion}</p>
     </div>
   );
 }
