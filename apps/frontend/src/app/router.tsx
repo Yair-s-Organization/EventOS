@@ -13,6 +13,11 @@ import { GestionEspacios } from "../features/admin/Gestion-Espacios";
 import { GestionEquipos } from "../features/admin/Gestion-Equipos";
 import { MenuSubdireccion } from "../features/educational-services/MenuSubdireccion";
 
+import { ReservationDemoPage } from "../features/reservations/pages/ReservationDemoPage";
+import { MyTicketsDemoPage } from "../features/tickets/pages/MyTicketsDemoPage";
+import { DigitalTicketDemoPage } from "../features/tickets/pages/DigitalTicketsDemo";
+import { ReservationAvailabilityPreviewPage } from "../features/reservations/pages/ReservationAvailabilityPreviewPage";
+
 export function AppRouter() {
   return (
     <BrowserRouter>
@@ -22,9 +27,38 @@ export function AppRouter() {
           <Route path="/registro" element={<Registro />} />
           {/*Colocar aqui rutas para probar sin tener que hacer login(no apareceran con el navbar correspondiente 
              pero solo es para probar visualización)*/}
-          <Route path="/solicitud-evento" element={<SolicitudEvento />} />
-          <Route path="/detalles-solicitud/" element={<DetallesSolicitud />} />
+  <Route
+    path="/demo-reservacion"
+    element={<ReservationDemoPage />}
+    />
+
+          <Route
+          path="/demo-boletos"
+          element={<MyTicketsDemoPage />}
+          />
+
+          <Route
+          path="/solicitud-evento"
+          element={<SolicitudEvento />}
+          />
+
+          <Route
+          path="/detalles-solicitud/"
+          element={<DetallesSolicitud />}
+          />
+
         </Route>
+
+        <Route
+          path="/demo-boleto"
+          element={<DigitalTicketDemoPage />}
+        />
+
+        <Route
+          path="/demo-disponibilidad/:idSubEvento"
+          element={<ReservationAvailabilityPreviewPage />}
+        />
+
 
         {/* Rutas para asistente*/}
         <Route

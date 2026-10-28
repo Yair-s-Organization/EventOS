@@ -1,44 +1,44 @@
+
 import type { SeatStatus } from "../atoms/Seat";
 
 interface LegendItem {
     status: SeatStatus;
     label: string;
-    colorClass: string;
+    color: string;
 }
 
 const legendItems: LegendItem[] = [
     {
         status: "available",
         label: "Disponible",
-        colorClass: "bg-eventos-success",
+        color: "bg-eventos-secondary-light",
     },
     {
         status: "occupied",
         label: "Ocupado",
-        colorClass: "bg-eventos-error",
+        color: "bg-secondary",
     },
     {
         status: "selected",
         label: "Seleccionado",
-        colorClass: "bg-eventos-primary",
+        color: "bg-eventos-primary",
     },
 ];
 
 export function SeatLegend() {
     return (
       <div
-        role="group"
-        aria-label="Estados de los asientos"
-        className="flex flex-wrap items-center gap-x-5 gap-y-2"
+        aria-label="Leyenda de asientos"
+        className="flex flex-wrap items-center gap-x-5 gap-y-3"
       >
           {legendItems.map((item) => (
             <div
               key={item.status}
-              className="inline-flex items-center gap-2"
+              className="flex items-center gap-2"
             >
           <span
             aria-hidden="true"
-            className={`h-3 w-3 rounded-sm ${item.colorClass}`}
+            className={`h-5 w-5 rounded-full ${item.color}`}
           />
 
                 <span className="font-merriweather text-sm">
