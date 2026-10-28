@@ -1,40 +1,61 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router";
+import React, { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router";
 import { Button } from "../../components/atoms/Button/Button";
 import { Modal } from "../../components/molecules/Modal";
+import { ListaEquiposTable } from "../admin/organism/ListaEquiposTable";
 
 interface Equipo {
-  id: number;
-  nombre: string;
-  disponible: boolean;
+  idEstadoEquipo: number;
+  numeroEquipo: number;
+  estado: boolean;
+  idRecinto: number;
 }
 
 export function GestionEquipos() {
   const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
 
-  // Lista simulada de equipos
-  const [equipos, setEquipos] = useState<Equipo[]>([
-    { id: 1, nombre: "Equipo 1", disponible: true },
-    { id: 2, nombre: "Equipo 2", disponible: true },
-    { id: 3, nombre: "Equipo 3", disponible: true },
-    { id: 4, nombre: "Equipo 4", disponible: true },
-    { id: 5, nombre: "Equipo 5", disponible: true },
-    { id: 6, nombre: "Equipo 6", disponible: true },
-    { id: 7, nombre: "Equipo 7", disponible: true },
-    { id: 8, nombre: "Equipo 8", disponible: true },
-    { id: 9, nombre: "Equipo 9", disponible: true },
-    { id: 10, nombre: "Equipo 10", disponible: true },
-    { id: 11, nombre: "Equipo 11", disponible: true },
-    { id: 12, nombre: "Equipo 12", disponible: true },
-    { id: 13, nombre: "Equipo 13", disponible: true },
-    { id: 14, nombre: "Equipo 14", disponible: true },
-  ]);
+  const [equipos, setEquipos] = useState<Equipo[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const [modalAbierto, setModalAbierto] = useState(false);
   const [equipoPendiente, setEquipoPendiente] = useState<Equipo | null>(null);
 
+  const getToken = () => {
+    const usuario = JSON.parse(localStorage.getItem("usuario") || "{}");
+    return usuario.token || localStorage.getItem("token") || "";
+  };
+
+  const fetchEquipos = async () => {
+    if (!id) return;
+    try {
+      setLoading(true);
+      const response = await fetch(`http://localhost:3000/api/espacios/${id}/equipos`, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${getToken()}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("No se pudieron cargar los equipos de este laboratorio.");
+      }
+
+      const data = await response.json();
+      setEquipos(data);
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchEquipos();
+  }, [id]);
+
   const totalEquipos = equipos.length;
-  const equiposDisponibles = equipos.filter((e) => e.disponible).length;
+  const equiposDisponibles = equipos.filter((e) => e.estado).length;
   const equiposFueraDeServicio = totalEquipos - equiposDisponibles;
 
   const handleToggleClick = (equipo: Equipo) => {
@@ -42,34 +63,49 @@ export function GestionEquipos() {
     setModalAbierto(true);
   };
 
-  const handleConfirmarCambio = () => {
-    if (equipoPendiente) {
-      setEquipos((prev) =>
-        prev.map((eq) =>
-          eq.id === equipoPendiente.id
-            ? { ...eq, disponible: !eq.disponible }
-            : eq
-        )
-      );
+  const handleConfirmarCambio = async () => {
+    if (!equipoPendiente) return;
+
+    const nuevoEstado = !equipoPendiente.estado;
+
+    try {
+      const response = await fetch(`http://localhost:3000/api/espacios/equipos/${equipoPendiente.idEstadoEquipo}/estado`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${getToken()}`,
+        },
+        body: JSON.stringify({ estado: nuevoEstado }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Error al actualizar el estado del equipo.");
+      }
+
+      await fetchEquipos();
+      setModalAbierto(false);
+      setEquipoPendiente(null);
+    } catch (err: any) {
+      alert(err.message);
     }
-    setModalAbierto(false);
-    setEquipoPendiente(null);
   };
 
   return (
     <div className="space-y-6 font-merriweather text-gray-800">
-      
       <div>
         <h1 className="text-2xl font-bold text-gray-900 mb-1">
           Mapa visual de inventario
         </h1>
         <p className="text-sm text-gray-600">
-          <span className="font-semibold">Laboratorio:</span> Laboratorio de sistemas 1
+          <span className="font-semibold">Laboratorio ID:</span> {id}
         </p>
       </div>
 
+      {loading && <p className="text-sm text-gray-600">Cargando equipos...</p>}
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 pt-4">
-        
         <div className="space-y-4">
           <p className="text-sm font-medium text-gray-800">
             Selecciona el equipo de cómputo
@@ -82,88 +118,29 @@ export function GestionEquipos() {
           </div>
 
           <div className="pt-2">
-            <Button
-              text="Regresar"
-              variant="primary"
-              size="sm"
-              className="bg-[#5c1d33] hover:bg-[#4a1c2d] text-white px-6 py-2 rounded"
-              onClick={() => navigate("/gestion-espacios")}
-            />
+            <Button text="Regresar" variant="primary" size="sm" className="bg-[#5c1d33] hover:bg-[#4a1c2d] text-white px-6 py-2 rounded" onClick={() => navigate("/gestion-espacios")}/>
           </div>
         </div>
 
-        <div className="lg:col-span-2 bg-white rounded-md border border-gray-300 shadow-sm p-7 max-w-md">
-          <div className="border-b border-gray-300 pb-3 mb-4 flex justify-between items-center font-semibold text-sm text-gray-900 max-w-md">
-            <span className="w-32">Número de equipo</span>
-            <div className="flex items-center space-x-3">
-                <span>Inhabilitar</span>
-                <div className="w-13"/>
-            </div>    
-          </div>
-
-          <div className="space-y-3 max-h-[350px] overflow-y-auto pr-2">
-            {equipos.map((equipo) => (
-              <div
-                key={equipo.id}
-                className="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0 max-w-md"
-              >
-                <span className="text-sm font-medium text-gray-800 w-32">
-                  {equipo.nombre}
-                </span>
-
-                <div className="flex items-center space-x-3">
-                  <span className="text-xs text-gray-600">Inhabilitar</span>
-                  
-                  <button
-                    type="button"
-                    onClick={() => handleToggleClick(equipo)}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
-                      !equipo.disponible ? "bg-[#5c1d33]" : "bg-gray-300"
-                    }`}
-                    role="switch"
-                    aria-checked={!equipo.disponible}
-                  >
-                    <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                        !equipo.disponible ? "translate-x-6" : "translate-x-1"
-                      }`}
-                    />
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        <ListaEquiposTable equipos={equipos} onToggleEquipo={handleToggleClick}/>
       </div>
 
-      <Modal
-        titulo="Advertencia"
-        contenido=""
-        mostrarModal={modalAbierto}
-        cerrarModal={() => setModalAbierto(false)}
-      >
+      <Modal titulo="Advertencia" contenido="" mostrarModal={modalAbierto} cerrarModal={() => setModalAbierto(false)}>
         <div className="space-y-6">
           <p className="text-sm text-gray-700 font-merriweather">
-            ¿Estás seguro que quieres {equipoPendiente?.disponible ? "inhabilitar" : "habilitar"} al {equipoPendiente?.nombre.toLowerCase()}?
+            ¿Estás seguro que quieres {equipoPendiente?.estado ? "inhabilitar" : "habilitar"} al Equipo {equipoPendiente?.numeroEquipo}?
           </p>
 
           <div className="flex items-center justify-end space-x-3">
-            <Button
-              text="Cancelar"
-              type="button"
-              onClick={() => setModalAbierto(false)}
-              className="bg-[#5c1d33] hover:bg-[#4a1c2d] text-white font-merriweather text-sm px-6 py-2.5 rounded-md transition-colors shadow"
+            <Button text="Cancelar" type="button" variant="outline" onClick={() => setModalAbierto(false)}
+              className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-merriweather text-sm px-6 py-2.5 rounded-md transition-colors"
             />
-            <Button
-              text="Aceptar"
-              type="button"
-              onClick={handleConfirmarCambio}
+            <Button text="Aceptar" type="button" onClick={handleConfirmarCambio}
               className="bg-[#5c1d33] hover:bg-[#4a1c2d] text-white font-merriweather text-sm px-6 py-2.5 rounded-md transition-colors shadow"
             />
           </div>
         </div>
       </Modal>
-
     </div>
   );
 }
