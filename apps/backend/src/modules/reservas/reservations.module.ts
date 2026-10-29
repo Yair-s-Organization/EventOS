@@ -15,6 +15,7 @@ import { FechaEntity } from '../eventos/entities/fecha.entity';
 import { EventoPersonalLogisticaEntity } from '../eventos/entities/eventoPersonalLogistica.entity';
 import { RecintoEntity } from '../recintos/entities/recinto.entity';
 import { AsientoEntity } from './entities/asiento.entity';
+import { PonenteEntity } from '../eventos/entities/ponente.entity';
 
 
 @Module({
@@ -29,6 +30,7 @@ import { AsientoEntity } from './entities/asiento.entity';
       EventoPersonalLogisticaEntity,
       RecintoEntity,
       AsientoEntity,
+      PonenteEntity,
     ]),
     JwtModule.register({
       secret: process.env.JWT_SECRET || 'clave_secreta_desarrollo',
