@@ -14,6 +14,8 @@ import { FechaEntity } from '../entities/fecha.entity';
 import { BitacoraEventoEntity } from '../entities/bitacoraEvento.entity';
 import { RecintoService } from '../../recintos/services/recinto.service';
 import { StorageService } from '../../../common/storage/storage.service';
+import { PonenteEntity } from '../entities/ponente.entity'; 
+import { AsientoEntity } from '../../reservas/entities/asiento.entity';
 import {
   EstadoEvento,
   EstadoSubEvento,
@@ -29,6 +31,8 @@ export class EventosService {
   usuarioRepository: Repository<UsuarioEntity>;
   subEventoRepository: Repository<SubEventoEntity>;
   bitacoraEventoRepository: Repository<BitacoraEventoEntity>;
+  ponenteRepository: Repository<PonenteEntity>;
+  asientoRepository: Repository<AsientoEntity>;
   recintoService: RecintoService;
   storageService: StorageService;
   private readonly dataSource: DataSource;
@@ -38,6 +42,8 @@ export class EventosService {
     @InjectRepository(UsuarioEntity) repoUsuario: Repository<UsuarioEntity>,
     @InjectRepository(SubEventoEntity) repoSubEvento: Repository<SubEventoEntity>,
     @InjectRepository(BitacoraEventoEntity) repoBitacora: Repository<BitacoraEventoEntity>,
+    @InjectRepository(PonenteEntity) private repoPonente: Repository<PonenteEntity>,
+    @InjectRepository(AsientoEntity) private repoAsiento: Repository<AsientoEntity>,
     recintoService: RecintoService,
     storageService: StorageService,
     dataSource: DataSource,
@@ -46,6 +52,8 @@ export class EventosService {
     this.usuarioRepository = repoUsuario;
     this.subEventoRepository = repoSubEvento;
     this.bitacoraEventoRepository = repoBitacora;
+    this.ponenteRepository = repoPonente;
+    this.asientoRepository = repoAsiento;
     this.recintoService = recintoService;
     this.storageService = storageService;
     this.dataSource = dataSource;
@@ -444,4 +452,85 @@ export class EventosService {
 
     return await this.crearEvento(nuevoEvento, dto.subeventos);
   }
+
+  // Listar cartelera (Solo eventos con idEstadoEvento = 2 'Aceptado')
+async obtenerEventosPublicos() {
+    const eventos = await this.eventoRepository.find({
+      where: { idEstadoEvento: 2 }, // 2 = Aceptado según tu DDL
+    });
+
+    return eventos.map(e => ({
+      idEvento: e.idEvento,
+      nombre: e.nombre,
+      descripcion: e.descripcion,
+      poster: e.poster,
+      idAlcance: e.idAlcance,
+    }));
+  }
+
+  // Detalle completo 
+  async obtenerDetalleEventoPublico(idEvento: number) {
+    const evento = await this.eventoRepository.findOne({
+      where: { idEvento, idEstadoEvento: 2 }, 
+    });
+
+    if (!evento) {
+      throw new NotFoundException('El evento no existe o no se encuentra disponible.');
+    }
+
+    const subEventos = await this.subEventoRepository.find({
+      where: { idEvento: evento.idEvento },
+    });
+
+    const subEventosDetallados = [];
+
+    const fechaRepository = this.dataSource.getRepository(FechaEntity);
+    const recintoRepository = this.dataSource.getRepository('recinto'); 
+
+    for (const sub of subEventos) {
+      const [fecha, recinto, ponentes, totalAsientosRecinto] = await Promise.all([
+        fechaRepository.findOne({ where: { idFecha: sub.idFecha } }),
+        recintoRepository.findOne({ where: { idRecinto: sub.idRecinto } }),
+        this.ponenteRepository.find({ where: { idSubEvento: sub.idSubEvento } }),
+        this.asientoRepository.count({ where: { idRecinto: sub.idRecinto } }),
+      ]);
+
+      subEventosDetallados.push({
+        idSubEvento: sub.idSubEvento,
+        nombre: sub.nombre,
+        descripcion: sub.descripcion,
+        estado: sub.estado,
+        accesoQR: sub.accesoQR,
+        requiereSeleccionAsiento: totalAsientosRecinto > 0,
+        fecha: fecha ? {
+          idFecha: fecha.idFecha,
+          fecha: fecha.fecha,
+          horaInicio: fecha.horaInicio,
+          horaFin: fecha.horaFin,
+        } : null,
+        recinto: recinto ? {
+          idRecinto: recinto.idRecinto, 
+          nombre: recinto['nombre'],    
+          aforo: recinto['aforo'],
+        } : null,
+        ponentes: ponentes.map(p => ({
+          idPonente: p.idPonente,
+          nombre: p.nombre,
+          apellidoPa: p.apellidoPa,
+          apellidoMa: p.apellidoMa,
+        })),
+      });
+    }
+
+    return {
+      idEvento: evento.idEvento,
+      nombre: evento.nombre,
+      descripcion: evento.descripcion,
+      poster: evento.poster,
+      idAlcance: evento.idAlcance,
+      subEventos: subEventosDetallados,
+    };
+  }
+
+
 }

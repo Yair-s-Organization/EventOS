@@ -12,6 +12,7 @@ import { SubEventoEntity } from '../../eventos/entities/subevento.entity';
 import { RecintoEntity } from '../../recintos/entities/recinto.entity';
 import { AsientoEntity } from '../entities/asiento.entity';
 import { FechaEntity } from '../../eventos/entities/fecha.entity';
+import { EventoEntity } from '../../eventos/entities/evento.entity';
 import { EventoPersonalLogisticaEntity } from '../../eventos/entities/eventoPersonalLogistica.entity';
 
 @Injectable()
@@ -21,6 +22,7 @@ export class ReservationsService {
     constructor(
         private dataSource: DataSource,
         private readonly qrService: QrService, 
+        @InjectRepository(EventoEntity) private eventoRepo: Repository<EventoEntity>,
         @InjectRepository(SubEventoEntity) private subEventoRepo: Repository<SubEventoEntity>,
         @InjectRepository(RecintoEntity) private recintoRepo: Repository<RecintoEntity>,
         @InjectRepository(AsientoEntity) private asientoRepo: Repository<AsientoEntity>,
@@ -32,8 +34,7 @@ export class ReservationsService {
 
     //CONSULTAR DISPONIBILIDAD
 
-    async consultarDisponibilidad(idSubEvento: number): Promise<DisponibilidadSubEvento> {
-        // validar subevento
+    async consultarDisponibilidad(idSubEvento: number): Promise<any> {
         const subEvento = await this.subEventoRepo.findOne({ 
             where: { idSubEvento: idSubEvento } 
         });
@@ -42,7 +43,14 @@ export class ReservationsService {
             throw new NotFoundException('El subevento solicitado no existe.');
         }
 
-        // validar Recinto
+        const evento = await this.eventoRepo.findOne({
+            where: { idEvento: subEvento.idEvento }
+        });
+
+        const fechaEvento = await this.fechaRepo.findOne({
+            where: { idFecha: subEvento.idFecha }
+        });
+
         const recinto = await this.recintoRepo.findOne({ 
             where: { idRecinto: subEvento.idRecinto } 
         });
@@ -55,7 +63,6 @@ export class ReservationsService {
             throw new ConflictException('El recinto asignado a este evento no se encuentra habilitado.');
         }
 
-        // obtener los id de los boletos asociados a este Subevento
         const asistentes = await this.asistenteRepo.find({ 
             where: { idSubEvento: idSubEvento } 
         });
@@ -65,9 +72,8 @@ export class ReservationsService {
         let lugaresOcupados = 0;
         const idsAsientosOcupados = new Set<number>();
 
-        
         if (idsBoleto.length > 0) {
-            const boletos = await this.boletoRepo.findBy({idBoleto: In(idsBoleto)});
+            const boletos = await this.boletoRepo.findBy({ idBoleto: In(idsBoleto) });
 
             for (const boleto of boletos) {
                 if (boleto.idEstadoBoleto === EstadoBoleto.VALIDO || boleto.idEstadoBoleto === EstadoBoleto.UTILIZADO) {
@@ -79,8 +85,11 @@ export class ReservationsService {
             }
         }
 
-        // calculo de lugares libres
-        const lugaresDisponibles = Math.max(0, recinto.aforo - lugaresOcupados);
+        // Verificar si la actividad permite reservaciones (Evento Aceptado = 2, SubEvento Aceptado y Fecha futura)
+        const limiteReserva = fechaEvento ? new Date(`${fechaEvento.fecha}T${fechaEvento.horaInicio}`) : new Date(0);
+        const eventoActivo = evento && evento.idEstadoEvento === 2 && subEvento.estado === EstadoSubEvento.ACEPTADO && new Date() <= limiteReserva;
+
+        const lugaresDisponibles = eventoActivo ? Math.max(0, recinto.aforo - lugaresOcupados) : 0;
 
         const asientosBD = await this.asientoRepo.find({ 
             where: { idRecinto: recinto.idRecinto } 
@@ -90,17 +99,18 @@ export class ReservationsService {
             idAsiento: a.idAsiento,
             fila: a.fila,
             numero: a.numero,
-            ocupado: idsAsientosOcupados.has(a.idAsiento),
+            ocupado: !eventoActivo ? true : idsAsientosOcupados.has(a.idAsiento),
         }));
 
-        
         return {
             idSubEvento: subEvento.idSubEvento,
             recinto: recinto,
             lugaresDisponibles,
+            permiteReservar: Boolean(eventoActivo && lugaresDisponibles > 0),
+            requiereSeleccionAsiento: asientos.length > 0,
             asientos,
         };
-    } 
+    }
 
 
     //CREAR RESERVA
@@ -125,6 +135,14 @@ export class ReservationsService {
 
             if (subEvento.estado !== EstadoSubEvento.ACEPTADO) {
                 throw new ConflictException('El registro para este evento se encuentra cerrado o cancelado');
+            }
+
+            const eventoPrincipal = await manager.findOne(EventoEntity, {
+                where: { idEvento: subEvento.idEvento }
+            });
+
+            if (!eventoPrincipal || eventoPrincipal.idEstadoEvento !== 2) {
+                throw new ConflictException('El evento principal no se encuentra autorizado o activo para reservaciones.');
             }
 
             const fechaEvento = await manager.findOne(FechaEntity, { 
@@ -172,11 +190,32 @@ export class ReservationsService {
                 where: { idRecinto: subEvento.idRecinto } 
             });
             
-            if (!recinto) {
-                throw new ConflictException('El evento no tiene un recinto registrado en la base de datos.');
+            if (!recinto || recinto.idEstadoRecinto !== EstadoRecinto.HABILITADO) {
+                throw new ConflictException('El recinto del evento no está disponible.');
             }
 
             
+            const asientosDelRecinto = await manager.find(AsientoEntity, {
+                where: { idRecinto: recinto.idRecinto }
+            });
+            const requiereAsiento = asientosDelRecinto.length > 0;
+
+            if (requiereAsiento && !dto.idAsiento) {
+                throw new BadRequestException('Esta actividad requiere que selecciones un asiento.');
+            }
+
+            if (!requiereAsiento && dto.idAsiento) {
+                throw new BadRequestException('Esta actividad es de entrada general y no utiliza asientos numerados.');
+            }
+
+            if (dto.idAsiento) {
+                const asientoPerteneceAlRecinto = asientosDelRecinto.some(a => a.idAsiento === dto.idAsiento);
+                if (!asientoPerteneceAlRecinto) {
+                    throw new BadRequestException('El asiento seleccionado no pertenece al recinto asignado a este subevento.');
+                }
+            }
+
+            // Verificar Aforo y Ocupación de Butaca solo en este SubEvento
             const asistentesAct = await manager.find(AsistenteEventoEntity, { 
                 where: { idSubEvento: dto.idSubEvento } 
             });
@@ -192,22 +231,16 @@ export class ReservationsService {
                 for (const b of boletos) {
                     if (b.idEstadoBoleto === EstadoBoleto.VALIDO || b.idEstadoBoleto === EstadoBoleto.UTILIZADO) {
                         lugaresOcupados++;
+                        // Comprobación de asiento por subevento considerando VALIDO y UTILIZADO
+                        if (dto.idAsiento && b.idAsiento === dto.idAsiento) {
+                            throw new ConflictException('El asiento seleccionado ya se encuentra ocupado en esta actividad.');
+                        }
                     }
                 }
             }
 
             if (lugaresOcupados >= recinto.aforo) {
                 throw new ConflictException('El aforo para este evento se ha agotado.');
-            }
-
-            if (dto.idAsiento) {
-                const asientoOcupado = await manager.findOne(BoletoEntity, {
-                    where: { idAsiento: dto.idAsiento, idEstadoBoleto: EstadoBoleto.VALIDO }
-                });
-                
-                if (asientoOcupado) {
-                    throw new ConflictException('El asiento seleccionado ya se encuentra ocupado.');
-                }
             }
 
             //GENERACION DE QR
@@ -293,13 +326,20 @@ export class ReservationsService {
                 await this.boletoRepo.save(boleto);
             }
 
+            const evento = await this.eventoRepo.findOne({ where: { idEvento: subEvento.idEvento } });
+            const recinto = await this.recintoRepo.findOne({ where: { idRecinto: subEvento.idRecinto } });
+
             misBoletos.push({
-                idSubEvento: subEvento.idSubEvento,
                 idBoleto: boleto.idBoleto,
+                idSubEvento: subEvento.idSubEvento,
+                idEvento: subEvento.idEvento,
+                nombreEvento: evento ? evento.nombre : '',
+                nombreSubEvento: subEvento.nombre,
                 estadoBoleto: boleto.idEstadoBoleto,
                 fecha: fechaEvento.fecha,
                 horaInicio: fechaEvento.horaInicio,
                 horaFin: fechaEvento.horaFin,
+                recinto: recinto ? recinto.nombre : '',
             });
         }
 
@@ -348,14 +388,23 @@ export class ReservationsService {
             }
         }
 
+        const evento = await this.eventoRepo.findOne({ where: { idEvento: subEvento.idEvento } });
+
         return {
             idBoleto: boleto.idBoleto,
             estadoBoleto: boleto.idEstadoBoleto,
             qr: qrBase64,
             asiento: asientoDetalle,
+            evento: {
+                idEvento: subEvento.idEvento,
+                nombre: evento ? evento.nombre : '',
+            },
             subEvento: {
                 idSubEvento: subEvento.idSubEvento,
                 idEvento: subEvento.idEvento,
+                nombre: subEvento.nombre,
+                descripcion: subEvento.descripcion,
+                accesoQR: subEvento.accesoQR,
                 fecha: fechaEvento.fecha,
                 horaInicio: fechaEvento.horaInicio,
                 horaFin: fechaEvento.horaFin,

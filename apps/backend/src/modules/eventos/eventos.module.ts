@@ -8,6 +8,9 @@ import { BitacoraEventoEntity } from './entities/bitacoraEvento.entity';
 import { EventosService } from './services/eventos.service';
 import { RecintosModule } from '../recintos/recintos.module';
 import { SolicitudesController } from './controllers/solicitudes.controller';
+import { PonenteEntity } from './entities/ponente.entity';
+import { EventosController } from './controllers/eventos.controller';
+import { AsientoEntity } from '../reservas/entities/asiento.entity'; 
 
 @Module({
     imports: [
@@ -17,10 +20,12 @@ import { SolicitudesController } from './controllers/solicitudes.controller';
             SubEventoEntity,
             FechaEntity,
             BitacoraEventoEntity,
+            PonenteEntity,
+            AsientoEntity
         ]),
         RecintosModule,
     ],
-    controllers: [SolicitudesController],
+    controllers: [SolicitudesController, EventosController],
     providers: [EventosService],
     exports: [EventosService],
 })
