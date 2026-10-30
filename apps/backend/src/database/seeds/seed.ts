@@ -99,14 +99,15 @@ export async function runSeed() {
     const organizadorId = idsUsuarios['organizador@ipn.mx'];
 
     const resEvento = await client.query(
-      `INSERT INTO evento (nombre, descripcion, poster, justificacion, "idAlcance", "idEstadoEvento", "idOrganizador")
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
+      `INSERT INTO evento (nombre, descripcion, poster, justificacion, "esUrgente", "idAlcance", "idEstadoEvento", "idOrganizador")
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
        RETURNING "idEvento";`,
       [
         'Semana de la Inteligencia Artificial 2026',
         'Ciclo de conferencias y talleres sobre IA generativa, redes neuronales y robótica autónoma.',
         'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=600',
         'Acercar las últimas innovaciones tecnológicas en IA a la comunidad estudiantil de la ESCOM.',
+        false,
         AlcanceEvento.PUBLICO,
         EstadoEvento.ENPROCESO,
         organizadorId,

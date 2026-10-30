@@ -20,7 +20,6 @@ export class QrService {
         if(expTime <= 0){
             expTime = 1;
         }
-
         
         //Sign the information 
         const signedToken = await this.jwtService.signAsync(info, {expiresIn: expTime});

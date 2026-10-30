@@ -21,10 +21,17 @@ export class EventoEntity implements Evento {
   descripcion: string;
 
   @Column({ name: 'poster', type: 'text' })
-  poster?: string | null;
+  poster: string;
 
   @Column({ name: 'justificacion', type: 'text' })
   justificacion: string;
+
+  @Column({
+    name: 'esUrgente',
+    type: 'boolean',
+    default: false,
+  })
+  esUrgente: boolean;
 
   @Column({ name: 'idOrganizador', type: 'int' })
   idOrganizador: number;

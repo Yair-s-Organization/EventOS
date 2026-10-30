@@ -10,7 +10,9 @@
     "build": "bun run --filter '*' build",
     "db:migrate": "bun run --filter @eventos/backend migration:run",
     "db:revert": "bun run --filter @eventos/backend migration:revert",
+    "db:init": "bun run --filter @eventos/backend db:init",
     "db:seed": "bun run --filter @eventos/backend seed",
+    "db:reset": "bun run --filter @eventos/backend db:reset",
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",
     "docs:preview": "vitepress preview docs"

@@ -3,9 +3,10 @@ export interface Evento {
   idEvento: number;
   nombre: string;
   descripcion: string;
-  poster?: string | null;
+  poster: string;
   idAlcance?: AlcanceEvento;
   idEstadoEvento?: EstadoEvento;
+  esUrgente?: boolean;
   etiquetas?: TipoEtiqueta[];
   subEventos?: SubEvento[];
   justificacion?: string | null;
@@ -124,6 +125,7 @@ export interface Verificacion {
   idVerificacion: number;
   informacionAdicional: string;
   archivo: string;
+  fecha: string;
   idRol: number;
   idUsuario: number;
 }

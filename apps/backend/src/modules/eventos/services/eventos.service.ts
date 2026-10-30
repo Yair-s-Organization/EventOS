@@ -14,6 +14,8 @@ import { FechaEntity } from '../entities/fecha.entity';
 import { BitacoraEventoEntity } from '../entities/bitacoraEvento.entity';
 import { RecintoService } from '../../recintos/services/recinto.service';
 import { StorageService } from '../../../common/storage/storage.service';
+import { PonenteEntity } from '../entities/ponente.entity'; 
+import { AsientoEntity } from '../../reservas/entities/asiento.entity';
 import {
   EstadoEvento,
   EstadoSubEvento,
@@ -29,6 +31,8 @@ export class EventosService {
   usuarioRepository: Repository<UsuarioEntity>;
   subEventoRepository: Repository<SubEventoEntity>;
   bitacoraEventoRepository: Repository<BitacoraEventoEntity>;
+  ponenteRepository: Repository<PonenteEntity>;
+  asientoRepository: Repository<AsientoEntity>;
   recintoService: RecintoService;
   storageService: StorageService;
   private readonly dataSource: DataSource;
@@ -38,6 +42,8 @@ export class EventosService {
     @InjectRepository(UsuarioEntity) repoUsuario: Repository<UsuarioEntity>,
     @InjectRepository(SubEventoEntity) repoSubEvento: Repository<SubEventoEntity>,
     @InjectRepository(BitacoraEventoEntity) repoBitacora: Repository<BitacoraEventoEntity>,
+    @InjectRepository(PonenteEntity) private repoPonente: Repository<PonenteEntity>,
+    @InjectRepository(AsientoEntity) private repoAsiento: Repository<AsientoEntity>,
     recintoService: RecintoService,
     storageService: StorageService,
     dataSource: DataSource,
@@ -46,6 +52,8 @@ export class EventosService {
     this.usuarioRepository = repoUsuario;
     this.subEventoRepository = repoSubEvento;
     this.bitacoraEventoRepository = repoBitacora;
+    this.ponenteRepository = repoPonente;
+    this.asientoRepository = repoAsiento;
     this.recintoService = recintoService;
     this.storageService = storageService;
     this.dataSource = dataSource;
@@ -60,24 +68,75 @@ export class EventosService {
     return true;
   }
 
-  // Valida coherencia de horario y traslapes internos entre subeventos
+  private obtenerAhoraCDMX(): { fechaHoy: string; horaActual: string } {
+    const ahora = new Date();
+    const fechaHoy = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'America/Mexico_City',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).format(ahora);
+    const horaActual = new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'America/Mexico_City',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+    }).format(ahora);
+    return { fechaHoy, horaActual };
+  }
+
+  private calcularDiasDiferencia(fechaObjetivo: string, fechaBase: string): number {
+    const [yBase, mBase, dBase] = fechaBase.split('-').map(Number);
+    const [yObj, mObj, dObj] = fechaObjetivo.split('-').map(Number);
+    const utcBase = Date.UTC(yBase, mBase - 1, dBase);
+    const utcObj = Date.UTC(yObj, mObj - 1, dObj);
+    return Math.round((utcObj - utcBase) / (1000 * 60 * 60 * 24));
+  }
+
+  private normalizarHora(hora?: string): string {
+    if (!hora) return '';
+    return hora.length === 5 ? `${hora}:00` : hora;
+  }
+
+  // Determina si la solicitud es urgente (algún subevento ocurre dentro de los próximos 7 días naturales)
+  calcularEsUrgente(subeventos: SubeventoPayload[]): boolean {
+    const { fechaHoy } = this.obtenerAhoraCDMX();
+    return subeventos.some((sub) => {
+      const dias = this.calcularDiasDiferencia(sub.fecha, fechaHoy);
+      return dias >= 0 && dias <= 7;
+    });
+  }
+
+  // Valida coherencia de fecha/horario y traslapes internos entre subeventos
   validarTraslapeInterno(subeventos: SubeventoPayload[]) {
+    const { fechaHoy, horaActual } = this.obtenerAhoraCDMX();
+
     for (let i = 0; i < subeventos.length; i++) {
       const a = subeventos[i];
+      const horaInicioA = this.normalizarHora(a.horaInicio);
+      const horaFinA = this.normalizarHora(a.horaFin);
+      const diasDiferencia = this.calcularDiasDiferencia(a.fecha, fechaHoy);
 
-      // La hora de inicio debe ser anterior a la hora de fin
-      if (a.horaInicio >= a.horaFin) {
+      // Fecha pasada o la hora de inicio no es anterior a la hora de fin (MSG-E-36)
+      if (
+        diasDiferencia < 0 ||
+        (diasDiferencia === 0 && horaInicioA <= horaActual) ||
+        horaInicioA >= horaFinA
+      ) {
         throw new BadRequestException(
-          'La hora de inicio debe ser anterior a la hora de fin.',
+          'La fecha u horario del evento no es válido. Verifique que la fecha sea futura y que la hora de finalización sea posterior a la hora de inicio.',
         );
       }
 
       for (let j = i + 1; j < subeventos.length; j++) {
         const b = subeventos[j];
+        const horaInicioB = this.normalizarHora(b.horaInicio);
+        const horaFinB = this.normalizarHora(b.horaFin);
 
         // Si coinciden en mismo recinto y misma fecha, verificar traslape
         if (a.idRecinto === b.idRecinto && a.fecha === b.fecha) {
-          if (a.horaInicio < b.horaFin && b.horaInicio < a.horaFin) {
+          if (horaInicioA < horaFinB && horaInicioB < horaFinA) {
             throw new ConflictException(
               'El espacio ya se encuentra solicitado en ese horario dentro de la misma solicitud.',
             );
@@ -149,6 +208,9 @@ export class EventosService {
     // Validación de reglas de recinto para cada subevento
     if (subeventos.length > 0) {
       await this.validarSubeventos(subeventos);
+      evento.esUrgente = this.calcularEsUrgente(subeventos);
+    } else {
+      evento.esUrgente = false;
     }
 
     // Transacción atómica: guarda el evento, sus fechas y sus subeventos como un todo
@@ -158,6 +220,11 @@ export class EventosService {
 
       // Guardar cada subevento con su bloque de fecha
       const subeventosGuardados: SubEventoEntity[] = [];
+
+      const estadoSubEventoInicial =
+        eventoGuardado.idEstadoEvento === EstadoEvento.ACEPTADO
+          ? EstadoSubEvento.ACEPTADO
+          : EstadoSubEvento.EN_PROCESO;
 
       for (const sub of subeventos) {
         // Guarda en la tabla 'fechas'
@@ -175,7 +242,7 @@ export class EventosService {
           idRecinto: sub.idRecinto,
           idFecha: fechaGuardada.idFecha,
           accesoQR: sub.accesoQR ?? false,
-          estado: EstadoSubEvento.ACEPTADO,
+          estado: estadoSubEventoInicial,
         });
 
         subeventosGuardados.push(nuevoSubEvento);
@@ -219,7 +286,7 @@ export class EventosService {
           recinto: true,
         },
       },
-      order: { idEvento: 'DESC' },
+      order: { esUrgente: 'DESC', idEvento: 'DESC' },
     });
 
     return eventos.map((evento) => ({
@@ -278,6 +345,7 @@ export class EventosService {
       justificacion: evento.justificacion,
       idAlcance: evento.idAlcance,
       idEstadoEvento: evento.idEstadoEvento,
+      esUrgente: evento.esUrgente,
       poster: evento.poster,
       poster_url: posterUrl,
       posterUrl: posterUrl,
@@ -339,6 +407,10 @@ export class EventosService {
     await this.eventoRepository.update(idEvento, {
       idEstadoEvento: EstadoEvento.ACEPTADO,
     });
+    await this.subEventoRepository.update(
+      { idEvento },
+      { estado: EstadoSubEvento.ACEPTADO },
+    );
 
     return {
       mensaje: 'Solicitud aprobada con éxito.',
@@ -427,12 +499,17 @@ export class EventosService {
     dto: CrearSolicitudDto,
     posterKey?: string,
   ) {
+    const rutaPoster = posterKey ?? dto.poster;
+    if (!rutaPoster) {
+      throw new BadRequestException('El póster del evento es obligatorio.');
+    }
+
     const nuevoEvento = this.eventoRepository.create({
       nombre: dto.nombre,
       descripcion: dto.descripcion,
       justificacion: dto.justificacion,
       idAlcance: dto.idAlcance,
-      poster: posterKey ?? dto.poster ?? null,
+      poster: rutaPoster,
       idOrganizador,
     });
 
@@ -440,8 +517,91 @@ export class EventosService {
     const solicitante = await this.usuarioRepository.findOneBy({ idUsuario: idOrganizador });
     if (solicitante?.tipoCuenta === TipoCuentaUsuario.SUBDIRECCION || solicitante?.esJefeAcademia) {
       nuevoEvento.idEstadoEvento = EstadoEvento.ACEPTADO;
+    } else {
+      nuevoEvento.idEstadoEvento = EstadoEvento.ENPROCESO;
     }
 
     return await this.crearEvento(nuevoEvento, dto.subeventos);
   }
+
+  // Listar cartelera (Solo eventos con idEstadoEvento = 2 'Aceptado')
+async obtenerEventosPublicos() {
+    const eventos = await this.eventoRepository.find({
+      where: { idEstadoEvento: 2 }, // 2 = Aceptado según tu DDL
+    });
+
+    return eventos.map(e => ({
+      idEvento: e.idEvento,
+      nombre: e.nombre,
+      descripcion: e.descripcion,
+      poster: e.poster,
+      idAlcance: e.idAlcance,
+    }));
+  }
+
+  // Detalle completo 
+  async obtenerDetalleEventoPublico(idEvento: number) {
+    const evento = await this.eventoRepository.findOne({
+      where: { idEvento, idEstadoEvento: 2 }, 
+    });
+
+    if (!evento) {
+      throw new NotFoundException('El evento no existe o no se encuentra disponible.');
+    }
+
+    const subEventos = await this.subEventoRepository.find({
+      where: { idEvento: evento.idEvento },
+    });
+
+    const subEventosDetallados = [];
+
+    const fechaRepository = this.dataSource.getRepository(FechaEntity);
+    const recintoRepository = this.dataSource.getRepository('recinto'); 
+
+    for (const sub of subEventos) {
+      const [fecha, recinto, ponentes, totalAsientosRecinto] = await Promise.all([
+        fechaRepository.findOne({ where: { idFecha: sub.idFecha } }),
+        recintoRepository.findOne({ where: { idRecinto: sub.idRecinto } }),
+        this.ponenteRepository.find({ where: { idSubEvento: sub.idSubEvento } }),
+        this.asientoRepository.count({ where: { idRecinto: sub.idRecinto } }),
+      ]);
+
+      subEventosDetallados.push({
+        idSubEvento: sub.idSubEvento,
+        nombre: sub.nombre,
+        descripcion: sub.descripcion,
+        estado: sub.estado,
+        accesoQR: sub.accesoQR,
+        requiereSeleccionAsiento: totalAsientosRecinto > 0,
+        fecha: fecha ? {
+          idFecha: fecha.idFecha,
+          fecha: fecha.fecha,
+          horaInicio: fecha.horaInicio,
+          horaFin: fecha.horaFin,
+        } : null,
+        recinto: recinto ? {
+          idRecinto: recinto.idRecinto, 
+          nombre: recinto['nombre'],    
+          aforo: recinto['aforo'],
+        } : null,
+        ponentes: ponentes.map(p => ({
+          idPonente: p.idPonente,
+          nombre: p.nombre,
+          apellidoPa: p.apellidoPa,
+          apellidoMa: p.apellidoMa,
+        })),
+      });
+    }
+
+    return {
+      idEvento: evento.idEvento,
+      nombre: evento.nombre,
+      descripcion: evento.descripcion,
+      poster: evento.poster,
+      idAlcance: evento.idAlcance,
+      subEventos: subEventosDetallados,
+    };
+  }
+
+
 }
