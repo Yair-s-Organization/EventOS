@@ -39,7 +39,7 @@ export class SolicitudesController {
 
   // Lista solicitudes filtradas por estado (ej. ?estado=Pendiente o ?estado=Aprobado). Solo Subdirección.
   @ApiOperation({
-    summary: '[Subdirección] Listar solicitudes de eventos filtradas por estado',
+    summary: 'Listar solicitudes de eventos filtradas por estado',
   })
   @Get()
   @UseGuards(RolesGuard)
@@ -50,7 +50,7 @@ export class SolicitudesController {
 
   // Detalle de solicitud para evaluación (CU03 / UI12). Protegido para Subdirección.
   @ApiOperation({
-    summary: '[Subdirección] Obtener detalle de una solicitud para evaluación',
+    summary: 'Obtener detalle de una solicitud para evaluación',
   })
   @Get(':id')
   @UseGuards(RolesGuard)
@@ -61,7 +61,7 @@ export class SolicitudesController {
 
   // Aprueba una solicitud Pendiente. Solo Subdirección.
   @ApiOperation({
-    summary: '[Subdirección] Aprobar una solicitud pendiente',
+    summary: 'Aprobar solicitud de evento pendiente',
   })
   @Patch(':id/aprobar')
   @UseGuards(RolesGuard)
@@ -72,7 +72,7 @@ export class SolicitudesController {
 
   // Rechaza una solicitud Pendiente y libera horarios/recintos de sus subeventos. Solo Subdirección.
   @ApiOperation({
-    summary: '[Subdirección] Rechazar una solicitud pendiente y liberar espacios',
+    summary: 'Rechazar solicitud de evento pendiente y liberar espacios',
   })
   @Patch(':id/rechazar')
   @UseGuards(RolesGuard)
@@ -83,7 +83,7 @@ export class SolicitudesController {
 
   // Cancela un evento Aprobado exigiendo motivo (RN-25), liberando subeventos (RN-22) y registrando en bitácora (RNF-26). Solo Subdirección.
   @ApiOperation({
-    summary: '[Subdirección] Cancelar un evento aprobado con motivo obligatorio',
+    summary: 'Cancelar evento aprobado con motivo obligatorio',
   })
   @Patch(':id/cancelar')
   @UseGuards(RolesGuard)
@@ -102,7 +102,7 @@ export class SolicitudesController {
   }
 
   @ApiOperation({
-    summary: '[Asistente / Subdirección] Registrar solicitud de evento',
+    summary: 'Crear nueva solicitud de evento',
   })
   @Post()
   @HttpCode(HttpStatus.CREATED)

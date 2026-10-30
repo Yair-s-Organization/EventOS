@@ -9,7 +9,7 @@ export class EventosController {
 
   // Cartelera: Obtener eventos aprobados
   @ApiOperation({
-    summary: '[Público / Asistente] Consultar cartelera de eventos aprobados',
+    summary: 'Consultar cartelera de eventos aprobados',
   })
   @Get()
   async obtenerEventosPublicos() {
@@ -18,7 +18,7 @@ export class EventosController {
 
   // Obtener detalle de un evento con subeventos, fechas, recintos y ponentes
   @ApiOperation({
-    summary: '[Público / Asistente] Consultar detalle de un evento aprobado',
+    summary: 'Consultar detalle de un evento aprobado',
   })
   @Get(':idEvento')
   async obtenerDetalleEventoPublico(

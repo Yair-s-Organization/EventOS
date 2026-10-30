@@ -2,7 +2,7 @@ import { Controller, Post, Body, Get, Param, ParseIntPipe, Patch, UseGuards, Req
 import { ReservationsService } from '../services/reservations.service';
 import { CreateReservationDto } from '../dto/createReservation.dto';
 import { UnauthorizedException, ForbiddenException } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { RolesGuard } from '../../auth/roles.guard';
 
 @ApiTags('Reservations')
@@ -20,6 +20,7 @@ export class ReservationsController {
   }
 
   // Lista de eventos del usuario
+  @ApiOperation({ summary: 'Consultar mis boletos y reservas activas' })
   @ApiBearerAuth()
   @UseGuards(RolesGuard)
   @Get('mis-boletos')
@@ -29,6 +30,7 @@ export class ReservationsController {
   }
 
   // Detalle de un boleto específico con QR al vuelo
+  @ApiOperation({ summary: 'Obtener detalle de un boleto con código QR' })
   @ApiBearerAuth()
   @UseGuards(RolesGuard)
   @Get('mis-boletos/:idBoleto')
@@ -41,6 +43,7 @@ export class ReservationsController {
   }
 
   // Consultar lugares y asientos libres (Público para UI05 / UI05.1)
+  @ApiOperation({ summary: 'Consultar disponibilidad de lugares y asientos de un subevento' })
   @Get('disponibilidad/:idSubEvento')
   async consultarDisponibilidad(
     @Param('idSubEvento', ParseIntPipe) idSubEvento: number,
@@ -49,6 +52,7 @@ export class ReservationsController {
   }
 
   // Crear una reserva con transacción atómica y QR
+  @ApiOperation({ summary: 'Crear reserva de lugar y generar boleto QR' })
   @ApiBearerAuth()
   @UseGuards(RolesGuard)
   @Post()
@@ -58,6 +62,7 @@ export class ReservationsController {
   }
 
   // Cancelación lógica y liberación de lugar
+  @ApiOperation({ summary: 'Cancelar reserva y liberar lugar' })
   @ApiBearerAuth()
   @UseGuards(RolesGuard)
   @Patch(':idBoleto/cancelar')
