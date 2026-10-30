@@ -1,6 +1,14 @@
-import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  CanActivate,
+  ExecutionContext,
+  ForbiddenException,
+} from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
+
+// Lista negra en memoria para invalidar tokens al cerrar sesión
+export const TOKEN_BLACKLIST = new Set<string>();
 
 @Injectable()
 export class RolesGuard implements CanActivate {
@@ -14,12 +22,21 @@ export class RolesGuard implements CanActivate {
     const authHeader = request.headers.authorization;
 
     if (!authHeader) {
-      throw new ForbiddenException('Acceso denegado. No se proporcionó token de autenticación (HTTP 403).');
+      throw new ForbiddenException(
+        'Acceso denegado. No se proporcionó token de autenticación (HTTP 403).',
+      );
     }
 
     const [bearer, token] = authHeader.split(' ');
     if (bearer !== 'Bearer' || !token) {
       throw new ForbiddenException('Formato de token inválido (HTTP 403).');
+    }
+
+    // Verificar si el token fue invalidado mediante logout
+    if (TOKEN_BLACKLIST.has(token)) {
+      throw new ForbiddenException(
+        'La sesión ya fue finalizada. Token invalidado en lista negra (HTTP 403).',
+      );
     }
 
     try {
@@ -29,17 +46,27 @@ export class RolesGuard implements CanActivate {
 
       request.user = payload;
 
-      const rolesRequeridos = this.reflector.get<string[]>('roles', context.getHandler());
+      const rolesRequeridos = this.reflector.get<string[]>(
+        'roles',
+        context.getHandler(),
+      );
       if (rolesRequeridos && rolesRequeridos.length > 0) {
         const tieneRol = rolesRequeridos.includes(payload.tipoCuenta);
         if (!tieneRol) {
-          throw new ForbiddenException('No cuentas con los permisos suficientes para acceder a este recurso (HTTP 403).');
+          throw new ForbiddenException(
+            'No cuentas con los permisos suficientes para acceder a este recurso (HTTP 403).',
+          );
         }
       }
 
       return true;
     } catch (error) {
-      throw new ForbiddenException('Token inválido, expirado o acceso no autorizado (HTTP 403).');
+      if (error instanceof ForbiddenException) {
+        throw error;
+      }
+      throw new ForbiddenException(
+        'Token inválido, expirado o acceso no autorizado (HTTP 403).',
+      );
     }
   }
 }
