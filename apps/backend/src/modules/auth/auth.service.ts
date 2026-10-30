@@ -1,18 +1,26 @@
-import { Injectable, ConflictException, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  ConflictException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { UsuarioEntity } from './entities/usuario.entity';
 import { TipoCuentaUsuario, EstadoVerificacion } from '@eventos/shared';
 import { JwtService } from '@nestjs/jwt';
+import { TOKEN_BLACKLIST } from './roles.guard';
 
 @Injectable()
 export class AuthService {
+  private readonly SOLO_LETRAS_REGEX = /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/;
+
   constructor(
-  @InjectRepository(UsuarioEntity)
-  private readonly usuarioRepository: Repository<UsuarioEntity>,
-  private readonly jwtService: JwtService,
-) {}
+    @InjectRepository(UsuarioEntity)
+    private readonly usuarioRepository: Repository<UsuarioEntity>,
+    private readonly jwtService: JwtService,
+  ) {}
 
   async registrar(dto: {
     nombre: string;
@@ -21,17 +29,40 @@ export class AuthService {
     correo: string;
     contrasena: string;
   }) {
-    
-    const existe = await this.usuarioRepository.findOne({ where: { correo: dto.correo } });
-    if (existe) {
-      throw new ConflictException('El correo electrónico ya se encuentra registrado.');
+    if (!dto.nombre || !this.SOLO_LETRAS_REGEX.test(dto.nombre.trim())) {
+      throw new BadRequestException(
+        'El nombre solo puede contener letras y espacios, no se permiten números.',
+      );
     }
 
-    
+    if (!dto.apellidoPa || !this.SOLO_LETRAS_REGEX.test(dto.apellidoPa.trim())) {
+      throw new BadRequestException(
+        'El apellido paterno solo puede contener letras y espacios, no se permiten números.',
+      );
+    }
+
+    if (
+      dto.apellidoMa &&
+      dto.apellidoMa.trim() !== '' &&
+      !this.SOLO_LETRAS_REGEX.test(dto.apellidoMa.trim())
+    ) {
+      throw new BadRequestException(
+        'El apellido materno solo puede contener letras y espacios, no se permiten números.',
+      );
+    }
+
+    const existe = await this.usuarioRepository.findOne({
+      where: { correo: dto.correo },
+    });
+    if (existe) {
+      throw new ConflictException(
+        'El correo electrónico ya se encuentra registrado.',
+      );
+    }
+
     const saltRounds = 10;
     const hashedPassword = await bcrypt.hash(dto.contrasena, saltRounds);
 
-    
     const correoMin = dto.correo.toLowerCase();
     let tipoAsignado = TipoCuentaUsuario.EXTERNO;
     if (correoMin.endsWith('@alumno.ipn.mx') || correoMin.endsWith('@ipn.mx')) {
@@ -40,7 +71,6 @@ export class AuthService {
       tipoAsignado = TipoCuentaUsuario.EXTERNO;
     }
 
-    
     const nuevoUsuario = this.usuarioRepository.create({
       nombre: dto.nombre,
       apellidoPa: dto.apellidoPa,
@@ -62,24 +92,34 @@ export class AuthService {
     };
   }
 
-  async login(dto: { correo: string; contrasena: string; captchaToken?: string }) {
+  async login(dto: {
+    correo: string;
+    contrasena: string;
+    captchaToken?: string;
+  }) {
     if (process.env.RECAPTCHA_SECRET_KEY) {
       if (!dto.captchaToken) {
-        throw new UnauthorizedException('Por favor, completa la verificación del CAPTCHA.');
+        throw new UnauthorizedException(
+          'Por favor, completa la verificación del CAPTCHA.',
+        );
       }
 
       const secretKey = process.env.RECAPTCHA_SECRET_KEY;
       const verifyUrl = `https://www.google.com/recaptcha/api/siteverify?secret=${secretKey}&response=${dto.captchaToken}`;
-      
+
       try {
         const response = await fetch(verifyUrl, { method: 'POST' });
         const captchaResult = await response.json();
 
         if (!captchaResult.success) {
-          throw new UnauthorizedException('Validación de CAPTCHA fallida o inválida.');
+          throw new UnauthorizedException(
+            'Validación de CAPTCHA fallida o inválida.',
+          );
         }
       } catch (error) {
-        throw new UnauthorizedException('No se pudo verificar el CAPTCHA con los servidores externos.');
+        throw new UnauthorizedException(
+          'No se pudo verificar el CAPTCHA con los servidores externos.',
+        );
       }
     }
 
@@ -95,7 +135,10 @@ export class AuthService {
       throw new UnauthorizedException('La cuenta se encuentra inactiva.');
     }
 
-    if (usuario.tipoCuenta === TipoCuentaUsuario.ADMINISTRADOR && usuario.bloqueadoHasta) {
+    if (
+      usuario.tipoCuenta === TipoCuentaUsuario.ADMINISTRADOR &&
+      usuario.bloqueadoHasta
+    ) {
       const ahora = new Date();
       if (ahora < new Date(usuario.bloqueadoHasta)) {
         throw new UnauthorizedException(
@@ -108,19 +151,19 @@ export class AuthService {
       }
     }
 
-    
-    const esPasswordValido = await bcrypt.compare(dto.contrasena, usuario.contrasena);
-    
+    const esPasswordValido = await bcrypt.compare(
+      dto.contrasena,
+      usuario.contrasena,
+    );
+
     if (!esPasswordValido) {
-      
       if (usuario.tipoCuenta === TipoCuentaUsuario.ADMINISTRADOR) {
         usuario.intentosFallidos = (usuario.intentosFallidos || 0) + 1;
 
-        
         if (usuario.intentosFallidos >= 5) {
           const bloqueoTime = new Date();
           bloqueoTime.setMinutes(bloqueoTime.getMinutes() + 30);
-          
+
           usuario.bloqueadoHasta = bloqueoTime;
           await this.usuarioRepository.save(usuario);
 
@@ -134,7 +177,7 @@ export class AuthService {
 
       throw new UnauthorizedException('Credenciales incorrectas o inexistentes.');
     }
-    
+
     if (usuario.tipoCuenta === TipoCuentaUsuario.ADMINISTRADOR) {
       usuario.intentosFallidos = 0;
       usuario.bloqueadoHasta = null;
@@ -158,10 +201,12 @@ export class AuthService {
     };
   }
 
-  async logout() {
+  async logout(token?: string) {
+    if (token) {
+      TOKEN_BLACKLIST.add(token);
+    }
     return {
-      mensaje: 'Sesión finalizada con éxito',
+      mensaje: 'Sesión finalizada con éxito.',
     };
   }
 }
-

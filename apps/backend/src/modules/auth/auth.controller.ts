@@ -1,7 +1,16 @@
-import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  Controller,
+  Post,
+  Body,
+  HttpCode,
+  HttpStatus,
+  UseGuards,
+  Req,
+} from '@nestjs/common';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
+import { RolesGuard } from './roles.guard';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -31,11 +40,14 @@ export class AuthController {
     return await this.authService.login(body);
   }
 
-
-  @ApiOperation({ summary: 'Cerrar sesión activa' })
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Cerrar sesión activa e invalidar token JWT' })
   @Post('logout')
+  @UseGuards(RolesGuard)
   @HttpCode(HttpStatus.OK)
-  async cerrarSesion() {
-    return await this.authService.logout();
+  async cerrarSesion(@Req() req: any) {
+    const authHeader: string = req.headers?.authorization || '';
+    const token = authHeader.split(' ')[1] || '';
+    return await this.authService.logout(token);
   }
 }
