@@ -68,24 +68,75 @@ export class EventosService {
     return true;
   }
 
-  // Valida coherencia de horario y traslapes internos entre subeventos
+  private obtenerAhoraCDMX(): { fechaHoy: string; horaActual: string } {
+    const ahora = new Date();
+    const fechaHoy = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'America/Mexico_City',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).format(ahora);
+    const horaActual = new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'America/Mexico_City',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+    }).format(ahora);
+    return { fechaHoy, horaActual };
+  }
+
+  private calcularDiasDiferencia(fechaObjetivo: string, fechaBase: string): number {
+    const [yBase, mBase, dBase] = fechaBase.split('-').map(Number);
+    const [yObj, mObj, dObj] = fechaObjetivo.split('-').map(Number);
+    const utcBase = Date.UTC(yBase, mBase - 1, dBase);
+    const utcObj = Date.UTC(yObj, mObj - 1, dObj);
+    return Math.round((utcObj - utcBase) / (1000 * 60 * 60 * 24));
+  }
+
+  private normalizarHora(hora?: string): string {
+    if (!hora) return '';
+    return hora.length === 5 ? `${hora}:00` : hora;
+  }
+
+  // Determina si la solicitud es urgente (algún subevento ocurre dentro de los próximos 7 días naturales)
+  calcularEsUrgente(subeventos: SubeventoPayload[]): boolean {
+    const { fechaHoy } = this.obtenerAhoraCDMX();
+    return subeventos.some((sub) => {
+      const dias = this.calcularDiasDiferencia(sub.fecha, fechaHoy);
+      return dias >= 0 && dias <= 7;
+    });
+  }
+
+  // Valida coherencia de fecha/horario y traslapes internos entre subeventos
   validarTraslapeInterno(subeventos: SubeventoPayload[]) {
+    const { fechaHoy, horaActual } = this.obtenerAhoraCDMX();
+
     for (let i = 0; i < subeventos.length; i++) {
       const a = subeventos[i];
+      const horaInicioA = this.normalizarHora(a.horaInicio);
+      const horaFinA = this.normalizarHora(a.horaFin);
+      const diasDiferencia = this.calcularDiasDiferencia(a.fecha, fechaHoy);
 
-      // La hora de inicio debe ser anterior a la hora de fin
-      if (a.horaInicio >= a.horaFin) {
+      // Fecha pasada o la hora de inicio no es anterior a la hora de fin (MSG-E-36)
+      if (
+        diasDiferencia < 0 ||
+        (diasDiferencia === 0 && horaInicioA <= horaActual) ||
+        horaInicioA >= horaFinA
+      ) {
         throw new BadRequestException(
-          'La hora de inicio debe ser anterior a la hora de fin.',
+          'La fecha u horario del evento no es válido. Verifique que la fecha sea futura y que la hora de finalización sea posterior a la hora de inicio.',
         );
       }
 
       for (let j = i + 1; j < subeventos.length; j++) {
         const b = subeventos[j];
+        const horaInicioB = this.normalizarHora(b.horaInicio);
+        const horaFinB = this.normalizarHora(b.horaFin);
 
         // Si coinciden en mismo recinto y misma fecha, verificar traslape
         if (a.idRecinto === b.idRecinto && a.fecha === b.fecha) {
-          if (a.horaInicio < b.horaFin && b.horaInicio < a.horaFin) {
+          if (horaInicioA < horaFinB && horaInicioB < horaFinA) {
             throw new ConflictException(
               'El espacio ya se encuentra solicitado en ese horario dentro de la misma solicitud.',
             );
@@ -157,6 +208,9 @@ export class EventosService {
     // Validación de reglas de recinto para cada subevento
     if (subeventos.length > 0) {
       await this.validarSubeventos(subeventos);
+      evento.esUrgente = this.calcularEsUrgente(subeventos);
+    } else {
+      evento.esUrgente = false;
     }
 
     // Transacción atómica: guarda el evento, sus fechas y sus subeventos como un todo
@@ -232,7 +286,7 @@ export class EventosService {
           recinto: true,
         },
       },
-      order: { idEvento: 'DESC' },
+      order: { esUrgente: 'DESC', idEvento: 'DESC' },
     });
 
     return eventos.map((evento) => ({
@@ -291,6 +345,7 @@ export class EventosService {
       justificacion: evento.justificacion,
       idAlcance: evento.idAlcance,
       idEstadoEvento: evento.idEstadoEvento,
+      esUrgente: evento.esUrgente,
       poster: evento.poster,
       poster_url: posterUrl,
       posterUrl: posterUrl,
@@ -444,12 +499,17 @@ export class EventosService {
     dto: CrearSolicitudDto,
     posterKey?: string,
   ) {
+    const rutaPoster = posterKey ?? dto.poster;
+    if (!rutaPoster) {
+      throw new BadRequestException('El póster del evento es obligatorio.');
+    }
+
     const nuevoEvento = this.eventoRepository.create({
       nombre: dto.nombre,
       descripcion: dto.descripcion,
       justificacion: dto.justificacion,
       idAlcance: dto.idAlcance,
-      poster: posterKey ?? dto.poster ?? null,
+      poster: rutaPoster,
       idOrganizador,
     });
 

@@ -8,7 +8,7 @@ import {
   MaxLength,
   ValidateNested,
 } from 'class-validator';
-import { Transform, Type } from 'class-transformer';
+import { plainToInstance, Transform, Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { AlcanceEvento } from '@eventos/shared';
 import { CrearSubEventoDto } from './crearSubEvento.dto';
@@ -46,14 +46,20 @@ export class CrearSolicitudDto {
   @IsNotEmpty({ message: 'La solicitud debe contener al menos un subevento.' })
   @Transform(({ value }: { value: unknown }) => {
     // Si la petición viene por FormData (multipart/form-data), el campo llega serializado en texto
+    let parsed = value;
     if (typeof value === 'string') {
       try {
-        return JSON.parse(value);
+        parsed = JSON.parse(value);
       } catch {
-        return value;
+        parsed = value;
       }
     }
-    return value;
+    if (Array.isArray(parsed)) {
+      return parsed.map((item) =>
+        item instanceof CrearSubEventoDto ? item : plainToInstance(CrearSubEventoDto, item),
+      );
+    }
+    return parsed;
   })
   @IsArray({ message: 'Los subeventos deben enviarse en formato de lista/arreglo.' })
   @ArrayMinSize(1, { message: 'La solicitud debe contener al menos un subevento.' })
