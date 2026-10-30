@@ -18,7 +18,7 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { TipoCuentaUsuario } from '@eventos/shared';
-import { ApiBearerAuth } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { EventosService } from '../services/eventos.service';
 import { CrearSolicitudDto } from '../dto/crearSolicitud.dto';
 import { CancelarSolicitudDto } from '../dto/cancelarSolicitud.dto';
@@ -27,6 +27,7 @@ import { posterOptions } from '../../../common/upload/upload.options';
 import { RolesGuard } from '../../auth/roles.guard';
 import { Roles } from '../../../common/decorators/roles.decorator';
 
+@ApiTags('Solicitudes')
 @ApiBearerAuth()
 @Controller('solicitudes')
 @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
@@ -37,6 +38,9 @@ export class SolicitudesController {
   ) {}
 
   // Lista solicitudes filtradas por estado (ej. ?estado=Pendiente o ?estado=Aprobado). Solo Subdirección.
+  @ApiOperation({
+    summary: 'Listar solicitudes de eventos filtradas por estado',
+  })
   @Get()
   @UseGuards(RolesGuard)
   @Roles(TipoCuentaUsuario.SUBDIRECCION)
@@ -45,6 +49,9 @@ export class SolicitudesController {
   }
 
   // Detalle de solicitud para evaluación (CU03 / UI12). Protegido para Subdirección.
+  @ApiOperation({
+    summary: 'Obtener detalle de una solicitud para evaluación',
+  })
   @Get(':id')
   @UseGuards(RolesGuard)
   @Roles(TipoCuentaUsuario.SUBDIRECCION)
@@ -53,6 +60,9 @@ export class SolicitudesController {
   }
 
   // Aprueba una solicitud Pendiente. Solo Subdirección.
+  @ApiOperation({
+    summary: 'Aprobar solicitud de evento pendiente',
+  })
   @Patch(':id/aprobar')
   @UseGuards(RolesGuard)
   @Roles(TipoCuentaUsuario.SUBDIRECCION)
@@ -61,6 +71,9 @@ export class SolicitudesController {
   }
 
   // Rechaza una solicitud Pendiente y libera horarios/recintos de sus subeventos. Solo Subdirección.
+  @ApiOperation({
+    summary: 'Rechazar solicitud de evento pendiente y liberar espacios',
+  })
   @Patch(':id/rechazar')
   @UseGuards(RolesGuard)
   @Roles(TipoCuentaUsuario.SUBDIRECCION)
@@ -69,6 +82,9 @@ export class SolicitudesController {
   }
 
   // Cancela un evento Aprobado exigiendo motivo (RN-25), liberando subeventos (RN-22) y registrando en bitácora (RNF-26). Solo Subdirección.
+  @ApiOperation({
+    summary: 'Cancelar evento aprobado con motivo obligatorio',
+  })
   @Patch(':id/cancelar')
   @UseGuards(RolesGuard)
   @Roles(TipoCuentaUsuario.SUBDIRECCION)
@@ -85,8 +101,17 @@ export class SolicitudesController {
     );
   }
 
+  @ApiOperation({
+    summary: 'Crear nueva solicitud de evento',
+  })
   @Post()
   @HttpCode(HttpStatus.CREATED)
+  @UseGuards(RolesGuard)
+  @Roles(
+    TipoCuentaUsuario.INTERNO,
+    TipoCuentaUsuario.EXTERNO,
+    TipoCuentaUsuario.SUBDIRECCION,
+  )
   @UseInterceptors(FileInterceptor('poster', posterOptions))
   async crearSolicitud(
     @Body() dto: CrearSolicitudDto,
@@ -98,8 +123,7 @@ export class SolicitudesController {
       ? await this.storageService.upload(posterFile, 'posters', 'public')
       : undefined;
 
-    // ID del usuario autenticado vía JWT, o fallback al ID 1 en desarrollo
-    const idOrganizador = req.user?.sub ?? 1;
+    const idOrganizador = req.user?.sub;
 
     return await this.eventosService.registrarSolicitud(
       idOrganizador,

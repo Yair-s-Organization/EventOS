@@ -290,8 +290,11 @@ export function SolicitudEvento() {
       datos.append("poster", form.rutaPoster);
     }
 
+    const token = localStorage.getItem("token");
+
     const response = await fetch("http://localhost:3000/api/solicitudes", {
       method: "POST",
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
       body: datos,
     });
   };
