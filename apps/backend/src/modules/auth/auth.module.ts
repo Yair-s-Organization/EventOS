@@ -4,10 +4,11 @@ import { JwtModule } from '@nestjs/jwt';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { UsuarioEntity } from './entities/usuario.entity';
+import { VerificacionEntity } from './entities/verificacion.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([UsuarioEntity]),
+    TypeOrmModule.forFeature([UsuarioEntity, VerificacionEntity]),
     JwtModule.register({
       global: true,
       secret: process.env.JWT_PASS || 'clave_secreta', 

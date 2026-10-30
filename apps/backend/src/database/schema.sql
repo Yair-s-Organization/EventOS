@@ -87,6 +87,7 @@ CREATE TABLE verificacion (
   "idVerificacion" integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   "informacionAdicional" varchar(500) NOT NULL,
   archivo text NOT NULL,
+  fecha timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   "idRol" integer NOT NULL REFERENCES rol("idRol"),
   "idUsuario" integer NOT NULL REFERENCES usuario("idUsuario")
 );

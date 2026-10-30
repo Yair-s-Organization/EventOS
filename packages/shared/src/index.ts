@@ -124,6 +124,7 @@ export interface Verificacion {
   idVerificacion: number;
   informacionAdicional: string;
   archivo: string;
+  fecha: string;
   idRol: number;
   idUsuario: number;
 }
