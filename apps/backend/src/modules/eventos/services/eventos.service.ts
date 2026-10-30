@@ -167,6 +167,11 @@ export class EventosService {
       // Guardar cada subevento con su bloque de fecha
       const subeventosGuardados: SubEventoEntity[] = [];
 
+      const estadoSubEventoInicial =
+        eventoGuardado.idEstadoEvento === EstadoEvento.ACEPTADO
+          ? EstadoSubEvento.ACEPTADO
+          : EstadoSubEvento.EN_PROCESO;
+
       for (const sub of subeventos) {
         // Guarda en la tabla 'fechas'
         const fechaGuardada = await manager.save(FechaEntity, {
@@ -183,7 +188,7 @@ export class EventosService {
           idRecinto: sub.idRecinto,
           idFecha: fechaGuardada.idFecha,
           accesoQR: sub.accesoQR ?? false,
-          estado: EstadoSubEvento.ACEPTADO,
+          estado: estadoSubEventoInicial,
         });
 
         subeventosGuardados.push(nuevoSubEvento);
@@ -347,6 +352,10 @@ export class EventosService {
     await this.eventoRepository.update(idEvento, {
       idEstadoEvento: EstadoEvento.ACEPTADO,
     });
+    await this.subEventoRepository.update(
+      { idEvento },
+      { estado: EstadoSubEvento.ACEPTADO },
+    );
 
     return {
       mensaje: 'Solicitud aprobada con éxito.',
@@ -448,6 +457,8 @@ export class EventosService {
     const solicitante = await this.usuarioRepository.findOneBy({ idUsuario: idOrganizador });
     if (solicitante?.tipoCuenta === TipoCuentaUsuario.SUBDIRECCION || solicitante?.esJefeAcademia) {
       nuevoEvento.idEstadoEvento = EstadoEvento.ACEPTADO;
+    } else {
+      nuevoEvento.idEstadoEvento = EstadoEvento.ENPROCESO;
     }
 
     return await this.crearEvento(nuevoEvento, dto.subeventos);
