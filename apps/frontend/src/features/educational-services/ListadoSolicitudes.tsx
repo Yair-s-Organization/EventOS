@@ -223,6 +223,7 @@ export function ListadoSolicitudes() {
               <path d="M3 9h18" />
             </svg>
             <p className="merriweather text-[24px] font-semibold">Sin solicitudes pendientes.</p>
+            <p></p>
           </div>
         )}
         {!cargando && !error && solicitudes.length > 0 && (

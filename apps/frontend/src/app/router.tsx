@@ -24,6 +24,9 @@ export function AppRouter() {
              pero solo es para probar visualización)*/}
           <Route path="/solicitud-evento" element={<SolicitudEvento />} />
           <Route path="/detalles-solicitud/" element={<DetallesSolicitud />} />
+         <Route path="/gestion-equipos/:id" element={<GestionEquipos />} />
+                    <Route path="/gestion-espacios" element={<GestionEspacios />} />
+
         </Route>
 
         {/* Rutas para asistente*/}
