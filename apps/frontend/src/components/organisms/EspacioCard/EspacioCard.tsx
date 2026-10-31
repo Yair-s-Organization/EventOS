@@ -6,7 +6,6 @@ interface Espacio {
   nombre: string;
   tipo?: string;
   aforo: number;
-  computadorasDisponibles?: number;
   idEstadoRecinto: number;
 }
 
@@ -49,16 +48,13 @@ export function EspacioCard({ espacio, onToggleEstado, onGestionarEquipos }: Esp
 
         <div className="text-sm text-gray-700 space-y-1 mb-6 font-merriweather">
           <p><span className="font-medium">Aforo máximo:</span> {espacio.aforo}</p>
-          {esLaboratorio && (
-            <p><span className="font-medium">Computadoras disponibles:</span> {espacio.computadorasDisponibles ?? 0}</p>
-          )}
         </div>
 
         <div className="flex items-center space-x-2 mb-6">
           <span
-            className={`w-2.5 h-2.5 rounded-full ${estaHabilitado ? "bg-emerald-600" : "bg-red-800"}`}
+            className={`w-2.5 h-2.5 rounded-full ${estaHabilitado ? "bg-eventos-success" : "bg-eventos-error"}`}
           />
-          <span className={`text-sm font-medium ${estaHabilitado ? "text-emerald-600" : "text-red-800"}`}>
+          <span className={`text-sm font-medium ${estaHabilitado ? "text-eventos-success" : "text-eventos-error"}`}>
             {estadoTexto}
           </span>
         </div>
@@ -67,12 +63,12 @@ export function EspacioCard({ espacio, onToggleEstado, onGestionarEquipos }: Esp
       <div className="space-y-2">
         {esLaboratorio && (
           <Button text="Gestionar equipos" variant="primary" size="sm"
-            className="w-full bg-[#5c1d33] hover:bg-[#4a1c2d] text-white text-xs py-2 rounded"
+            className="w-full text-xs py-2 rounded"
             onClick={() => onGestionarEquipos(espacio.idRecinto)}
           />
         )}
         <Button text={estaHabilitado ? "Inhabilitar" : "Habilitar"} variant="primary" size="sm"
-          className="w-full bg-[#5c1d33] hover:bg-[#4a1c2d] text-white text-xs py-2 rounded"
+          className="w-full text-xs py-2 rounded"
           onClick={() => onToggleEstado(espacio)}
         />
       </div>

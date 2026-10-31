@@ -22,12 +22,12 @@ export async function runSeed() {
 
   try {
     await client.connect();
-    console.log(`🔌 Conectado a PostgreSQL (${client.database}) para sembrar datos de prueba...`);
+    console.log(`Conectado a PostgreSQL (${client.database}) para sembrar datos de prueba...`);
 
     const saltRounds = 10;
     const passwordHash = await bcrypt.hash('Admin123!', saltRounds);
 
-    console.log('🌱 Creando usuarios de prueba...');
+    console.log('Creando usuarios de prueba...');
 
     // 1. Usuarios
     const usuarios = [
@@ -91,11 +91,46 @@ export async function runSeed() {
         ],
       );
       idsUsuarios[res.rows[0].correo] = res.rows[0].idUsuario;
-      console.log(`   ✓ Usuario listo: ${u.correo} (ID: ${res.rows[0].idUsuario}, Rol: ${u.tipoCuenta})`);
+      console.log(`   Usuario listo: ${u.correo} (ID: ${res.rows[0].idUsuario}, Rol: ${u.tipoCuenta})`);
     }
 
-    // 2. Evento de prueba en estado "En Proceso" (Pendiente de evaluación por Subdirección)
-    console.log('🌱 Creando solicitud de evento de prueba...');
+    // 2. Recintos Iniciales de ESCOM (Actualizado sin computadoras disponibles)
+    console.log('Creando recintos iniciales...');
+    const recintos = [
+      { id: 1, nombre: 'Auditorio Principal', aforo: 250, idEstadoRecinto: 1 },
+      { id: 2, nombre: 'Laboratorio de Cómputo A', aforo: 36, idEstadoRecinto: 1 },
+      { id: 3, nombre: 'Laboratorio de Cómputo B', aforo: 36, idEstadoRecinto: 1 },
+      { id: 4, nombre: 'Sala 14', aforo: 50, idEstadoRecinto: 1 },
+    ];
+
+    for (const r of recintos) {
+      await client.query(
+        `INSERT INTO recinto ("idRecinto", nombre, aforo, "idEstadoRecinto")
+         OVERRIDING SYSTEM VALUE
+         VALUES ($1, $2, $3, $4)
+         ON CONFLICT ("idRecinto") DO UPDATE 
+         SET nombre = EXCLUDED.nombre, aforo = EXCLUDED.aforo;`,
+        [r.id, r.nombre, r.aforo, r.idEstadoRecinto],
+      );
+    }
+
+    console.log('Poblando equipos/computadoras en estadoEquipo...');
+    const laboratoriosIds = [2, 3];
+
+    for (const recintoId of laboratoriosIds) {
+      await client.query(`DELETE FROM "estadoEquipo" WHERE "idRecinto" = $1;`, [recintoId]);
+
+      for (let i = 1; i <= 36; i++) {
+        await client.query(
+          `INSERT INTO "estadoEquipo" ("numeroEquipo", estado, "idRecinto") VALUES ($1, $2, $3);`,
+          [i, true, recintoId],
+        );
+      }
+      console.log(`   36 computadoras agregadas al recinto ID: ${recintoId}`);
+    }
+
+    // 3. Evento de prueba en estado "En Proceso" (Pendiente de evaluación por Subdirección)
+    console.log('Creando solicitud de evento de prueba...');
     const organizadorId = idsUsuarios['organizador@ipn.mx'];
 
     const resEvento = await client.query(
@@ -115,9 +150,9 @@ export async function runSeed() {
     );
 
     const idEvento = resEvento.rows[0].idEvento;
-    console.log(`   ✓ Evento creado con ID: ${idEvento}`);
+    console.log(`   Evento creado con ID: ${idEvento}`);
 
-    // 3. Fecha para el subevento
+    // 4. Fecha para el subevento
     const resFecha = await client.query(
       `INSERT INTO fecha (fecha, "horaInicio", "horaFin")
        VALUES ($1, $2, $3)
@@ -126,7 +161,7 @@ export async function runSeed() {
     );
     const idFecha = resFecha.rows[0].idFecha;
 
-    // 4. Subevento
+    // 5. Subevento
     const resSub = await client.query(
       `INSERT INTO "subEvento" ("accesoQR", estado, nombre, descripcion, "idEvento", "idRecinto", "idFecha")
        VALUES ($1, $2, $3, $4, $5, $6, $7)
@@ -141,11 +176,11 @@ export async function runSeed() {
         idFecha,
       ],
     );
-    console.log(`   ✓ Subevento creado con ID: ${resSub.rows[0].idSubEvento}`);
+    console.log(`   Subevento creado con ID: ${resSub.rows[0].idSubEvento}`);
 
-    console.log('\n✨ ¡Semillas de prueba insertadas con éxito!');
+    console.log('\nSemillas de prueba insertadas con éxito.');
   } catch (error) {
-    console.error('❌ Error al sembrar datos de prueba:', error);
+    console.error('Error al sembrar datos de prueba:', error);
   } finally {
     await client.end();
   }

@@ -5,7 +5,6 @@ export interface EspacioDisponible {
   nombre: string;
   tipo: string;
   aforo: string;
-  computadorasDisponibles?: number | string;
   estado: string;
 }
 

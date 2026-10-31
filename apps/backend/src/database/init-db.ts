@@ -14,7 +14,7 @@ export async function initDb() {
 
   try {
     await client.connect();
-    console.log(`🔌 Conectado a PostgreSQL (${client.database}) en ${client.host}:${client.port}`);
+    console.log(`Conectado a PostgreSQL (${client.database}) en ${client.host}:${client.port}`);
 
     const sqlPath = path.join(__dirname, 'schema.sql');
     const sql = fs.readFileSync(sqlPath, 'utf-8');

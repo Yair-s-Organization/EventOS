@@ -9,7 +9,6 @@ interface Espacio {
   nombre: string;
   tipo?: string;
   aforo: number;
-  computadorasDisponibles?: number;
   idEstadoRecinto: number;
 }
 
