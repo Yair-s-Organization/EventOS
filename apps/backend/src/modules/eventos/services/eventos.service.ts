@@ -4,6 +4,7 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
@@ -17,11 +18,13 @@ import { StorageService } from '../../../common/storage/storage.service';
 import { PonenteEntity } from '../entities/ponente.entity'; 
 import { AsientoEntity } from '../../reservas/entities/asiento.entity';
 import {
+  AlcanceEvento,
   EstadoEvento,
   EstadoSubEvento,
   EstadoVerificacion,
   TipoCuentaUsuario,
   type SubeventoPayload,
+  type MovimientoBitacoraItem,
 } from '@eventos/shared';
 import type { CrearSolicitudDto } from '../dto/crearSolicitud.dto';
 
@@ -227,6 +230,7 @@ export class EventosService {
           : EstadoSubEvento.EN_PROCESO;
 
       for (const sub of subeventos) {
+        
         // Guarda en la tabla 'fechas'
         const fechaGuardada = await manager.save(FechaEntity, {
           fecha: sub.fecha,
@@ -246,6 +250,14 @@ export class EventosService {
         });
 
         subeventosGuardados.push(nuevoSubEvento);
+
+        await manager.save(BitacoraEventoEntity, {
+          idEvento: eventoGuardado.idEvento,
+          idSubEvento: nuevoSubEvento.idSubEvento,
+          idUsuarioActor: eventoGuardado.idOrganizador,
+          idEstadoEvento:
+            eventoGuardado.idEstadoEvento ?? EstadoEvento.ENPROCESO,
+        });
       }
 
       return {
@@ -384,7 +396,6 @@ export class EventosService {
             idRecinto: sub.recinto.idRecinto,
             nombre: sub.recinto.nombre,
             aforo: sub.recinto.aforo,
-            computadorasDisponibles: sub.recinto.computadorasDisponibles,
             idEstadoRecinto: sub.recinto.idEstadoRecinto,
           }
           : null,
@@ -392,8 +403,7 @@ export class EventosService {
     };
   }
 
-  // Aprueba una solicitud: valida que exista y esté Pendiente, y cambia el estado a ACEPTADO.
-  async aprobarSolicitud(idEvento: number) {
+  async aprobarSolicitud(idEvento: number, idUsuarioActor?: number) {
     const evento = await this.eventoRepository.findOneBy({ idEvento });
     if (!evento) {
       throw new NotFoundException(`No se encontró la solicitud con ID ${idEvento}.`);
@@ -412,6 +422,16 @@ export class EventosService {
       { estado: EstadoSubEvento.ACEPTADO },
     );
 
+    const subeventos = await this.subEventoRepository.findBy({ idEvento });
+    for (const sub of subeventos) {
+      await this.bitacoraEventoRepository.save({
+        idEvento,
+        idSubEvento: sub.idSubEvento,
+        idUsuarioActor: idUsuarioActor ?? evento.idOrganizador,
+        idEstadoEvento: EstadoEvento.ACEPTADO,
+      });
+    }
+
     return {
       mensaje: 'Solicitud aprobada con éxito.',
       idEvento,
@@ -419,8 +439,8 @@ export class EventosService {
     };
   }
 
-  // Rechaza una solicitud: valida que exista y esté Pendiente, pasa a RECHAZADO y cancela subeventos para liberar espacios.
-  async rechazarSolicitud(idEvento: number) {
+  // Rechaza una solicitud: valida que exista y esté Pendiente, pasa a RECHAZADO, cancela subeventos y registra en bitácora (RNF-26).
+  async rechazarSolicitud(idEvento: number, idUsuarioActor?: number) {
     const evento = await this.eventoRepository.findOneBy({ idEvento });
     if (!evento) {
       throw new NotFoundException(`No se encontró la solicitud con ID ${idEvento}.`);
@@ -438,6 +458,16 @@ export class EventosService {
       { idEvento },
       { estado: EstadoSubEvento.CANCELADO },
     );
+
+    const subeventos = await this.subEventoRepository.findBy({ idEvento });
+    for (const sub of subeventos) {
+      await this.bitacoraEventoRepository.save({
+        idEvento,
+        idSubEvento: sub.idSubEvento,
+        idUsuarioActor: idUsuarioActor ?? evento.idOrganizador,
+        idEstadoEvento: EstadoEvento.RECHAZADO,
+      });
+    }
 
     return {
       mensaje: 'Solicitud rechazada con éxito.',
@@ -525,24 +555,93 @@ export class EventosService {
   }
 
   // Listar cartelera (Solo eventos con idEstadoEvento = 2 'Aceptado')
-async obtenerEventosPublicos() {
+async obtenerEventosPublicos(usuarioActual?: {
+    sub?: number;
+    tipoCuenta?: TipoCuentaUsuario;
+  }) {
+    const { fechaHoy } = this.obtenerAhoraCDMX();
+
     const eventos = await this.eventoRepository.find({
-      where: { idEstadoEvento: 2 }, // 2 = Aceptado según tu DDL
+      where: { idEstadoEvento: EstadoEvento.ACEPTADO },
+      relations: {
+        subEventos: {
+          fecha: true,
+          recinto: true,
+        },
+      },
+      order: { idEvento: 'DESC' },
     });
 
-    return eventos.map(e => ({
-      idEvento: e.idEvento,
-      nombre: e.nombre,
-      descripcion: e.descripcion,
-      poster: e.poster,
-      idAlcance: e.idAlcance,
-    }));
+    const tieneSesion = Boolean(usuarioActual && usuarioActual.sub);
+    const esUsuarioInterno =
+      tieneSesion &&
+      (usuarioActual?.tipoCuenta === TipoCuentaUsuario.INTERNO ||
+        usuarioActual?.tipoCuenta === TipoCuentaUsuario.SUBDIRECCION ||
+        usuarioActual?.tipoCuenta === TipoCuentaUsuario.ADMINISTRADOR);
+
+    const cartelera = [];
+
+    for (const e of eventos) {
+      // Filtrar únicamente subeventos próximos (fecha >= hoy en CDMX) y que no estén cancelados
+      const subEventosProximos = (e.subEventos || []).filter(
+        (sub) =>
+          sub.estado !== EstadoSubEvento.CANCELADO &&
+          sub.fecha?.fecha &&
+          this.calcularDiasDiferencia(sub.fecha.fecha, fechaHoy) >= 0,
+      );
+
+      // Solo se muestran eventos que tengan al menos un subevento próximo
+      if (subEventosProximos.length === 0) {
+        continue;
+      }
+
+      // Eventos Privados no aparecen en la cartelera general
+      if (e.idAlcance === AlcanceEvento.PRIVADO) {
+        continue;
+      }
+
+      // Un evento es de libre acceso si es Público y tiene al menos un subevento próximo sin requisito de QR/boleto
+      const esAccesoLibre =
+        e.idAlcance === AlcanceEvento.PUBLICO &&
+        subEventosProximos.some((sub) => !sub.accesoQR);
+
+      if (!tieneSesion) {
+        //Sin sesión iniciada [solo eventos próximos de libre acceso]
+        if (!esAccesoLibre) {
+          continue;
+        }
+      } else {
+        //Con sesión iniciada (Externos solo ven PUBLICO; Internos ven PUBLICO e INTERNO)
+        if (e.idAlcance === AlcanceEvento.INTERNO && !esUsuarioInterno) {
+          continue;
+        }
+      }
+
+      cartelera.push({
+        idEvento: e.idEvento,
+        nombre: e.nombre,
+        descripcion: e.descripcion,
+        poster: e.poster,
+        idAlcance: e.idAlcance,
+        esAccesoLibre,
+        requiereCuenta: !esAccesoLibre,
+        subEventos: subEventosProximos,
+      });
+    }
+
+    return cartelera;
   }
 
-  // Detalle completo 
-  async obtenerDetalleEventoPublico(idEvento: number) {
+  // Detalle completo de un evento en cartelera validando acceso con o sin cuenta (CAR-05 y CAR-06)
+  async obtenerDetalleEventoPublico(
+    idEvento: number,
+    usuarioActual?: {
+      sub?: number;
+      tipoCuenta?: TipoCuentaUsuario;
+    },
+  ) {
     const evento = await this.eventoRepository.findOne({
-      where: { idEvento, idEstadoEvento: 2 }, 
+      where: { idEvento, idEstadoEvento: EstadoEvento.ACEPTADO },
     });
 
     if (!evento) {
@@ -553,10 +652,32 @@ async obtenerEventosPublicos() {
       where: { idEvento: evento.idEvento },
     });
 
-    const subEventosDetallados = [];
+    const tieneSesion = Boolean(usuarioActual && usuarioActual.sub);
+    const esUsuarioInterno =
+      tieneSesion &&
+      (usuarioActual?.tipoCuenta === TipoCuentaUsuario.INTERNO ||
+        usuarioActual?.tipoCuenta === TipoCuentaUsuario.SUBDIRECCION ||
+        usuarioActual?.tipoCuenta === TipoCuentaUsuario.ADMINISTRADOR);
 
+    const esAccesoLibre =
+      evento.idAlcance === AlcanceEvento.PUBLICO &&
+      subEventos.some((sub) => sub.estado !== EstadoSubEvento.CANCELADO && !sub.accesoQR);
+
+    if (!tieneSesion && !esAccesoLibre) {
+      throw new ForbiddenException(
+        'Debes iniciar sesión o registrarte para consultar eventos que requieren cuenta.',
+      );
+    }
+
+    if (evento.idAlcance === AlcanceEvento.INTERNO && !esUsuarioInterno) {
+      throw new ForbiddenException(
+        'Este evento es exclusivo para la comunidad interna del IPN (RN-12).',
+      );
+    }
+
+    const subEventosDetallados = [];
     const fechaRepository = this.dataSource.getRepository(FechaEntity);
-    const recintoRepository = this.dataSource.getRepository('recinto'); 
+    const recintoRepository = this.dataSource.getRepository('recinto');
 
     for (const sub of subEventos) {
       const [fecha, recinto, ponentes, totalAsientosRecinto] = await Promise.all([
@@ -573,18 +694,22 @@ async obtenerEventosPublicos() {
         estado: sub.estado,
         accesoQR: sub.accesoQR,
         requiereSeleccionAsiento: totalAsientosRecinto > 0,
-        fecha: fecha ? {
-          idFecha: fecha.idFecha,
-          fecha: fecha.fecha,
-          horaInicio: fecha.horaInicio,
-          horaFin: fecha.horaFin,
-        } : null,
-        recinto: recinto ? {
-          idRecinto: recinto.idRecinto, 
-          nombre: recinto['nombre'],    
-          aforo: recinto['aforo'],
-        } : null,
-        ponentes: ponentes.map(p => ({
+        fecha: fecha
+          ? {
+              idFecha: fecha.idFecha,
+              fecha: fecha.fecha,
+              horaInicio: fecha.horaInicio,
+              horaFin: fecha.horaFin,
+            }
+          : null,
+        recinto: recinto
+          ? {
+              idRecinto: recinto.idRecinto,
+              nombre: recinto['nombre'],
+              aforo: recinto['aforo'],
+            }
+          : null,
+        ponentes: ponentes.map((p) => ({
           idPonente: p.idPonente,
           nombre: p.nombre,
           apellidoPa: p.apellidoPa,
@@ -599,9 +724,149 @@ async obtenerEventosPublicos() {
       descripcion: evento.descripcion,
       poster: evento.poster,
       idAlcance: evento.idAlcance,
+      esAccesoLibre,
+      requiereCuenta: !esAccesoLibre,
       subEventos: subEventosDetallados,
     };
   }
 
+//Consultar Bitácora General de Movimientos y con buscador
+  async obtenerBitacoraGeneral(buscar?: string): Promise<MovimientoBitacoraItem[]> {
+    const registros = await this.bitacoraEventoRepository.find({
+      order: { fechaHoraCambio: 'DESC', idBitacoraEvento: 'DESC' },
+    });
+
+    if (registros.length === 0) {
+      return [];
+    }
+
+    const [eventos, subeventos, usuarios] = await Promise.all([
+      this.eventoRepository.find(),
+      this.subEventoRepository.find(),
+      this.usuarioRepository.find(),
+    ]);
+
+    const mapaEventos = new Map(eventos.map((e) => [e.idEvento, e]));
+    const mapaSubeventos = new Map(subeventos.map((s) => [s.idSubEvento, s]));
+    const mapaUsuarios = new Map(usuarios.map((u) => [u.idUsuario, u]));
+
+    const nombresEstado: Record<number, string> = {
+      [EstadoEvento.RECHAZADO]: 'Rechazado',
+      [EstadoEvento.ACEPTADO]: 'Aceptado',
+      [EstadoEvento.ENPROCESO]: 'En Proceso',
+      [EstadoEvento.CANCELADO]: 'Cancelado',
+      [EstadoEvento.FINALIZADO]: 'Finalizado',
+    };
+
+    let movimientos: MovimientoBitacoraItem[] = registros.map((reg) => {
+      const ev = mapaEventos.get(reg.idEvento);
+      const sub = mapaSubeventos.get(reg.idSubEvento);
+      const idActor = reg.idUsuarioActor ?? ev?.idOrganizador ?? null;
+      const usr = idActor ? mapaUsuarios.get(idActor) : undefined;
+
+      const fechaObj = reg.fechaHoraCambio
+        ? new Date(reg.fechaHoraCambio)
+        : new Date();
+
+      const fecha = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'America/Mexico_City',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      }).format(fechaObj);
+
+      const hora = new Intl.DateTimeFormat('en-GB', {
+        timeZone: 'America/Mexico_City',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false,
+      }).format(fechaObj);
+
+      const nombreUsuario = usr
+        ? `${usr.nombre} ${usr.apellidoPa} ${usr.apellidoMa || ''}`.trim()
+        : 'Sistema';
+
+      return {
+        idBitacoraEvento: reg.idBitacoraEvento,
+        idEvento: reg.idEvento,
+        idSubEvento: reg.idSubEvento,
+        evento: ev ? ev.nombre : `Evento #${reg.idEvento}`,
+        subEvento: sub ? sub.nombre : `Subevento #${reg.idSubEvento}`,
+        idEstadoEvento: reg.idEstadoEvento,
+        estado: nombresEstado[reg.idEstadoEvento] ?? 'Desconocido',
+        idUsuarioActor: idActor,
+        usuario: nombreUsuario,
+        correoUsuario: usr?.correo ?? null,
+        fecha,
+        hora,
+        fechaHoraCambio: fechaObj.toISOString(),
+      };
+    });
+
+    if (buscar && buscar.trim() !== '') {
+      const termino = buscar.trim().toLowerCase();
+      movimientos = movimientos.filter(
+        (m) =>
+          m.evento.toLowerCase().includes(termino) ||
+          m.subEvento.toLowerCase().includes(termino) ||
+          m.estado.toLowerCase().includes(termino) ||
+          m.usuario.toLowerCase().includes(termino) ||
+          (m.correoUsuario && m.correoUsuario.toLowerCase().includes(termino)) ||
+          m.fecha.includes(termino) ||
+          m.hora.includes(termino),
+      );
+    }
+
+    return movimientos;
+  }
+
+
+//Exportar Bitácora General de Movimientos
+  async exportarBitacoraGeneral(buscar?: string): Promise<{
+    nombreArchivo: string;
+    contenidoCsv: string;
+    totalRegistros: number;
+  }> {
+    const movimientos = await this.obtenerBitacoraGeneral(buscar);
+
+    if (!movimientos || movimientos.length === 0) {
+      throw new NotFoundException(
+        'No hay registros de eventos disponibles. (MSG-E-32)',
+      );
+    }
+
+    try {
+      const escaparCelda = (valor: string | number | null | undefined): string => {
+        const texto = String(valor ?? '').replace(/"/g, '""');
+        return `"${texto}"`;
+      };
+
+      const encabezados = ['Evento', 'Estado', 'Usuario', 'Fecha', 'Hora'];
+      const filas = movimientos.map((m) =>
+        [
+          escaparCelda(m.evento),
+          escaparCelda(m.estado),
+          escaparCelda(m.usuario),
+          escaparCelda(m.fecha),
+          escaparCelda(m.hora),
+        ].join(','),
+      );
+
+      // UTF-8 BOM (\uFEFF) para que Excel en Windows abra directamente con acentos y columnas separadas
+      const contenidoCsv = '\uFEFF' + [encabezados.join(','), ...filas].join('\r\n');
+      const { fechaHoy } = this.obtenerAhoraCDMX();
+
+      return {
+        nombreArchivo: `bitacora_general_${fechaHoy}.csv`,
+        contenidoCsv,
+        totalRegistros: movimientos.length,
+      };
+    } catch (error) {
+      throw new InternalServerErrorException(
+        'Error al exportar archivo. (MSG-E-33)',
+      );
+    }
+  }
 
 }

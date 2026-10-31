@@ -23,32 +23,71 @@ export class RecintoService {
         private readonly dataSource: DataSource,
     ) {}
 
-    //Listamos todos los espacios(Admin)
-    async listarTodosLosEspacios() {
-        return await this.recintoRepository.find({
-            order: { idRecinto: 'ASC' },
-        });
+    private esLaboratorio(idRecinto: number): boolean {
+        return (
+            idRecinto === RecintoId.LABORATORIO_A ||
+            idRecinto === RecintoId.LABORATORIO_B
+        );
     }
 
-    //Listamos únicamente espacios habilitados
+    // Calcula el aforo del laboratorio a través de la tabla de equipos disponibles (estadoEquipo con estado = true)
+    private async obtenerAforoReal(recinto: RecintoEntity): Promise<number> {
+        if (!this.esLaboratorio(recinto.idRecinto)) {
+            return recinto.aforo;
+        }
+
+        const equiposDisponibles = await this.estadoEquipoRepository.count({
+            where: { idRecinto: recinto.idRecinto, estado: true },
+        });
+
+        if (recinto.aforo !== equiposDisponibles) {
+            recinto.aforo = equiposDisponibles;
+            await this.recintoRepository.update(recinto.idRecinto, {
+                aforo: equiposDisponibles,
+            });
+        }
+
+        return equiposDisponibles;
+    }
+
+    // Listamos todos los espacios con el aforo de laboratorios calculado desde estadoEquipo
+    async listarTodosLosEspacios() {
+        const recintos = await this.recintoRepository.find({
+            order: { idRecinto: 'ASC' },
+        });
+
+        for (const recinto of recintos) {
+            recinto.aforo = await this.obtenerAforoReal(recinto);
+        }
+
+        return recintos;
+    }
+
+    // Listamos únicamente espacios habilitados con su aforo actualizado
     async listarEspaciosDisponibles() {
-        return await this.recintoRepository.find({
+        const recintos = await this.recintoRepository.find({
             where: { idEstadoRecinto: EstadoRecinto.HABILITADO },
             order: { idRecinto: 'ASC' },
         });
+
+        for (const recinto of recintos) {
+            recinto.aforo = await this.obtenerAforoReal(recinto);
+        }
+
+        return recintos;
     }
 
-    //Cambiamos el estado del espacio
+    // Cambiamos el estado del espacio
     async cambiarEstadoEspacio(idRecinto: number, idEstadoRecinto: EstadoRecinto) {
         const recinto = await this.recintoRepository.findOneBy({ idRecinto });
         if (!recinto) {
             throw new NotFoundException(`Recinto con ID ${idRecinto} no encontrado.`);
         }
 
+        const aforoActual = await this.obtenerAforoReal(recinto);
+
         if (idEstadoRecinto === EstadoRecinto.HABILITADO) {
-            const esLaboratorio =
-                idRecinto === RecintoId.LABORATORIO_A || idRecinto === RecintoId.LABORATORIO_B;
-            if (esLaboratorio && (recinto.computadorasDisponibles ?? 0) <= 0) {
+            if (this.esLaboratorio(idRecinto) && aforoActual <= 0) {
                 throw new ConflictException(
                     'No se puede habilitar un laboratorio sin equipos funcionales (RN-38).',
                 );
@@ -59,21 +98,19 @@ export class RecintoService {
         await this.recintoRepository.save(recinto);
 
         return {
-            mensaje: 'Operación realizada con éxito. Recinto actualizado.', // MSG-17
+            mensaje: 'Operación realizada con éxito. Recinto actualizado.',
             recinto,
         };
     }
 
-    //Consultamos los equipos del laboratorio
+    // Consultamos los equipos del laboratorio
     async listarEquiposPorLaboratorio(idRecinto: number) {
         const recinto = await this.recintoRepository.findOneBy({ idRecinto });
         if (!recinto) {
             throw new NotFoundException('Recinto no encontrado.');
         }
 
-        const esLaboratorio =
-            idRecinto === RecintoId.LABORATORIO_A || idRecinto === RecintoId.LABORATORIO_B;
-        if (!esLaboratorio) {
+        if (!this.esLaboratorio(idRecinto)) {
             throw new BadRequestException('El recinto no es un laboratorio.');
         }
 
@@ -83,7 +120,7 @@ export class RecintoService {
         });
     }
 
-    //Cambiamos el estado de un equipo y volvemos a calcular su capacidad
+    // Cambiamos el estado de un equipo y recalculamos el aforo del laboratorio desde estadoEquipo
     async cambiarEstadoEquipo(idEquipo: number, estado: boolean) {
         return await this.dataSource.transaction(async (manager) => {
             const equipo = await manager.findOneBy(EstadoEquipoEntity, {
@@ -93,11 +130,11 @@ export class RecintoService {
                 throw new NotFoundException('Equipo no encontrado.');
             }
 
-            //Actualizar estado del equipo
+            // Actualizar estado del equipo
             equipo.estado = estado;
             await manager.save(equipo);
 
-            //Recalcular computadorasDisponibles
+            // Recalcular el aforo del laboratorio contando los equipos habilitados
             const equiposHabilitados = await manager.count(EstadoEquipoEntity, {
                 where: { idRecinto: equipo.idRecinto, estado: true },
             });
@@ -108,9 +145,10 @@ export class RecintoService {
             if (!recinto) {
                 throw new NotFoundException('Recinto no encontrado al intentar recalcular.');
             }
-            recinto.computadorasDisponibles = equiposHabilitados;
 
-            //Inhabilitación preventiva automática si llega a 0 equipos
+            recinto.aforo = equiposHabilitados;
+
+            // Inhabilitación preventiva automática si llega a 0 equipos (aforo = 0)
             if (equiposHabilitados === 0) {
                 recinto.idEstadoRecinto = EstadoRecinto.INHABILITADO;
             }
@@ -118,9 +156,9 @@ export class RecintoService {
             await manager.save(recinto);
 
             return {
-                mensaje: 'Operación exitosa, estado del equipo actualizado', // MSG-12
+                mensaje: 'Operación exitosa, estado del equipo actualizado',
                 equipo,
-                computadorasDisponibles: recinto.computadorasDisponibles,
+                aforo: recinto.aforo,
                 idEstadoRecinto: recinto.idEstadoRecinto,
             };
         });
@@ -134,7 +172,7 @@ export class RecintoService {
         return true;
     }
 
-    //Validación de recinto y equipos disponibles al solicitar evento
+    // Validación de recinto y aforo de equipos disponibles al solicitar evento
     async validarRecinto(idRecinto: number, accesoQR: boolean = false) {
         const recinto = await this.recintoRepository.findOneBy({ idRecinto });
 
@@ -149,25 +187,24 @@ export class RecintoService {
             );
         }
 
-        // Sala 14 no permite emisión de boletos ni acceso QR (RN-04)
+        // Sala 14 no permite emisión de boletos ni acceso QR
         if (idRecinto === RecintoId.SALA_14 && accesoQR === true) {
             throw new BadRequestException(
-                'En Sala 14 no se permite acceso con boleto o código QR individual (RN-04).',
+                'En Sala 14 no se permite acceso con boleto o código QR individual.',
             );
-        }
+            }
 
-        // En Laboratorios es obligatorio acceso con boleto/QR y contar con equipos (RN-18 / RN-38)
-        const esLaboratorio =
-            idRecinto === RecintoId.LABORATORIO_A || idRecinto === RecintoId.LABORATORIO_B;
-        if (esLaboratorio) {
+        // En Laboratorios es obligatorio acceso con boleto/QR y contar con aforo > 0 calculado desde estadoEquipo
+        if (this.esLaboratorio(idRecinto)) {
             if (accesoQR === false) {
                 throw new BadRequestException(
-                    'En los laboratorios de cómputo es obligatorio el acceso con boleto/código QR (RN-18).',
+                    'En los laboratorios de cómputo es obligatorio el acceso con boleto/código QR.',
                 );
             }
-            if ((recinto.computadorasDisponibles ?? 0) <= 0) {
+            const aforoLaboratorio = await this.obtenerAforoReal(recinto);
+            if (aforoLaboratorio <= 0) {
                 throw new ConflictException(
-                    `El laboratorio "${recinto.nombre}" no cuenta con equipos de cómputo habilitados disponibles (RN-18 / MSG-E-03).`,
+                    `El laboratorio "${recinto.nombre}" no cuenta con equipos de cómputo habilitados disponibles.`,
                 );
             }
         }
@@ -175,7 +212,7 @@ export class RecintoService {
         return true;
     }
 
-    //Consulta la agenda y disponibilidad de horarios en una fecha específica
+    // Consulta la agenda y disponibilidad de horarios en una fecha específica
     async obtenerAgendaEspacio(idRecinto: number, fecha: string) {
         if (!fecha) {
             throw new BadRequestException('El parámetro "fecha" es requerido (formato YYYY-MM-DD).');
@@ -190,12 +227,14 @@ export class RecintoService {
             throw new NotFoundException(`El espacio físico con ID ${idRecinto} no fue encontrado.`);
         }
 
-        //Rechazar si el espacio se encuentra inhabilitado (RN-34)
+        // Rechazar si el espacio se encuentra inhabilitado
         if (recinto.idEstadoRecinto !== EstadoRecinto.HABILITADO) {
             throw new ConflictException(
                 `El recinto "${recinto.nombre}" se encuentra inhabilitado y no tiene horarios disponibles (RN-34).`,
             );
         }
+
+        const aforoActual = await this.obtenerAforoReal(recinto);
 
         const subEventos = await this.subEventoRepository
             .createQueryBuilder('subevento')
@@ -216,8 +255,7 @@ export class RecintoService {
             espacio: {
                 idRecinto: recinto.idRecinto,
                 nombre: recinto.nombre,
-                aforo: recinto.aforo,
-                computadorasDisponibles: recinto.computadorasDisponibles,
+                aforo: aforoActual,
                 idEstadoRecinto: recinto.idEstadoRecinto,
             },
             fecha,

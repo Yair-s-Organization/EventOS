@@ -12,9 +12,6 @@ export class RecintoEntity implements Recinto {
   @Column({ name: 'aforo', type: 'int', default: 0 })
   aforo: number;
 
-  @Column({ name: 'computadorasDisponibles', type: 'int', nullable: true })
-  computadorasDisponibles?: number;
-
   @Column({ name: 'idEstadoRecinto', type: 'int', default: 1 })
   idEstadoRecinto: number;
 }

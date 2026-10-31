@@ -1,19 +1,96 @@
-import { Controller, Get, Param, ParseIntPipe } from '@nestjs/common';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  Controller,
+  Get,
+  Param,
+  ParseIntPipe,
+  Query,
+  Req,
+  Res,
+  UseGuards,
+} from '@nestjs/common';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { JwtService } from '@nestjs/jwt';
 import { EventosService } from '../services/eventos.service';
+import { RolesGuard } from '../../auth/roles.guard';
+import { Roles } from '../../../common/decorators/roles.decorator';
+import { TipoCuentaUsuario } from '@eventos/shared';
 
-@ApiTags('Eventos (Cartelera Pública)')
+@ApiTags('Eventos y Bitácora')
 @Controller('eventos')
 export class EventosController {
-  constructor(private readonly eventosService: EventosService) {}
+  constructor(
+    private readonly eventosService: EventosService,
+    private readonly jwtService: JwtService,
+  ) {}
 
-  // Cartelera: Obtener eventos aprobados
+  // Extraemos el payload del JWT sin fallar cuando el usuario no ha iniciado sesión
+  private async extraerUsuarioOpcional(req: any) {
+    const authHeader = req?.headers?.authorization;
+    if (!authHeader) return undefined;
+
+    const [bearer, token] = authHeader.split(' ');
+    if (bearer !== 'Bearer' || !token) return undefined;
+
+    try {
+      return await this.jwtService.verifyAsync(token, {
+        secret: process.env.JWT_PASS || 'clave_secreta',
+      });
+    } catch {
+      return undefined;
+    }
+  }
+
+  //Cartelera de eventos próximos (sin sesión: solo acceso libre; con sesión: internos o externos según cuenta)
   @ApiOperation({
-    summary: 'Consultar cartelera de eventos aprobados',
+    summary: 'Consultar cartelera de eventos próximos (Acceso libre sin sesión / Completo con sesión)',
   })
   @Get()
-  async obtenerEventosPublicos() {
-    return await this.eventosService.obtenerEventosPublicos();
+  async obtenerEventosPublicos(@Req() req: any) {
+    const usuario = await this.extraerUsuarioOpcional(req);
+    return await this.eventosService.obtenerEventosPublicos(usuario);
+  }
+
+  //Consultar Bitácora General de Movimientos
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Consultar bitácora general de movimientos del sistema (UI20)',
+  })
+  @Get('bitacora')
+  @UseGuards(RolesGuard)
+  @Roles(TipoCuentaUsuario.ADMINISTRADOR)
+  async obtenerBitacoraGeneral(@Query('buscar') buscar?: string) {
+    const movimientos = await this.eventosService.obtenerBitacoraGeneral(buscar);
+    return {
+      mensaje:
+        movimientos.length === 0
+          ? 'No hay registros de eventos disponibles. (MSG-E-32)'
+          : 'Bitácora consultada con éxito.',
+      total: movimientos.length,
+      movimientos,
+    };
+  }
+
+  //Exportar Bitácora General de Movimientos
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Exportar y descargar reporte de la bitácora general de movimientos (UI20)',
+  })
+  @Get('bitacora/exportar')
+  @UseGuards(RolesGuard)
+  @Roles(TipoCuentaUsuario.ADMINISTRADOR)
+  async exportarBitacoraGeneral(
+    @Query('buscar') buscar: string | undefined,
+    @Res() res: any,
+  ) {
+    const reporte = await this.eventosService.exportarBitacoraGeneral(buscar);
+
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="${reporte.nombreArchivo}"`,
+    );
+
+    return res.status(200).send(reporte.contenidoCsv);
   }
 
   // Obtener detalle de un evento con subeventos, fechas, recintos y ponentes
@@ -23,7 +100,9 @@ export class EventosController {
   @Get(':idEvento')
   async obtenerDetalleEventoPublico(
     @Param('idEvento', ParseIntPipe) idEvento: number,
+    @Req() req: any,
   ) {
-    return await this.eventosService.obtenerDetalleEventoPublico(idEvento);
+    const usuario = await this.extraerUsuarioOpcional(req);
+    return await this.eventosService.obtenerDetalleEventoPublico(idEvento, usuario);
   }
 }
