@@ -21,7 +21,7 @@ export function FormField({
   readOnly,
 }: FormFieldProps) {
   return (
-    <div className="flex min-w-0 flex-col justify-end gap-1">
+    <div className="flex min-w-0 flex-col justify-end gap-0 mb-10">
       <Label htmlFor={htmlFor} required={required} readOnly={readOnly}>
         {label}
       </Label>
@@ -29,7 +29,7 @@ export function FormField({
       {!readOnly && (
         <span
           aria-live="polite"
-          className={`mt-1 block min-h-5 text-xs leading-4 ${
+          className={`font-merriweather mt-1 block min-h-5 text-[12px] leading-4 ${
             errorMessage ? "text-eventos-error" : "text-black"
           }`}>
           {errorMessage ?? mensajeAyuda}

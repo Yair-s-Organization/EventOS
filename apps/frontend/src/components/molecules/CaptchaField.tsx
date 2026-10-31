@@ -16,7 +16,7 @@ export function CaptchaField({
   recaptchaRef,
 }: CaptchaFieldProps) {
   return (
-    <div className="flex flex-col items-center space-y-2 my-2">
+    <div className="flex flex-col items-center space-y-1 my-1">
       <ReCAPTCHA
         ref={recaptchaRef}
         sitekey={sitekey}

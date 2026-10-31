@@ -14,7 +14,7 @@ export function FieldMessage({
     ...restOfProps
 }: FielMessageProps){
     const variantStyles = {
-        error: "text-red-600",
+        error: "text-eventos-error",
         success: "text-green-600",
         helper: "text-gray-500",
     };
@@ -23,7 +23,7 @@ export function FieldMessage({
         <p
             id={id}
             role={variant==="success" ? "alert" : "status"}
-            className={`mt-0 text-[10px] ${variantStyles[variant]} ${className}`}
+            className={`mt-0 text-[12px] font-merriweather ${variantStyles[variant]} ${className}`}
             {...restOfProps}>
                 {children}
             </p>

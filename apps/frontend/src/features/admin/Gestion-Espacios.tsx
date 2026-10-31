@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { Button } from "../../components/atoms/Button/Button";
 import { EspacioCard } from "../../components/organisms/EspacioCard/EspacioCard";
+import { Modal } from "../../components/molecules/Modal";
 
 interface Espacio {
   idRecinto: number;
@@ -17,6 +18,9 @@ export function GestionEspacios() {
   const [espacios, setEspacios] = useState<Espacio[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  const [modalAbierto, setModalAbierto] = useState(false);
+  const [espacioSeleccionado, setEspacioSeleccionado] = useState<Espacio | null>(null);
 
   const getToken = () => {
     const usuario = JSON.parse(localStorage.getItem("usuario") || "{}");
@@ -51,11 +55,17 @@ export function GestionEspacios() {
     fetchEspacios();
   }, []);
 
-  const handleToggleEstado = async (espacio: Espacio) => {
-    const nuevoEstadoRecinto = espacio.idEstadoRecinto === 1 ? 2 : 1;
+  const handlePreToggle = (espacio: Espacio) => {
+    setEspacioSeleccionado(espacio);
+    setModalAbierto(true);
+  };
+
+  const handleConfirmToggle = async () => {
+    if (!espacioSeleccionado) return;
+    const nuevoEstadoRecinto = espacioSeleccionado.idEstadoRecinto === 1 ? 2 : 1;
 
     try {
-      const response = await fetch(`http://localhost:3000/api/espacios/${espacio.idRecinto}/estado`, {
+      const response = await fetch(`http://localhost:3000/api/espacios/${espacioSeleccionado.idRecinto}/estado`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -70,11 +80,15 @@ export function GestionEspacios() {
         throw new Error(data.message || "No se pudo actualizar el estado del recinto.");
       }
 
+      setModalAbierto(false);
+      setEspacioSeleccionado(null);
       await fetchEspacios();
     } catch (err: any) {
       alert(err.message);
     }
   };
+
+  const isInhabilitando = espacioSeleccionado?.idEstadoRecinto === 1;
 
   return (
     <div className="space-y-6 font-merriweather text-gray-800">
@@ -88,17 +102,30 @@ export function GestionEspacios() {
       </div>
 
       {loading && <p className="text-sm text-gray-600">Cargando espacios...</p>}
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-eventos-error">{error}</p>}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
         {!loading && espacios.map((espacio) => (
-          <EspacioCard key={espacio.idRecinto} espacio={espacio} onToggleEstado={handleToggleEstado} onGestionarEquipos={(id) => navigate(`/gestion-equipos/${id}`)}/>
-        ))}
+          <EspacioCard key={espacio.idRecinto} espacio={espacio} onToggleEstado={handlePreToggle} onGestionarEquipos={(id) => navigate(`/gestion-equipos/${id}`)}/>))}
       </div>
 
       <div className="flex justify-end pt-6">
-        <Button text="Regresar" variant="primary" size="sm" className="bg-[#5c1d33] hover:bg-[#4a1c2d] text-white px-6 py-2 rounded" onClick={() => navigate(-1)}/>
+        <Button text="Regresar" variant="primary" size="sm" className="px-6 py-2 rounded" onClick={() => navigate(-1)}/>
       </div>
+
+      <Modal titulo={isInhabilitando ? "Inhabilitar espacio físico" : "Habilitar espacio físico"} contenido="" mostrarModal={modalAbierto} cerrarModal={() => setModalAbierto(false)}>
+        <div className="space-y-4 font-merriweather text-sm text-gray-700">
+          <p>
+            {isInhabilitando 
+              ? "¿Estas seguro de inhabilitar este espacio físico? Los eventos programados podrían verse afectados."
+              : "El espacio volverá a estar disponible para la programación de eventos."}
+          </p>
+          <div className="flex justify-end space-x-3 pt-2">
+            <Button text="Cancelar" variant="outline" type="button" onClick={() => setModalAbierto(false)} className="px-5 py-2 rounded-md transition-colors shadow"/>
+            <Button text={isInhabilitando ? "Inhabilitar" : "Habilitar"} type="button" onClick={handleConfirmToggle} className={`px-5 py-2 rounded-md transition-colors shadow`}/>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }
