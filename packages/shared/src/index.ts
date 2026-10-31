@@ -273,3 +273,11 @@ export interface MovimientoBitacoraItem {
   hora: string;
   fechaHoraCambio: string;
 }
+
+export interface JefeDepartamentoItem {
+  idUsuario: number;
+  boleta: string;
+  nombre: string;
+  correoInstitucional: string;
+  esJefeAcademia: boolean;
+}

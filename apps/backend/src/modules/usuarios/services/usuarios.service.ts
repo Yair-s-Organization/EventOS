@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -10,12 +11,17 @@ import { VerificacionEntity } from '../../auth/entities/verificacion.entity';
 import { RolEntity } from '../entities/rol.entity';
 import {
   EstadoVerificacion,
+  TipoCuentaUsuario,
   TipoPerfilVerificacion,
   PerfilUsuarioResponse,
+  JefeDepartamentoItem,
 } from '@eventos/shared';
 
 @Injectable()
 export class UsuariosService {
+  // Regex unificada de Boleta para Estudiantes y Profesores
+  private readonly BOLETA_REGEX = /^(?:\d{4,10}|P[EP]\d{8})$/;
+
   constructor(
     @InjectRepository(UsuarioEntity)
     private readonly usuarioRepository: Repository<UsuarioEntity>,
@@ -26,7 +32,7 @@ export class UsuariosService {
     private readonly dataSource: DataSource,
   ) {}
 
-  // Consulta el Perfil (UI28)
+  // Consulta el Perfil
   async obtenerPerfil(idUsuario: number): Promise<PerfilUsuarioResponse> {
     const usuario = await this.usuarioRepository.findOne({
       where: { idUsuario },
@@ -90,7 +96,7 @@ export class UsuariosService {
     };
   }
 
-  // Procesar Verificación (UI32)
+  //Estudiantes y Profesores usan Boleta
   async verificarCuenta(
     idUsuario: number,
     tipoPerfil: TipoPerfilVerificacion,
@@ -99,6 +105,27 @@ export class UsuariosService {
   ) {
     if (!archivoPath) {
       throw new BadRequestException('El documento PDF es obligatorio');
+    }
+
+    const infoLimpia = informacionAdicional ? informacionAdicional.trim() : '';
+
+    // Validar Boleta obligatoria para Estudiante, Profesor y Docente
+    if (
+      tipoPerfil === TipoPerfilVerificacion.ESTUDIANTE ||
+      tipoPerfil === TipoPerfilVerificacion.PROFESOR ||
+      tipoPerfil === TipoPerfilVerificacion.DOCENTE
+    ) {
+      if (!infoLimpia || !this.BOLETA_REGEX.test(infoLimpia)) {
+        throw new BadRequestException(
+          'La boleta es obligatoria para estudiantes y profesores y debe contener únicamente dígitos válidos.',
+        );
+      }
+    }
+
+    if (tipoPerfil === TipoPerfilVerificacion.EMPRESA && !infoLimpia) {
+      throw new BadRequestException(
+        'El nombre de la empresa es obligatorio para este perfil.',
+      );
     }
 
     let idRolAsignar = 0;
@@ -130,7 +157,7 @@ export class UsuariosService {
       if (!usuario) throw new NotFoundException('Usuario no encontrado');
 
       const nuevaVerificacion = manager.create(VerificacionEntity, {
-        informacionAdicional: informacionAdicional ?? '',
+        informacionAdicional: infoLimpia,
         archivo: archivoPath,
         idRol: idRolAsignar,
         idUsuario: idUsuario,
@@ -146,5 +173,128 @@ export class UsuariosService {
         verificacion: nuevaVerificacion,
       };
     });
+  }
+
+  // Listar usuarios para Tab 1 (Asignar Jefe -> esJefe = false) y Tab 2 (Revocar Jefe -> esJefe = true)
+  async listarCandidatosOJefes(
+    esJefe: boolean,
+    buscar?: string,
+  ): Promise<JefeDepartamentoItem[]> {
+    const usuarios = await this.usuarioRepository.find({
+      where: {
+        estatus: true,
+        esJefeAcademia: esJefe,
+      },
+      order: { idUsuario: 'ASC' },
+    });
+
+    // Filtrar cuentas con correo institucional o de tipo interno
+    const usuariosInstitucionales = usuarios.filter((u) => {
+      const correoMin = u.correo.toLowerCase();
+      return (
+        u.tipoCuenta === TipoCuentaUsuario.INTERNO ||
+        correoMin.endsWith('@ipn.mx') ||
+        correoMin.endsWith('@alumno.ipn.mx')
+      );
+    });
+
+    // Obtener la boleta registrada en la última verificación de cada usuario
+    const verificaciones = await this.verificacionRepository.find({
+      order: { fecha: 'DESC', idVerificacion: 'DESC' },
+    });
+
+    const boletaPorUsuario = new Map<number, string>();
+    for (const v of verificaciones) {
+      if (!boletaPorUsuario.has(v.idUsuario) && v.informacionAdicional) {
+        boletaPorUsuario.set(v.idUsuario, v.informacionAdicional);
+      }
+    }
+
+    let lista: JefeDepartamentoItem[] = usuariosInstitucionales.map((u) => ({
+      idUsuario: u.idUsuario,
+      boleta:
+        boletaPorUsuario.get(u.idUsuario) ??
+        String(u.idUsuario).padStart(4, '0'),
+      nombre: `${u.nombre} ${u.apellidoPa} ${u.apellidoMa || ''}`.trim(),
+      correoInstitucional: u.correo,
+      esJefeAcademia: u.esJefeAcademia,
+    }));
+
+    // Buscador superior: filtra por correo institucional o nombre (y también por boleta si la escriben)
+    if (buscar && buscar.trim() !== '') {
+      const termino = buscar.trim().toLowerCase();
+      lista = lista.filter(
+        (item) =>
+          item.nombre.toLowerCase().includes(termino) ||
+          item.correoInstitucional.toLowerCase().includes(termino) ||
+          item.boleta.toLowerCase().includes(termino),
+      );
+    }
+
+    return lista;
+  }
+
+  // Tab 1 -> Acción del botón [Asignar Jefe]
+  async asignarJefeDepartamento(idUsuario: number) {
+    const usuario = await this.usuarioRepository.findOne({
+      where: { idUsuario, estatus: true },
+    });
+
+    if (!usuario) {
+      throw new NotFoundException(
+        'La cuenta de usuario no existe o se encuentra inactiva.',
+      );
+    }
+
+    if (usuario.esJefeAcademia) {
+      throw new ConflictException(
+        'El usuario ya cuenta con los permisos de Jefe de Departamento.',
+      );
+    }
+
+    usuario.esJefeAcademia = true;
+    await this.usuarioRepository.save(usuario);
+
+    const nombreCompleto = `${usuario.nombre} ${usuario.apellidoPa} ${usuario.apellidoMa || ''}`.trim();
+
+    return {
+      mensaje: `${nombreCompleto} fue asignado como Jefe de Departamento`,
+      idUsuario: usuario.idUsuario,
+      nombre: nombreCompleto,
+      correoInstitucional: usuario.correo,
+      esJefeAcademia: true,
+    };
+  }
+
+  // Tab 2 -> Acción del botón [Revocar]
+  async revocarJefeDepartamento(idUsuario: number) {
+    const usuario = await this.usuarioRepository.findOne({
+      where: { idUsuario, estatus: true },
+    });
+
+    if (!usuario) {
+      throw new NotFoundException(
+        'La cuenta de usuario no existe o se encuentra inactiva.',
+      );
+    }
+
+    if (!usuario.esJefeAcademia) {
+      throw new ConflictException(
+        'El usuario no tiene asignado el cargo de Jefe de Departamento.',
+      );
+    }
+
+    usuario.esJefeAcademia = false;
+    await this.usuarioRepository.save(usuario);
+
+    const nombreCompleto = `${usuario.nombre} ${usuario.apellidoPa} ${usuario.apellidoMa || ''}`.trim();
+
+    return {
+      mensaje: `${nombreCompleto} fue revocado del cargo`,
+      idUsuario: usuario.idUsuario,
+      nombre: nombreCompleto,
+      correoInstitucional: usuario.correo,
+      esJefeAcademia: false,
+    };
   }
 }
