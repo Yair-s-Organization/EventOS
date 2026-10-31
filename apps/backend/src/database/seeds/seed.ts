@@ -143,6 +143,40 @@ export async function runSeed() {
     );
     console.log(`   ✓ Subevento creado con ID: ${resSub.rows[0].idSubEvento}`);
 
+    // 5. Recintos Iniciales de ESCOM (Actualizado sin computadoras disponibles)
+      console.log('🌱 Creando recintos iniciales...');
+      const recintos = [
+        { id: 1, nombre: 'Auditorio Principal', aforo: 250, idEstadoRecinto: 1 },
+        { id: 2, nombre: 'Laboratorio de Cómputo A', aforo: 36, idEstadoRecinto: 1 },
+        { id: 3, nombre: 'Laboratorio de Cómputo B', aforo: 36, idEstadoRecinto: 1 },
+        { id: 4, nombre: 'Sala 14', aforo: 50, idEstadoRecinto: 1 },
+      ];
+
+      for (const r of recintos) {
+        await client.query(
+          `INSERT INTO recinto ("idRecinto", nombre, aforo, "idEstadoRecinto")
+          VALUES ($1, $2, $3, $4)
+          ON CONFLICT ("idRecinto") DO UPDATE 
+          SET nombre = EXCLUDED.nombre, aforo = EXCLUDED.aforo;`,
+          [r.id, r.nombre, r.aforo, r.idEstadoRecinto]
+        );
+      }
+
+      console.log('🌱 Poblando equipos/computadoras en estadoEquipo...');
+      const laboratoriosIds = [2, 3];
+
+      for (const recintoId of laboratoriosIds) {
+        await client.query(`DELETE FROM "estadoEquipo" WHERE "idRecinto" = $1;`, [recintoId]);
+
+        for (let i = 1; i <= 36; i++) {
+          await client.query(
+            `INSERT INTO "estadoEquipo" ("numeroEquipo", estado, "idRecinto") VALUES ($1, $2, $3);`,
+            [i, true, recintoId]
+          );
+        }
+        console.log(`✓ 36 computadoras agregadas al recinto ID: ${recintoId}`);
+      }
+
     console.log('\n✨ ¡Semillas de prueba insertadas con éxito!');
   } catch (error) {
     console.error('❌ Error al sembrar datos de prueba:', error);

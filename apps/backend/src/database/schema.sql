@@ -59,18 +59,11 @@ CREATE TABLE "estadoEvento" (
   estado varchar(100) NOT NULL
 );
 
--- 8. Tipo Etiqueta
-CREATE TABLE "tipoEtiqueta" (
-  "idTipoEtiqueta" integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-  "tipoEtiqueta" varchar(150) NOT NULL
-);
-
 -- 9. Recinto
 CREATE TABLE recinto (
   "idRecinto" integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   nombre varchar(100) NOT NULL,
   aforo integer NOT NULL,
-  "computadorasDisponibles" integer,
   "idEstadoRecinto" integer NOT NULL REFERENCES "estadoRecinto"("idEstadoRecinto")
 );
 
@@ -96,7 +89,7 @@ CREATE TABLE verificacion (
 CREATE TABLE "estadoEquipo" (
   "idEstadoEquipo" integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   "numeroEquipo" integer NOT NULL,
-  estado boolean NOT NULL,
+  estado boolean NOT NULL DEFAULT true,
   "idRecinto" integer NOT NULL REFERENCES recinto("idRecinto")
 );
 
@@ -111,13 +104,6 @@ CREATE TABLE evento (
   "idAlcance" integer NOT NULL REFERENCES alcance("idAlcance"),
   "idEstadoEvento" integer NOT NULL REFERENCES "estadoEvento"("idEstadoEvento"),
   "idOrganizador" integer NOT NULL REFERENCES usuario("idUsuario")
-);
-
--- 14. Evento Etiqueta
-CREATE TABLE "eventoEtiqueta" (
-  "idEvento" integer NOT NULL REFERENCES evento("idEvento"),
-  "idTipoEtiqueta" integer NOT NULL REFERENCES "tipoEtiqueta"("idTipoEtiqueta"),
-  PRIMARY KEY ("idEvento", "idTipoEtiqueta")
 );
 
 -- 15. Boleto
@@ -231,15 +217,6 @@ VALUES
   (2, 2),
   (3, 3)
 ON CONFLICT ("idRol") DO NOTHING;
-
--- 7. Recintos Iniciales de ESCOM
-INSERT INTO recinto ("idRecinto", nombre, aforo, "computadorasDisponibles", "idEstadoRecinto") OVERRIDING SYSTEM VALUE
-VALUES 
-  (1, 'Auditorio Principal', 250, 0, 1),
-  (2, 'Laboratorio de Cómputo A', 35, 35, 1),
-  (3, 'Laboratorio de Cómputo B', 25, 25, 1),
-  (4, 'Sala 14', 50, 0, 1)
-ON CONFLICT ("idRecinto") DO NOTHING;
 
 -- Ajustar secuencias de identity para futuros INSERTs automáticos
 SELECT setval(pg_get_serial_sequence('"alcance"', 'idAlcance'), COALESCE(MAX("idAlcance"), 1)) FROM "alcance";

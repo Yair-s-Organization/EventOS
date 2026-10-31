@@ -69,7 +69,7 @@ export function GestionEquipos() {
     const nuevoEstado = !equipoPendiente.estado;
 
     try {
-      const response = await fetch(`http://localhost:3000/api/espacios/equipos/${equipoPendiente.idEstadoEquipo}/estado`, {
+      const response = await fetch(`http://localhost:3000/api/espacios/${id}/equipos/${equipoPendiente.idEstadoEquipo}/estado`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -118,7 +118,7 @@ export function GestionEquipos() {
           </div>
 
           <div className="pt-2">
-            <Button text="Regresar" variant="primary" size="sm" className="bg-[#5c1d33] hover:bg-[#4a1c2d] text-white px-6 py-2 rounded" onClick={() => navigate("/gestion-espacios")}/>
+            <Button text="Regresar" variant="primary" size="sm" className="px-6 py-2 rounded" onClick={() => navigate("/gestion-espacios")}/>
           </div>
         </div>
 
@@ -128,15 +128,15 @@ export function GestionEquipos() {
       <Modal titulo="Advertencia" contenido="" mostrarModal={modalAbierto} cerrarModal={() => setModalAbierto(false)}>
         <div className="space-y-6">
           <p className="text-sm text-gray-700 font-merriweather">
-            ¿Estás seguro que quieres {equipoPendiente?.estado ? "inhabilitar" : "habilitar"} al Equipo {equipoPendiente?.numeroEquipo}?
+            ¿Estás seguro que quieres {equipoPendiente?.estado ? "inhabilitar" : "habilitar"} el Equipo {equipoPendiente?.numeroEquipo}?
           </p>
 
           <div className="flex items-center justify-end space-x-3">
             <Button text="Cancelar" type="button" variant="outline" onClick={() => setModalAbierto(false)}
-              className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-merriweather text-sm px-6 py-2.5 rounded-md transition-colors"
+              className="font-merriweather text-sm px-6 py-2.5 rounded-md transition-colors"
             />
             <Button text="Aceptar" type="button" onClick={handleConfirmarCambio}
-              className="bg-[#5c1d33] hover:bg-[#4a1c2d] text-white font-merriweather text-sm px-6 py-2.5 rounded-md transition-colors shadow"
+              className="font-merriweather text-sm px-6 py-2.5 rounded-md transition-colors shadow"
             />
           </div>
         </div>
