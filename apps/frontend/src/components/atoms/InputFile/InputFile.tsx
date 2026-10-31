@@ -36,7 +36,7 @@ export function InputFile({
 
   return (
     <label
-      className={`font-merriweather border-2 text-[16px] flex w-full items-center rounded-lg border p-3 text-sm transition-colors focus-within:ring-2 ${
+      className={`font-merriweather border-2 text-[16px] flex w-full items-center rounded-lg p-3 text-sm transition-colors focus-within:ring-2 ${
         disabled
           ? "cursor-not-allowed bg-gray-100 text-gray-400"
           : "cursor-pointer bg-white"

@@ -27,7 +27,7 @@ export function PasswordField({
   const [showPassword, setShowPassword] = useState(false);
 
   return (
-    <div className="flex min-w-0 flex-col justify-end gap-1 font-merriweather font-regular text-[16px]">
+    <div className="flex -mt-1 min-w-0 flex-col justify-end gap-1 font-merriweather text-[16px]">
       <Label htmlFor={id} required={required}>{label}</Label>
       <div className="relative">
         <Input

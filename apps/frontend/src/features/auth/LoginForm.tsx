@@ -9,6 +9,7 @@ import { FormField } from "../../components/molecules/FormField";
 import { PasswordField } from "../../components/molecules/PasswordField";
 import { CaptchaField } from "../../components/molecules/CaptchaField";
 import { AuthLayout } from "../../components/templates/AuthLayout";
+import { Modal } from "../../components/molecules/Modal";
 
 export function LoginForm() {
   const navigate = useNavigate();
@@ -27,9 +28,8 @@ export function LoginForm() {
   const [loading, setLoading] = useState(false);
   const [captchaError, setCaptchaError] = useState("");
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [modalBloqueoAbierto, setModalBloqueoAbierto] = useState(false);
   const recaptchaRef = useRef<ReCAPTCHA>(null);
-
-  const ValidacionContra = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,64}$/;
 
   const handleCaptchaChange = (token: string | null) => {
     setCaptchaToken(token);
@@ -45,7 +45,7 @@ export function LoginForm() {
       if (!value.trim()) {
         setErrors((prev) => ({ ...prev, correo: "El correo electrónico es requerido." }));
       } else if (!/\S+@\S+\.\S+/.test(value)) {
-        setErrors((prev) => ({ ...prev, correo: "El formato del correo electrónico no es válido." }));
+        setErrors((prev) => ({ ...prev, correo: "Ingresa un correo valido. Ejemplo: usuario@alumno.ipn.mx" }));
       } else {
         setErrors((prev) => ({ ...prev, correo: "" }));
       }
@@ -54,11 +54,6 @@ export function LoginForm() {
     if (name === "contrasena") {
       if (!value) {
         setErrors((prev) => ({ ...prev, contrasena: "La contraseña es requerida." }));
-      } else if (!ValidacionContra.test(value)) {
-        setErrors((prev) => ({
-          ...prev,
-          contrasena: "La contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula, un número y un carácter especial.",
-        }));
       } else {
         setErrors((prev) => ({ ...prev, contrasena: "" }));
       }
@@ -68,38 +63,41 @@ export function LoginForm() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setErrors((prev) => ({ ...prev, general: "" }));
-    let hasError = false;
+    setCaptchaError("");
 
     let newCorreoError = "";
     let newContrasenaError = "";
+    let newCaptchaError = "";
+    let hasError = false;
 
     if (!formData.correo.trim()) {
       newCorreoError = "El correo electrónico es requerido.";
       hasError = true;
     } else if (!/\S+@\S+\.\S+/.test(formData.correo)) {
-      newCorreoError = "El formato del correo electrónico no es válido.";
+      newCorreoError = "Ingresa un correo valido. Ejemplo: usuario@alumno.ipn.mx";
       hasError = true;
     }
 
     if (!formData.contrasena) {
       newContrasenaError = "La contraseña es requerida.";
       hasError = true;
-    } else if (!ValidacionContra.test(formData.contrasena)) {
-      newContrasenaError = "La contraseña debe cumplir con los requisitos de seguridad.";
-      hasError = true;
     }
 
     if (!captchaToken) {
-      setCaptchaError("Por favor, confirma que no eres un robot.");
+      newCaptchaError = "Por favor, confirma que no eres un robot.";
       hasError = true;
     }
+
+    const faltaCampoGeneral = !formData.correo.trim() || !formData.contrasena;
 
     if (hasError) {
       setErrors((prev) => ({
         ...prev,
+        general: faltaCampoGeneral ? "Por favor, completa todos los campos" : "",
         correo: newCorreoError,
         contrasena: newContrasenaError,
       }));
+      setCaptchaError(newCaptchaError);
       return;
     }
 
@@ -121,13 +119,23 @@ export function LoginForm() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || "Error al iniciar sesión.");
+        const mensajeServidor = data.message || "";
+        if (
+          mensajeServidor.toLowerCase().includes("bloqueado") ||
+          mensajeServidor.toLowerCase().includes("intentos") ||
+          response.status === 423
+        ) {
+          setModalBloqueoAbierto(true);
+          throw new Error("");
+        } else {
+          throw new Error("Correo electrónico o contraseña incorrectos");
+        }
       }
 
       localStorage.setItem("token", data.access_token);
       localStorage.setItem("usuario", JSON.stringify(data.usuario));
 
-      const rol = data.usuario?.tipoCuenta; // revisar con back
+      const rol = data.usuario?.tipoCuenta;
 
       if (rol === "admin" || rol === "Administrador") {
         navigate("/gestion-espacios");
@@ -138,10 +146,12 @@ export function LoginForm() {
       }
 
     } catch (error: any) {
-      setErrors((prev) => ({
-        ...prev,
-        general: error.message || "Ocurrió un error al conectar con el servidor.",
-      }));
+      if (error.message) {
+        setErrors((prev) => ({
+          ...prev,
+          general: error.message,
+        }));
+      }
       recaptchaRef.current?.reset();
       setCaptchaToken(null);
     } finally {
@@ -153,19 +163,22 @@ export function LoginForm() {
     <AuthLayout title="Iniciar Sesión" generalError={errors.general}>
       <form onSubmit={handleSubmit} className="space-y-4">
         
-        <FormField label="Correo Electrónico" htmlFor="correo" errorMessage={errors.correo}>
-          <Input id="correo" type="email" name="correo" placeholder="Ingresar tu correo electrónico" aria-describedby="email-error"
-            value={formData.correo}
-            onChange={handleChange}
-            hasError={!!errors.correo}
-          />
-          <FieldMessage variant="helper" className="mt-1">
-            Usa tu correo institucional (@ipn.mx, @alumno.ipn.mx) o tu cuenta personal. 
-          </FieldMessage>
+        <FormField label="Correo Electrónico" htmlFor="correo">
+          <Input id="correo" type="email" name="correo" placeholder="Ingresar tu correo electrónico" aria-describedby="email-error" value={formData.correo} onChange={handleChange} hasError={!!errors.correo}/>
+          <div className="min-h-1.5 mt-1">
+            {errors.correo ? (
+              <p className="mt-1 text-eventos-error text-xs font-merriweather">{errors.correo}</p>
+            ) : (
+              <FieldMessage variant="helper">
+                Usa tu correo institucional (@ipn.mx, @alumno.ipn.mx) o tu cuenta personal. 
+              </FieldMessage>
+            )}
+          </div>
         </FormField>
 
-        <PasswordField id="contrasena" name="contrasena" label="Contraseña" placeholder="●●●●●●●" value={formData.contrasena} onChange={handleChange} error={errors.contrasena}/>
-
+        <div className="-mt-12">
+          <PasswordField id="contrasena" name="contrasena" label="Contraseña" placeholder="Ejemplo01!" value={formData.contrasena} onChange={handleChange} error={errors.contrasena}/>
+        </div>    
         <CaptchaField recaptchaRef={recaptchaRef} onChange={handleCaptchaChange} error={captchaError}
           sitekey="6LddCvktAAAAAM980VTf7Y1lBBjUbjKEIOqMEXBi"
         />
@@ -178,6 +191,20 @@ export function LoginForm() {
           </TextLink>
         </div>
       </form>
+
+      <Modal titulo="Acceso bloqueado temporalmente" contenido="" mostrarModal={modalBloqueoAbierto} cerrarModal={() => setModalBloqueoAbierto(false)}>
+        <div className="space-y-4 font-merriweather text-sm text-gray-700">
+          <p>
+            Has superado el límite de 5 intentos fallidos consecutivos de inicio de sesión.
+          </p>
+          <p>
+            Por motivos de seguridad y protección contra accesos no autorizados, el ingreso a esta cuenta ha sido suspendido durante 30 minutos.
+          </p>
+          <div className="flex justify-end pt-2">
+            <Button text="Cerrar" type="button" onClick={() => setModalBloqueoAbierto(false)} className="bg-[#5c1d33] hover:bg-[#4a1c2d] text-white px-6 py-2 rounded-md transition-colors shadow"/>
+          </div>
+        </div>
+      </Modal>
     </AuthLayout>
   );
 }

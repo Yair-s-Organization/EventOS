@@ -3,7 +3,7 @@
 
 @theme {
   /* Colores principales */
-  --color-eventos-primary: #725B8C;
+  --color-eventos-primary: #5F1B36;
   --color-secondary: #1B585F;
 
   /* Colores claros */
@@ -18,9 +18,8 @@
   /* Neutros */
   --color-eventos-neutral: #E9E9E9;
 
-  --color-primary: #463757;
+  --color-primary: #5F1B36;
 
   /* Fuente */
   --font-merriweather: "Poppins", serif;
 }
-

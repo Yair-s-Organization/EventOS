@@ -43,12 +43,7 @@ export function AppRouter() {
         />
 
         {/* Rutas para asistente*/}
-        <Route
-          element={
-            <ProtectedRoute
-              allowedRoles={["Asistente", "Usuario Externo", "Usuario Interno"]}
-            />
-          }>
+        <Route element={<ProtectedRoute allowedRoles={["Asistente", "Usuario Externo", "Usuario Interno"]}/>}>
           <Route element={<DashboardLayout />}>
             <Route path="/menu-asistente" element={<MenuAsistente />} />
             <Route path="/solicitud-evento" element={<SolicitudEvento />} />

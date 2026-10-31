@@ -20,9 +20,11 @@ export function Navbar({ userRole }: NavbarProps) {
         ];
       case "admin":
         return [
+          { label: "Menú", to: "/admin/usuarios" },
           { label: "Bitácora", to: "/admin/bitacora" },
-          { label: "Cuentas de usuario", to: "/admin/usuarios" },
-          { label: "Espacios Físicos", to: "/gestion-espacios" },
+          { label: "Gestión de Jefes de departamento", to: "/admin/usuarios" },
+          { label: "Gestión de espacios", to: "/admin/usuarios" },
+          { label: "Gestión de usuarios", to: "/gestion-espacios" },
         ];
       case "subdireccion":
       default:
@@ -37,7 +39,7 @@ export function Navbar({ userRole }: NavbarProps) {
   };
 
   return (
-    <nav className="w-full bg-eventos-primary border-b border-[#60253a] px-8 py-4 flex items-center justify-between font-merriweather text-white shadow-md">
+    <nav className="w-full bg-primary border-b px-8 py-4 flex items-center justify-between font-merriweather text-white shadow-md">
       <div className="flex items-center">
         <span className="font-bold text-xl tracking-wide text-stone-100 font-merriweather">
           Event-Os
@@ -54,7 +56,7 @@ export function Navbar({ userRole }: NavbarProps) {
           ))}
         </div>
 
-        <div className="flex items-center space-x-6 pl-4 border-l border-[#60253a]">
+        <div className="flex items-center space-x-6 pl-4 border-l border-primary">
           {userRole === "asistente" && (
             <button type="button" className="text-stone-200 hover:text-white focus:outline-none transition-colors" aria-label="Notificaciones">
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
