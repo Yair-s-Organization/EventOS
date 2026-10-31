@@ -6,6 +6,7 @@ interface ModalProps {
   children?: ReactNode;
   mostrarModal: boolean;
   cerrarModal: () => void;
+  ancho?: "normal" | "amplio";
 }
 
 export function Modal({
@@ -14,6 +15,7 @@ export function Modal({
   children,
   mostrarModal,
   cerrarModal,
+  ancho = "normal",
 }: ModalProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const tituloId = useId();
@@ -39,7 +41,9 @@ export function Modal({
       onClick={(event) => {
         if (event.target === event.currentTarget) cerrarModal();
       }}
-      className="rounded-md m-auto w-[calc(100%-2rem)] max-w-lg border-0 bg-gray p-0 text-gray-900 backdrop:bg-black/50"
+      className={`rounded-md m-auto w-[calc(100%-2rem)] ${
+        ancho === "amplio" ? "max-w-2xl" : "max-w-lg"
+      } border-0 bg-gray p-0 text-gray-900 backdrop:bg-black/50`}
     >
       <div className="bg-white p-6 shadow-xl sm:p-8">
         <h2 id={tituloId} className="mb-3 font-merriweather font-bold">

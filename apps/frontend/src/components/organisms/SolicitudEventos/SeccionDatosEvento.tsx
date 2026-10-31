@@ -100,7 +100,7 @@
             className="flex h-full min-w-0 flex-col gap-[15px] [&>div]:flex-1 ">
             <p className="text-justify text-xs  font-merriweather">
               La descripción del evento debe mencionar brevemente las actividades
-              que se vayan a realizar a lo largo del evento.
+              que se vayan a realizar a lo largo del evento. Máximo 500 caracteres
             </p>
             <FormField
               label="Descripcion del evento"
@@ -125,6 +125,7 @@
             className="flex h-full min-w-0 flex-col gap-[15px] [&>div]:flex-1">
               <p className="text-justify text-xs font-merriweather">
                 La justificación debe destacar los beneficios que el evento traerá a la comunidad politécnica y al publico en general.
+                Máximo 500 caracteres
               </p>
             <FormField
               label="Justificación"
