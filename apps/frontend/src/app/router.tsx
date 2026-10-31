@@ -27,38 +27,20 @@ export function AppRouter() {
           <Route path="/registro" element={<Registro />} />
           {/*Colocar aqui rutas para probar sin tener que hacer login(no apareceran con el navbar correspondiente 
              pero solo es para probar visualización)*/}
-  <Route
-    path="/demo-reservacion"
-    element={<ReservationDemoPage />}
-    />
+          <Route path="/demo-reservacion" element={<ReservationDemoPage />} />
+          <Route path="/demo-boletos" element={<MyTicketsDemoPage />} />
 
-          <Route
-          path="/demo-boletos"
-          element={<MyTicketsDemoPage />}
-          />
+          <Route path="/solicitud-evento" element={<SolicitudEvento />} />
 
-          <Route
-          path="/solicitud-evento"
-          element={<SolicitudEvento />}
-          />
-
-          <Route
-          path="/detalles-solicitud/"
-          element={<DetallesSolicitud />}
-          />
-
+          <Route path="/detalles-solicitud/" element={<DetallesSolicitud />} />
         </Route>
 
-        <Route
-          path="/demo-boleto"
-          element={<DigitalTicketDemoPage />}
-        />
+        <Route path="/demo-boleto" element={<DigitalTicketDemoPage />} />
 
         <Route
           path="/demo-disponibilidad/:idSubEvento"
           element={<ReservationAvailabilityPreviewPage />}
         />
-
 
         {/* Rutas para asistente*/}
         <Route
@@ -88,8 +70,14 @@ export function AppRouter() {
               path="/detalles-solicitud/:id"
               element={<DetallesSolicitud />}
             />
-            <Route path="/subdireccion/lista-solicitudes" element={<ListadoSolicitudes />} />
-            <Route path="/subdireccion/menu-principal" element={<MenuSubdireccion />} />
+            <Route
+              path="/subdireccion/lista-solicitudes"
+              element={<ListadoSolicitudes />}
+            />
+            <Route
+              path="/subdireccion/menu-principal"
+              element={<MenuSubdireccion />}
+            />
           </Route>
         </Route>
 

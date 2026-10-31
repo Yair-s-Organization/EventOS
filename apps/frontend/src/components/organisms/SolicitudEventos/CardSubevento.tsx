@@ -9,7 +9,8 @@ import type {
 } from "../../../features/events/SolicitudEventos";
 import Input from "../../atoms/Input/Input";
 import Button from "../../atoms/Button/Button";
-import { TextArea } from "../../atoms/TextArea/TextArea";
+import { SpaceRequerimentsDialog } from "../../organisms/SpaceRequirementsDialog/SpaceRequerimentsDialog";
+import { useState } from "react";
 
 interface CardSubeventoBaseProps {
   subevento: SubeventoFormData;
@@ -100,10 +101,11 @@ export function CardSubevento(props: CardSubeventoProps) {
   const errors = readOnly ? {} : props.errors;
   const touched = readOnly ? {} : props.touched;
   const { subevento, index } = props;
+  const [mostrarModal, setMostrarModal] = useState(false);
 
   return (
     <div className="grid min-w-0 grid-cols-1 gap-4 rounded-md bg-eventos-primary-light p-4 sm:grid-cols-2 sm:p-6 lg:grid-cols-3 lg:px-10 lg:py-8">
-    {/*   {readOnly && (
+      {/*   {readOnly && (
         <>
           <FormField label="Nombre del subevento" readOnly>
             <Input value={subevento.nombre} disabled />
@@ -268,9 +270,20 @@ export function CardSubevento(props: CardSubeventoProps) {
               !subevento.idRecinto
             }
             className="w-full sm:w-auto"
+            onClick={() => setMostrarModal(true)}
           />
         )}
       </FormField>
+      <SpaceRequerimentsDialog
+        mostrar={mostrarModal}
+        laboratorio={
+          RECINTOS.find(
+            (recinto) => recinto.value === String(subevento.idRecinto),
+          )?.label ?? "Espacio seleccionado"
+        }
+        id={subevento.idRecinto}
+        cerrar={() => setMostrarModal(false)}
+      />
       {!readOnly && (
         <div className="col-span-full flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <Button
