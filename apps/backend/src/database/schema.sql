@@ -200,17 +200,7 @@ VALUES
   (3, 'Cancelado')
 ON CONFLICT ("idEstadoBoleto") DO NOTHING;
 
--- 5. Tipo de Etiqueta
-INSERT INTO "tipoEtiqueta" ("idTipoEtiqueta", "tipoEtiqueta") OVERRIDING SYSTEM VALUE
-VALUES 
-  (1, 'IA'),
-  (2, 'Tecnología'),
-  (3, 'Salud'),
-  (4, 'Ciencia'),
-  (5, 'Sistemas')
-ON CONFLICT ("idTipoEtiqueta") DO NOTHING;
-
--- 6. Rol de Verificación
+-- 5. Rol de Verificación
 INSERT INTO rol ("idRol", rol) OVERRIDING SYSTEM VALUE
 VALUES 
   (1, 1),
@@ -218,11 +208,19 @@ VALUES
   (3, 3)
 ON CONFLICT ("idRol") DO NOTHING;
 
+-- 6. Recintos Iniciales de ESCOM
+INSERT INTO recinto ("idRecinto", nombre, aforo, "idEstadoRecinto") OVERRIDING SYSTEM VALUE
+VALUES 
+  (1, 'Auditorio Principal', 250, 1),
+  (2, 'Laboratorio de Cómputo A', 36, 1),
+  (3, 'Laboratorio de Cómputo B', 36, 1),
+  (4, 'Sala 14', 50, 1)
+ON CONFLICT ("idRecinto") DO NOTHING;
+
 -- Ajustar secuencias de identity para futuros INSERTs automáticos
 SELECT setval(pg_get_serial_sequence('"alcance"', 'idAlcance'), COALESCE(MAX("idAlcance"), 1)) FROM "alcance";
 SELECT setval(pg_get_serial_sequence('"estadoRecinto"', 'idEstadoRecinto'), COALESCE(MAX("idEstadoRecinto"), 1)) FROM "estadoRecinto";
 SELECT setval(pg_get_serial_sequence('"estadoEvento"', 'idEstadoEvento'), COALESCE(MAX("idEstadoEvento"), 1)) FROM "estadoEvento";
 SELECT setval(pg_get_serial_sequence('"estadoBoleto"', 'idEstadoBoleto'), COALESCE(MAX("idEstadoBoleto"), 1)) FROM "estadoBoleto";
-SELECT setval(pg_get_serial_sequence('"tipoEtiqueta"', 'idTipoEtiqueta'), COALESCE(MAX("idTipoEtiqueta"), 1)) FROM "tipoEtiqueta";
 SELECT setval(pg_get_serial_sequence('"rol"', 'idRol'), COALESCE(MAX("idRol"), 1)) FROM "rol";
 SELECT setval(pg_get_serial_sequence('"recinto"', 'idRecinto'), COALESCE(MAX("idRecinto"), 1)) FROM "recinto";
