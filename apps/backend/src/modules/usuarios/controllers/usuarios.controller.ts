@@ -29,7 +29,7 @@ import { TipoCuentaUsuario } from '@eventos/shared';
 export class UsuariosController {
   constructor(private readonly usuariosService: UsuariosService) {}
 
-  // Consulta de Perfil 
+  // Consulta de Perfil
   @ApiOperation({
     summary: 'Consultar perfil y vigencia de verificación del usuario',
   })
@@ -99,7 +99,7 @@ export class UsuariosController {
     return await this.usuariosService.obtenerDetalleVerificacion(id);
   }
 
-  // SUBDIRECCIÓN: Botón [Verificar usuario] 
+  // SUBDIRECCIÓN Botón [Verificar usuario]
   @ApiOperation({
     summary:
       'Subdirección: Aprobar verificación de usuario (Botón Verificar usuario)',
@@ -110,7 +110,7 @@ export class UsuariosController {
     return await this.usuariosService.aprobarVerificacionUsuario(id);
   }
 
-  // SUBDIRECCIÓN: Botón [Rechazar] 
+  // SUBDIRECCIÓN Botón [Rechazar]
   @ApiOperation({
     summary: 'Subdirección: Rechazar solicitud de verificación de usuario',
   })
@@ -120,7 +120,7 @@ export class UsuariosController {
     return await this.usuariosService.rechazarVerificacionUsuario(id);
   }
 
-  // ADMINISTRADOR: Listar cuentas del sistema 
+  // ADMINISTRADOR Listar cuentas del sistema
   @ApiOperation({
     summary: 'Administrador (UI21): Listar cuentas del sistema con filtros',
   })
@@ -144,7 +144,7 @@ export class UsuariosController {
     });
   }
 
-  // ADMINISTRADOR: Botón [Eliminar]
+  // ADMINISTRADOR Botón [Eliminar]
   @ApiOperation({
     summary:
       'Administrador: Eliminar lógicamente (inhabilitar) cuenta de usuario',
@@ -159,18 +159,26 @@ export class UsuariosController {
     return await this.usuariosService.eliminarCuentaLogica(id, idAdminActor);
   }
 
-  // Tab 1 (Asignar Jefe): Candidatos que aún NO son jefes 
+  // Tab 1 Asignar Jefe. Candidatos que aún NO son jefes (Excluye Subdirección y Admin)
   @ApiOperation({
     summary:
       'Tab 1 (Asignar Jefe): Listar cuentas institucionales candidatas por correo o nombre',
   })
   @Get('jefes-departamento/candidatos')
   @Roles(TipoCuentaUsuario.ADMINISTRADOR)
-  async listarCandidatosJefe(@Query('buscar') buscar?: string) {
-    return await this.usuariosService.listarCandidatosOJefes(false, buscar);
+  async listarCandidatosJefe(
+    @Req() req: any,
+    @Query('buscar') buscar?: string,
+  ) {
+    const idAdminActor = Number(req.user?.sub ?? req.user?.idUsuario);
+    return await this.usuariosService.listarCandidatosOJefes(
+      false,
+      buscar,
+      idAdminActor,
+    );
   }
 
-  // Tab 2 (Revocar Jefe): Usuarios que actualmente SÍ son jefes
+  // Tab 2 Revocar Jefe. Usuarios que actualmente SÍ son jefes
   @ApiOperation({
     summary:
       'Tab 2 (Revocar Jefe): Listar Jefes de Departamento activos por correo o nombre',
@@ -181,17 +189,21 @@ export class UsuariosController {
     return await this.usuariosService.listarCandidatosOJefes(true, buscar);
   }
 
-  // Modal [Asignar]: Otorga permisos de Jefe de Departamento
+  //Otorga permisos de Jefe de Departamento (Bloquea Subdirección y Admin)
   @ApiOperation({
     summary: 'Asignar permisos de Jefe de Departamento a un usuario',
   })
   @Patch(':id/asignar-jefe')
   @Roles(TipoCuentaUsuario.ADMINISTRADOR)
-  async asignarJefe(@Param('id', ParseIntPipe) id: number) {
-    return await this.usuariosService.asignarJefeDepartamento(id);
+  async asignarJefe(
+    @Param('id', ParseIntPipe) id: number,
+    @Req() req: any,
+  ) {
+    const idAdminActor = Number(req.user?.sub ?? req.user?.idUsuario);
+    return await this.usuariosService.asignarJefeDepartamento(id, idAdminActor);
   }
 
-  // [Confirmar Revocar]: Revoca permisos de Jefe de Departamento
+  //Revoca permisos de Jefe de Departamento
   @ApiOperation({
     summary: 'Revocar permisos de Jefe de Departamento a un usuario',
   })
