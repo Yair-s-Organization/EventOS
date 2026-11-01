@@ -218,12 +218,33 @@ export function SolicitudEvento() {
       subEventos: prev.subEventos.map((subevento, currentIndex) => {
         if (currentIndex !== index) return subevento;
 
+        if (field === "fecha") {
+          return {
+            ...subevento,
+            fecha: value,
+            horaInicio: "",
+            horaFin: "",
+          };
+        }
+
+        if (field === "horaInicio") {
+          return {
+            ...subevento,
+            horaInicio: value,
+            horaFin: "",
+          };
+        }
+
         if (field === "idRecinto") {
           const idRecinto = Number(value);
           const updated: SubeventoFormData = {
             ...subevento,
             idRecinto,
           };
+          if (idRecinto !== subevento.idRecinto) {
+            updated.horaInicio = "";
+            updated.horaFin = "";
+          }
           if (
             idRecinto === RecintoId.LABORATORIO_A ||
             idRecinto === RecintoId.LABORATORIO_B

@@ -16,6 +16,7 @@ import { ModalSubevento } from "../ModalSubevento/ModalSubevento";
 interface CardSubeventoBaseProps {
   subevento: SubeventoFormData;
   index: number;
+  otrosSubeventos?: SubeventoFormData[];
   isDeleting?: boolean;
   nombreRecinto?: string;
 }
@@ -114,15 +115,13 @@ const HORASFIN = [
   { value: "22:00", label: "22:00" },
 ];
 
-function opcionesConValor(
-  opciones: typeof HORASINICIO,
-  valor: string,
-): typeof HORASINICIO {
-  if (!valor || opciones.some((opcion) => opcion.value === valor)) {
-    return opciones;
-  }
-
-  return [...opciones, { value: valor, label: valor }];
+function seTraslapan(
+  horaInicio: string,
+  horaFin: string,
+  otraHoraInicio: string,
+  otraHoraFin: string,
+): boolean {
+  return horaInicio < otraHoraFin && otraHoraInicio < horaFin;
 }
 
 export function CardSubevento(props: CardSubeventoProps) {
@@ -130,8 +129,32 @@ export function CardSubevento(props: CardSubeventoProps) {
   const errors = readOnly ? {} : props.errors;
   const touched = readOnly ? {} : props.touched;
   const { subevento, index } = props;
+  const otrosSubeventos = (props.otrosSubeventos ?? []).filter(
+    (otro) =>
+      otro.fecha === subevento.fecha &&
+      otro.idRecinto === subevento.idRecinto &&
+      otro.horaInicio &&
+      otro.horaFin,
+  );
   const [mostrarModalEspacio, setMostrarModalEspacio] = useState(false);
   const [mostrarModalSubevento, setMostrarModalSubevento] = useState(false);
+
+  const horaDisponible = (horaInicio: string, horaFin: string) =>
+    !otrosSubeventos.some((otro) =>
+      seTraslapan(horaInicio, horaFin, otro.horaInicio, otro.horaFin),
+    );
+  const horasInicioDisponibles = HORASINICIO.filter(({ value: horaInicio }) =>
+    HORASFIN.some(
+      ({ value: horaFin }) =>
+        horaFin > horaInicio && horaDisponible(horaInicio, horaFin),
+    ),
+  );
+  const horasFinDisponibles = HORASFIN.filter(
+    ({ value: horaFin }) =>
+      subevento.horaInicio &&
+      horaFin > subevento.horaInicio &&
+      horaDisponible(subevento.horaInicio, horaFin),
+  );
 
   const fechaMinima = new Intl.DateTimeFormat("en-CA", {
     timeZone: "America/Mexico_City",
@@ -177,9 +200,9 @@ export function CardSubevento(props: CardSubeventoProps) {
         <Select
           id={`selectHoraInicio-${index}`}
           placeholder="Selecciona la hora de inicio"
-          options={opcionesConValor(HORASINICIO, subevento.horaInicio)}
+          options={horasInicioDisponibles}
           value={subevento.horaInicio}
-          disabled={readOnly}
+          disabled={readOnly || !subevento.fecha || !subevento.idRecinto}
           hasError={Boolean(touched.horaInicio && errors.horaInicio)}
           onChange={
             readOnly
@@ -204,9 +227,14 @@ export function CardSubevento(props: CardSubeventoProps) {
         <Select
           id={`selectHoraFinal-${index}`}
           placeholder="Selecciona la hora final"
-          options={opcionesConValor(HORASFIN, subevento.horaFin)}
+          options={horasFinDisponibles}
           value={subevento.horaFin}
-          disabled={readOnly}
+          disabled={
+            readOnly ||
+            !subevento.fecha ||
+            !subevento.idRecinto ||
+            !subevento.horaInicio
+          }
           hasError={Boolean(touched.horaFin && errors.horaFin)}
           onChange={
             readOnly

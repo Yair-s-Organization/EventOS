@@ -58,6 +58,9 @@ export function SeccionSubeventos({
               <CardSubevento
                 subevento={subevento}
                 index={index}
+                otrosSubeventos={subEventos.filter(
+                  (_, otroIndex) => otroIndex !== index,
+                )}
                 errors={subeventErrors[index] ?? {}}
                 touched={subeventTouched[index] ?? {}}
                 updateSubevento={updateSubevento}
