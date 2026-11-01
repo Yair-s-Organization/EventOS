@@ -108,7 +108,7 @@ function validarFormulario(form: FormularioSolicitudData): ErroresFormulario {
 function validarSubeventos(
   subEventos: SubeventoFormData[],
 ): ErroresSubevento[] {
-  return subEventos.map((subevento) => {
+  return subEventos.map((subevento, index) => {
     const errors: ErroresSubevento = {};
 
     if (subevento.nombre.length > 150) {
@@ -150,6 +150,30 @@ function validarSubeventos(
       subevento.horaInicio >= subevento.horaFin
     ) {
       errors.horaFin = "La hora final debe ser posterior a la hora de inicio";
+    }
+
+    const hayTraslape = subEventos.some((otro, otroIndex) => {
+      if (
+        otroIndex === index ||
+        otro.fecha !== subevento.fecha ||
+        otro.idRecinto !== subevento.idRecinto ||
+        !otro.horaInicio ||
+        !otro.horaFin ||
+        !subevento.horaInicio ||
+        !subevento.horaFin
+      ) {
+        return false;
+      }
+
+      return (
+        subevento.horaInicio < otro.horaFin &&
+        otro.horaInicio < subevento.horaFin
+      );
+    });
+
+    if (hayTraslape) {
+      errors.horaInicio =
+        "Ese horario ya está ocupado para este recinto y fecha.";
     }
 
     return errors;
