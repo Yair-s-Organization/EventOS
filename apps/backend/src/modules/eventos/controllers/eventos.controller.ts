@@ -1,5 +1,6 @@
 import {
   Controller,
+  ForbiddenException,
   Get,
   Param,
   ParseIntPipe,
@@ -38,6 +39,39 @@ export class EventosController {
     } catch {
       return undefined;
     }
+  }
+
+  private obtenerIdUsuarioAutenticado(req: any): number {
+    const idUsuario = req.user?.sub ?? req.user?.idUsuario;
+    if (!idUsuario) {
+      throw new ForbiddenException('No se pudo identificar al usuario en el token.');
+    }
+    return Number(idUsuario);
+  }
+
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Consultar mis eventos registrados como organizador',
+  })
+  @Get('mis-eventos')
+  @UseGuards(RolesGuard)
+  async obtenerMisEventos(@Req() req: any) {
+    const idUsuario = this.obtenerIdUsuarioAutenticado(req);
+    return await this.eventosService.obtenerMisEventos(idUsuario);
+  }
+
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Consultar detalle administrativo de un evento propio',
+  })
+  @Get(':idEvento/detalle-organizador')
+  @UseGuards(RolesGuard)
+  async obtenerDetalleOrganizador(
+    @Param('idEvento', ParseIntPipe) idEvento: number,
+    @Req() req: any,
+  ) {
+    const idUsuario = this.obtenerIdUsuarioAutenticado(req);
+    return await this.eventosService.obtenerDetalleOrganizador(idEvento, idUsuario);
   }
 
   //Cartelera de eventos próximos (sin sesión: solo acceso libre; con sesión: internos o externos según cuenta)

@@ -170,6 +170,57 @@ export interface SubeventoPayload {
   horaFin: string;
 }
 
+export interface PrimerSubeventoResumen {
+  idSubEvento: number;
+  nombre: string;
+  fecha: string | null;
+  horaInicio: string | null;
+  horaFin: string | null;
+  nombreRecinto: string | null;
+}
+
+export interface MisEventosItem {
+  idEvento: number;
+  nombre: string;
+  descripcion: string;
+  justificacion?: string | null;
+  poster: string;
+  posterUrl: string | null;
+  idAlcance?: AlcanceEvento;
+  idEstadoEvento?: EstadoEvento;
+  cupoMaximo: number;
+  boletosEmitidos: number;
+  primerSubevento: PrimerSubeventoResumen | null;
+}
+
+export interface EventoOrganizadorDetalleSubevento {
+  idSubEvento: number;
+  nombre: string;
+  descripcion: string;
+  accesoQR: boolean;
+  estado: EstadoSubEvento;
+  fecha: Fecha | null;
+  recinto: Recinto | null;
+  ponentes: Ponente[];
+  boletosEmitidos: number;
+}
+
+export interface EventoOrganizadorDetalle {
+  idEvento: number;
+  nombre: string;
+  descripcion: string;
+  justificacion?: string | null;
+  poster: string;
+  posterUrl: string | null;
+  idAlcance?: AlcanceEvento;
+  idEstadoEvento?: EstadoEvento;
+  esUrgente: boolean;
+  idOrganizador: number;
+  cupoMaximo: number;
+  boletosActivosCount: number;
+  subEventos: EventoOrganizadorDetalleSubevento[];
+}
+
 
 // Enums
 export enum TipoEtiqueta {
