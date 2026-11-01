@@ -10,6 +10,7 @@ import {
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
+import { RegistroDto } from './dto/registro.dto';
 import { RolesGuard } from './roles.guard';
 
 @ApiTags('Auth')
@@ -22,13 +23,7 @@ export class AuthController {
   @HttpCode(HttpStatus.CREATED)
   async registrarUsuario(
     @Body()
-    body: {
-      nombre: string;
-      apellidoPa: string;
-      apellidoMa?: string;
-      correo: string;
-      contrasena: string;
-    },
+    body: RegistroDto,
   ) {
     return await this.authService.registrar(body);
   }

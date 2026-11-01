@@ -29,30 +29,49 @@ export class AuthService {
     correo: string;
     contrasena: string;
   }) {
-    if (!dto.nombre || !this.SOLO_LETRAS_REGEX.test(dto.nombre.trim())) {
-      throw new BadRequestException(
-        'El nombre solo puede contener letras y espacios, no se permiten números.',
-      );
-    }
+    const nombre = dto.nombre?.trim() ?? '';
+    const apellidoPa = dto.apellidoPa?.trim() ?? '';
+    const apellidoMa = dto.apellidoMa?.trim() ?? '';
+    const correo = dto.correo?.trim().toLowerCase() ?? '';
+    const contrasenaRaw = dto.contrasena ?? '';
 
-    if (!dto.apellidoPa || !this.SOLO_LETRAS_REGEX.test(dto.apellidoPa.trim())) {
-      throw new BadRequestException(
-        'El apellido paterno solo puede contener letras y espacios, no se permiten números.',
-      );
-    }
-
+    //Rechazar campos nulos, vacíos o solo con espacios
     if (
-      dto.apellidoMa &&
-      dto.apellidoMa.trim() !== '' &&
-      !this.SOLO_LETRAS_REGEX.test(dto.apellidoMa.trim())
+      !nombre ||
+      !apellidoPa ||
+      !apellidoMa ||
+      !correo ||
+      !contrasenaRaw.trim()
     ) {
       throw new BadRequestException(
-        'El apellido materno solo puede contener letras y espacios, no se permiten números.',
+        'Por favor, completa todos los campos obligatorios resaltados para continuar (MSG-17).',
+      );
+    }
+
+    //Validar longitud máxima de 50 caracteres en Nombre y Apellidos
+    if (
+      nombre.length > 50 ||
+      apellidoPa.length > 50 ||
+      apellidoMa.length > 50
+    ) {
+      throw new BadRequestException(
+        'El nombre y los apellidos no pueden exceder los 50 caracteres.',
+      );
+    }
+
+    //Validar que Nombre y Apellidos contengan únicamente letras
+    if (
+      !this.SOLO_LETRAS_REGEX.test(nombre) ||
+      !this.SOLO_LETRAS_REGEX.test(apellidoPa) ||
+      !this.SOLO_LETRAS_REGEX.test(apellidoMa)
+    ) {
+      throw new BadRequestException(
+        'El nombre y los apellidos solo pueden contener letras, sin números ni símbolos especiales.',
       );
     }
 
     const existe = await this.usuarioRepository.findOne({
-      where: { correo: dto.correo },
+      where: { correo },
     });
     if (existe) {
       throw new ConflictException(
@@ -61,30 +80,29 @@ export class AuthService {
     }
 
     const saltRounds = 10;
-    const hashedPassword = await bcrypt.hash(dto.contrasena, saltRounds);
+    const hashedPassword = await bcrypt.hash(contrasenaRaw, saltRounds);
 
-    const correoMin = dto.correo.toLowerCase();
     let tipoAsignado = TipoCuentaUsuario.EXTERNO;
-    if (correoMin.endsWith('@alumno.ipn.mx') || correoMin.endsWith('@ipn.mx')) {
+    if (correo.endsWith('@alumno.ipn.mx') || correo.endsWith('@ipn.mx')) {
       tipoAsignado = TipoCuentaUsuario.INTERNO;
     } else {
       tipoAsignado = TipoCuentaUsuario.EXTERNO;
     }
 
     const nuevoUsuario = this.usuarioRepository.create({
-      nombre: dto.nombre,
-      apellidoPa: dto.apellidoPa,
-      apellidoMa: dto.apellidoMa || null,
-      correo: dto.correo,
+      nombre: dto.nombre.trim(),
+      apellidoPa: dto.apellidoPa.trim(),
+      apellidoMa: dto.apellidoMa ? dto.apellidoMa.trim() : null,
+      correo: dto.correo.trim().toLowerCase(),
       contrasena: hashedPassword,
       estatus: true,
       esVerificado: EstadoVerificacion.NO_VERIFICADO,
       tipoCuenta: tipoAsignado,
       esJefeAcademia: false,
-    });
+  });
 
     const guardado = await this.usuarioRepository.save(nuevoUsuario);
-    const { contrasena, ...resultado } = guardado;
+    const { contrasena: _contrasena, ...resultado } = guardado;
 
     return {
       mensaje: 'Usuario registrado con éxito',
@@ -128,7 +146,9 @@ export class AuthService {
     });
 
     if (!usuario || !usuario.contrasena) {
-      throw new UnauthorizedException('Credenciales incorrectas o inexistentes.');
+      throw new UnauthorizedException(
+        'Credenciales incorrectas o inexistentes.',
+      );
     }
 
     if (!usuario.estatus) {
@@ -175,7 +195,9 @@ export class AuthService {
         await this.usuarioRepository.save(usuario);
       }
 
-      throw new UnauthorizedException('Credenciales incorrectas o inexistentes.');
+      throw new UnauthorizedException(
+        'Credenciales incorrectas o inexistentes.',
+      );
     }
 
     if (usuario.tipoCuenta === TipoCuentaUsuario.ADMINISTRADOR) {
@@ -193,7 +215,7 @@ export class AuthService {
 
     const accessToken = this.jwtService.sign(payload);
 
-    const { contrasena, ...datosUsuario } = usuario;
+    const { contrasena: _contrasena, ...datosUsuario } = usuario;
     return {
       mensaje: 'Inicio de sesión exitoso',
       access_token: accessToken,
