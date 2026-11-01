@@ -21,7 +21,7 @@ export function FormField({
   readOnly,
 }: FormFieldProps) {
   return (
-    <div className="flex min-w-0 flex-col justify-end gap-0 mb-10">
+    <div className="flex min-w-0 flex-col justify-end gap-0">
       <Label htmlFor={htmlFor} required={required} readOnly={readOnly}>
         {label}
       </Label>

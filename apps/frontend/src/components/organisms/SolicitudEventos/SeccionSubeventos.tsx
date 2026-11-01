@@ -54,7 +54,7 @@ export function SeccionSubeventos({
                 ? "grid-rows-[0fr] opacity-0 scale-[0.98] -translate-y-2 pointer-events-none !mt-0"
                 : "grid-rows-[1fr] opacity-100 scale-100 translate-y-0"
             }`}>
-            <div className="min-h-0 overflow-hidden">
+            <div className="min-h-0">
               <CardSubevento
                 subevento={subevento}
                 index={index}
