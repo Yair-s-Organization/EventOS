@@ -1,4 +1,8 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import {
   S3Client,
   PutObjectCommand,
@@ -55,6 +59,11 @@ export class StorageService {
       return key;
     } catch (error) {
       console.error('Storage upload error:', error);
+      if (process.env.NODE_ENV !== 'production') {
+        throw new ServiceUnavailableException(
+          'No se pudo conectar al servicio de almacenamiento (MinIO/S3). Verifica que el contenedor esté corriendo con "docker compose up -d minio".',
+        );
+      }
       throw new InternalServerErrorException('No se pudo almacenar el archivo');
     }
   }
