@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Patch,
+  Delete,
   Body,
   Param,
   Query,
@@ -14,30 +15,36 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiTags, ApiConsumes } from '@nestjs/swagger';
 import { UsuariosService } from '../services/usuarios.service';
 import { VerificarIdentidadDto } from '../dto/verificar-identidad.dto';
 import { RolesGuard } from '../../auth/roles.guard';
 import { Roles } from '../../../common/decorators/roles.decorator';
 import { TipoCuentaUsuario } from '@eventos/shared';
 
-@ApiTags('Usuarios y Jefes de Departamento')
+@ApiTags('Usuarios, Verificaciones y Administración de Cuentas')
 @ApiBearerAuth()
 @Controller('usuarios')
 @UseGuards(RolesGuard)
 export class UsuariosController {
   constructor(private readonly usuariosService: UsuariosService) {}
 
-  // Consulta de Perfil [ GET /api/usuarios/perfil ] 
-  @ApiOperation({ summary: 'Consultar perfil y vigencia de verificación del usuario' })
+  // Consulta de Perfil 
+  @ApiOperation({
+    summary: 'Consultar perfil y vigencia de verificación del usuario',
+  })
   @Get('perfil')
   async obtenerPerfil(@Req() req: any) {
     const idUsuario = Number(req.user.sub ?? req.user.idUsuario);
     return await this.usuariosService.obtenerPerfil(idUsuario);
   }
 
-  // Verificación de Identidad con archivo PDF [ POST /api/usuarios/verificar ]
-  @ApiOperation({ summary: 'Enviar solicitud de verificación de identidad con PDF' })
+  // Verificación de Identidad con archivo PDF
+  @ApiOperation({
+    summary:
+      'Enviar solicitud de verificación de identidad con PDF (queda Pendiente hasta aprobación de Subdirección)',
+  })
+  @ApiConsumes('multipart/form-data')
   @Post('verificar')
   @UseInterceptors(FileInterceptor('documentoPDF'))
   async verificarCuenta(
@@ -67,9 +74,95 @@ export class UsuariosController {
     );
   }
 
-  // Tab 1 (Asignar Jefe): Candidatos institucionales que aún NO son jefes [ GET /api/usuarios/jefes-departamento/candidatos?buscar= ]
+  // SUBDIRECCIÓN: Listar solicitudes de verificación pendientes
   @ApiOperation({
-    summary: 'Tab 1 (Asignar Jefe): Listar cuentas institucionales candidatas por correo o nombre',
+    summary:
+      'Subdirección: Listar solicitudes de verificación de usuario pendientes',
+  })
+  @Get('verificaciones/pendientes')
+  @Roles(TipoCuentaUsuario.SUBDIRECCION, TipoCuentaUsuario.ADMINISTRADOR)
+  async listarVerificacionesPendientes(@Query('todas') todas?: string) {
+    const soloPendientes = todas !== 'true';
+    return await this.usuariosService.listarSolicitudesVerificacion(
+      soloPendientes,
+    );
+  }
+
+  // SUBDIRECCIÓN: Ver detalle de solicitud de verificación
+  @ApiOperation({
+    summary:
+      'Subdirección: Consultar detalle y PDF de una solicitud de verificación',
+  })
+  @Get('verificaciones/:id')
+  @Roles(TipoCuentaUsuario.SUBDIRECCION, TipoCuentaUsuario.ADMINISTRADOR)
+  async obtenerDetalleVerificacion(@Param('id', ParseIntPipe) id: number) {
+    return await this.usuariosService.obtenerDetalleVerificacion(id);
+  }
+
+  // SUBDIRECCIÓN: Botón [Verificar usuario] 
+  @ApiOperation({
+    summary:
+      'Subdirección: Aprobar verificación de usuario (Botón Verificar usuario)',
+  })
+  @Patch('verificaciones/:id/aprobar')
+  @Roles(TipoCuentaUsuario.SUBDIRECCION, TipoCuentaUsuario.ADMINISTRADOR)
+  async aprobarVerificacion(@Param('id', ParseIntPipe) id: number) {
+    return await this.usuariosService.aprobarVerificacionUsuario(id);
+  }
+
+  // SUBDIRECCIÓN: Botón [Rechazar] 
+  @ApiOperation({
+    summary: 'Subdirección: Rechazar solicitud de verificación de usuario',
+  })
+  @Patch('verificaciones/:id/rechazar')
+  @Roles(TipoCuentaUsuario.SUBDIRECCION, TipoCuentaUsuario.ADMINISTRADOR)
+  async rechazarVerificacion(@Param('id', ParseIntPipe) id: number) {
+    return await this.usuariosService.rechazarVerificacionUsuario(id);
+  }
+
+  // ADMINISTRADOR: Listar cuentas del sistema 
+  @ApiOperation({
+    summary: 'Administrador (UI21): Listar cuentas del sistema con filtros',
+  })
+  @Get('admin/cuentas')
+  @Roles(TipoCuentaUsuario.ADMINISTRADOR)
+  async listarCuentasSistema(
+    @Query('criterio') criterio?: string,
+    @Query('buscar') buscar?: string,
+    @Query('nombre') nombre?: string,
+    @Query('correo') correo?: string,
+    @Query('rol') rol?: string,
+    @Query('estado') estado?: string,
+  ) {
+    return await this.usuariosService.listarCuentasSistema({
+      criterio,
+      buscar,
+      nombre,
+      correo,
+      rol,
+      estado,
+    });
+  }
+
+  // ADMINISTRADOR: Botón [Eliminar]
+  @ApiOperation({
+    summary:
+      'Administrador: Eliminar lógicamente (inhabilitar) cuenta de usuario',
+  })
+  @Delete('admin/cuentas/:id')
+  @Roles(TipoCuentaUsuario.ADMINISTRADOR)
+  async eliminarCuenta(
+    @Param('id', ParseIntPipe) id: number,
+    @Req() req: any,
+  ) {
+    const idAdminActor = Number(req.user.sub ?? req.user.idUsuario);
+    return await this.usuariosService.eliminarCuentaLogica(id, idAdminActor);
+  }
+
+  // Tab 1 (Asignar Jefe): Candidatos que aún NO son jefes 
+  @ApiOperation({
+    summary:
+      'Tab 1 (Asignar Jefe): Listar cuentas institucionales candidatas por correo o nombre',
   })
   @Get('jefes-departamento/candidatos')
   @Roles(TipoCuentaUsuario.ADMINISTRADOR)
@@ -77,9 +170,10 @@ export class UsuariosController {
     return await this.usuariosService.listarCandidatosOJefes(false, buscar);
   }
 
-  // Tab 2 (Revocar Jefe): Usuarios que actualmente SÍ son jefes [ GET /api/usuarios/jefes-departamento/activos?buscar= ]
+  // Tab 2 (Revocar Jefe): Usuarios que actualmente SÍ son jefes
   @ApiOperation({
-    summary: 'Tab 2 (Revocar Jefe): Listar Jefes de Departamento activos por correo o nombre',
+    summary:
+      'Tab 2 (Revocar Jefe): Listar Jefes de Departamento activos por correo o nombre',
   })
   @Get('jefes-departamento/activos')
   @Roles(TipoCuentaUsuario.ADMINISTRADOR)
@@ -87,7 +181,7 @@ export class UsuariosController {
     return await this.usuariosService.listarCandidatosOJefes(true, buscar);
   }
 
-  // Modal [Asignar]: Otorga permisos de Jefe de Departamento [ PATCH /api/usuarios/:id/asignar-jefe ]
+  // Modal [Asignar]: Otorga permisos de Jefe de Departamento
   @ApiOperation({
     summary: 'Asignar permisos de Jefe de Departamento a un usuario',
   })
@@ -97,7 +191,7 @@ export class UsuariosController {
     return await this.usuariosService.asignarJefeDepartamento(id);
   }
 
-  // Modal [Confirmar Revocar]: Revoca permisos de Jefe de Departamento, [ PATCH /api/usuarios/:id/revocar-jefe ]
+  // [Confirmar Revocar]: Revoca permisos de Jefe de Departamento
   @ApiOperation({
     summary: 'Revocar permisos de Jefe de Departamento a un usuario',
   })

@@ -69,7 +69,7 @@ export interface AsientoDisponible {
 export interface DisponibilidadSubEvento {
   idSubEvento: number;
   recinto: Recinto;
-  lugaresDisponibles: number;  //<- calculado por el back
+  lugaresDisponibles: number; //<- calculado por el back
   asientos: AsientoDisponible[]; // <- lista de asientos disponibles
 }
 
@@ -124,7 +124,7 @@ export interface Verificacion {
   idVerificacion: number;
   informacionAdicional: string | null; //Los externos pueden no mandar estos datos
   archivo: string;
-  fecha: Date|string;
+  fecha: Date | string;
   idRol: number;
   idUsuario: number;
 }
@@ -252,7 +252,6 @@ export interface CancelarSolicitudPayload {
   motivoCancelacion?: string;
 }
 
-
 // Enums
 export enum TipoEtiqueta {
   IA = 1,
@@ -291,7 +290,6 @@ export enum EstadoRecinto {
   MANTENIMIENTO = 3,
 }
 
-//el estado cancelado se va a usar? -> habria que revisarlo
 export enum EstadoBoleto {
   VALIDO = 1,
   UTILIZADO = 2,
@@ -326,19 +324,45 @@ export enum TipoPerfilVerificacion {
   EXTERNO = 'Externo',
 }
 
-
-//Verificar identidad y verificacion de vigencia de autenticacion
+// Verificar identidad y verificación de vigencia de autenticación
 export interface PerfilUsuarioResponse {
   idUsuario: number;
   nombreCompleto: string;
   correo: string;
   tipoCuenta: TipoCuentaUsuario;
-  cuenta: EstadoVerificacion; 
+  cuenta: EstadoVerificacion;
   tipoUsuario: string;
   fechaUltimaVerificacion: Date | string | null;
   verificacionVigente: boolean;
+  solicitudPendiente?: boolean;
+  estadoSolicitud?: 'Sin solicitud' | 'Pendiente' | 'Verificado';
 }
 
+// Solicitud de verificación para evaluación de Subdirección
+export interface SolicitudVerificacionItem {
+  idVerificacion: number;
+  idUsuario: number;
+  estado: 'Pendiente' | 'Verificado';
+  fechaSolicitud: Date | string;
+  perfilSolicita: string;
+  nombre: string;
+  correo: string;
+  numeroBoleta: string | null;
+  informacionAdicional: string | null;
+  archivo: string;
+}
+
+// Cuentas del sistema para el Panel de Administrador
+export interface CuentaSistemaItem {
+  idUsuario: number;
+  nombre: string;
+  correo: string;
+  estado: 'Activo' | 'Inactivo';
+  esVerificado: EstadoVerificacion;
+  rol: string;
+  tipoCuenta: TipoCuentaUsuario;
+  estatus: boolean;
+}
 
 export interface MovimientoBitacoraItem {
   idBitacoraEvento: number;
