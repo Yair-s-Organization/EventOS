@@ -20,6 +20,7 @@ import { UsuariosModule } from './modules/usuarios/usuarios.module';
     EventosModule,
     RecintosModule,
     ReservationsModule, 
+    UsuariosModule,
   ],
 })
 export class AppModule {}                   

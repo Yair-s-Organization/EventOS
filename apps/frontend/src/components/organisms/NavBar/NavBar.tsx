@@ -22,9 +22,9 @@ export function Navbar({ userRole }: NavbarProps) {
         return [
           { label: "Menú", to: "/admin/usuarios" },
           { label: "Bitácora", to: "/admin/bitacora" },
-          { label: "Gestión de Jefes de departamento", to: "/admin/usuarios" },
-          { label: "Gestión de espacios", to: "/admin/usuarios" },
-          { label: "Gestión de usuarios", to: "/gestion-espacios" },
+          { label: "Gestión de Jefes de departamento", to: "/admin/jefe-departamento" },
+          { label: "Gestión de espacios", to: "/gestion-espacios" },
+          { label: "Gestión de usuarios", to: "/admin/gestion-usuarios" },
         ];
       case "subdireccion":
       default:
