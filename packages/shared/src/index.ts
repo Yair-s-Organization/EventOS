@@ -170,6 +170,88 @@ export interface SubeventoPayload {
   horaFin: string;
 }
 
+export interface PrimerSubeventoResumen {
+  idSubEvento: number;
+  nombre: string;
+  fecha: string | null;
+  horaInicio: string | null;
+  horaFin: string | null;
+  nombreRecinto: string | null;
+}
+
+export interface MisEventosItem {
+  idEvento: number;
+  nombre: string;
+  descripcion: string;
+  justificacion?: string | null;
+  poster: string;
+  posterUrl: string | null;
+  idAlcance?: AlcanceEvento;
+  idEstadoEvento?: EstadoEvento;
+  cupoMaximo: number;
+  boletosEmitidos: number;
+  primerSubevento: PrimerSubeventoResumen | null;
+}
+
+export interface EventoOrganizadorDetalleSubevento {
+  idSubEvento: number;
+  nombre: string;
+  descripcion: string;
+  accesoQR: boolean;
+  estado: EstadoSubEvento;
+  fecha: Fecha | null;
+  recinto: Recinto | null;
+  ponentes: Ponente[];
+  boletosEmitidos: number;
+}
+
+export interface EventoOrganizadorDetalle {
+  idEvento: number;
+  nombre: string;
+  descripcion: string;
+  justificacion?: string | null;
+  poster: string;
+  posterUrl: string | null;
+  idAlcance?: AlcanceEvento;
+  idEstadoEvento?: EstadoEvento;
+  esUrgente: boolean;
+  idOrganizador: number;
+  cupoMaximo: number;
+  boletosActivosCount: number;
+  subEventos: EventoOrganizadorDetalleSubevento[];
+}
+
+export interface SubEventoLogisticaPayload extends SubeventoPayload {
+  idSubEvento?: number;
+}
+
+export interface ModificarLogisticaPayload {
+  subeventos: SubEventoLogisticaPayload[];
+  motivoModificacion: string;
+}
+
+export interface PonentePayload {
+  idPonente?: number;
+  nombre: string;
+  apellidoPa: string;
+  apellidoMa?: string | null;
+  correo: string;
+  idSubEvento?: number;
+}
+
+export interface ActualizarInfoGeneralPayload {
+  nombre?: string;
+  descripcion?: string;
+  justificacion?: string;
+  idAlcance?: AlcanceEvento;
+  ponentes?: PonentePayload[];
+}
+
+export interface CancelarSolicitudPayload {
+  motivo: string;
+  motivoCancelacion?: string;
+}
+
 
 // Enums
 export enum TipoEtiqueta {

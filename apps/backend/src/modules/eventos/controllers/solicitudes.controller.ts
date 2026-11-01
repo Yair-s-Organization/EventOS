@@ -19,7 +19,7 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { TipoCuentaUsuario } from '@eventos/shared';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { EventosService } from '../services/eventos.service';
+import { SolicitudesService } from '../services/solicitudes.service';
 import { CrearSolicitudDto } from '../dto/crearSolicitud.dto';
 import { CancelarSolicitudDto } from '../dto/cancelarSolicitud.dto';
 import { StorageService } from '../../../common/storage/storage.service';
@@ -33,7 +33,7 @@ import { Roles } from '../../../common/decorators/roles.decorator';
 @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
 export class SolicitudesController {
   constructor(
-    private readonly eventosService: EventosService,
+    private readonly eventosService: SolicitudesService,
     private readonly storageService: StorageService,
   ) {}
 
