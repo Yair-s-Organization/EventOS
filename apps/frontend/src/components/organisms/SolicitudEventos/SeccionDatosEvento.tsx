@@ -42,7 +42,7 @@
           className="grid min-w-0 grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
           <div
             id="camposIzquierda"
-            className="flex min-w-0 flex-1 flex-col gap-2">
+            className="flex min-w-0 flex-1 flex-col gap-1">
             <FormField
               label="Nombre del evento"
               htmlFor="campoNombreEvento"

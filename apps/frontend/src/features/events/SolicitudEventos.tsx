@@ -3,8 +3,11 @@ import { useState, type FormEvent } from "react";
 import { SeccionSubeventos } from "../../components/organisms/SolicitudEventos/SeccionSubeventos";
 import Button from "../../components/atoms/Button/Button";
 import { Modal } from "../../components/molecules/Modal";
-import Badge from "../../components/atoms/Badge/Badge";
-import { AlcanceEvento, RecintoId, type SubeventoPayload } from "@eventos/shared";
+import {
+  EstadoVerificacion,
+  RecintoId,
+  type SubeventoPayload,
+} from "@eventos/shared";
 
 export type SubeventoFormData = SubeventoPayload & { id: number };
 
@@ -68,8 +71,8 @@ function validarFormulario(form: FormularioSolicitudData): ErroresFormulario {
 
   if (!form.nombre.trim()) {
     errors.nombre = "El nombre del evento es obligatorio.";
-  }else if(form.nombre.trim().length > 150){
-    errors.nombre = "El nombre del evento no debe exceder los 150 caracteres"
+  } else if (form.nombre.trim().length > 150) {
+    errors.nombre = "El nombre del evento no debe exceder los 150 caracteres";
   }
 
   if (!form.idAlcance) {
@@ -92,7 +95,8 @@ function validarFormulario(form: FormularioSolicitudData): ErroresFormulario {
   if (!form.justificacion.trim()) {
     errors.justificacion = "La justificación del evento es obligatoria.";
   } else if (form.justificacion.trim().length > 500) {
-    errors.justificacion ="La justificacion no debe exceder los 500 caracteres";
+    errors.justificacion =
+      "La justificacion no debe exceder los 500 caracteres";
   } else if (!regex.test(form.justificacion)) {
     errors.justificacion = "Simbolo no valido";
   }
@@ -100,9 +104,20 @@ function validarFormulario(form: FormularioSolicitudData): ErroresFormulario {
   return errors;
 }
 
-function validarSubeventos(subEventos: SubeventoFormData[]): ErroresSubevento[] {
-  return subEventos.map((subevento) => {
+function validarSubeventos(
+  subEventos: SubeventoFormData[],
+): ErroresSubevento[] {
+  return subEventos.map((subevento, index) => {
     const errors: ErroresSubevento = {};
+
+    if (subevento.nombre.length > 150) {
+      errors.nombre =
+        "El nombre del subevento no debe exceder los 150 caracteres";
+    }
+    if (subevento.descripcion.length > 500) {
+      errors.descripcion =
+        "La descripción del subevento no debe exceder los 500 caracteres";
+    }
 
     if (!subevento.fecha) {
       errors.fecha = "Selecciona la fecha del evento";
@@ -136,6 +151,30 @@ function validarSubeventos(subEventos: SubeventoFormData[]): ErroresSubevento[] 
       errors.horaFin = "La hora final debe ser posterior a la hora de inicio";
     }
 
+    const hayTraslape = subEventos.some((otro, otroIndex) => {
+      if (
+        otroIndex === index ||
+        otro.fecha !== subevento.fecha ||
+        otro.idRecinto !== subevento.idRecinto ||
+        !otro.horaInicio ||
+        !otro.horaFin ||
+        !subevento.horaInicio ||
+        !subevento.horaFin
+      ) {
+        return false;
+      }
+
+      return (
+        subevento.horaInicio < otro.horaFin &&
+        otro.horaInicio < subevento.horaFin
+      );
+    });
+
+    if (hayTraslape) {
+      errors.horaInicio =
+        "Ese horario ya está ocupado para este recinto y fecha.";
+    }
+
     return errors;
   });
 }
@@ -155,8 +194,11 @@ export function SolicitudEvento() {
     CamposSubeventoTocados[]
   >([{}]);
 
-  const [modal, setModal] = useState<"confirmacion" | "error" | null>(null);
+  const [modal, setModal] = useState<"confirmacion" | "error" | "exito" | null>(
+    null,
+  );
 
+  const [mensajeError, setMensajeError] = useState("");
   const errors = validarFormulario(form);
   const subeventErrors = validarSubeventos(form.subEventos);
 
@@ -176,12 +218,39 @@ export function SolicitudEvento() {
       subEventos: prev.subEventos.map((subevento, currentIndex) => {
         if (currentIndex !== index) return subevento;
 
+        if (field === "fecha") {
+          return {
+            ...subevento,
+            fecha: value,
+            horaInicio: "",
+            horaFin: "",
+          };
+        }
+
+        if (field === "horaInicio") {
+          return {
+            ...subevento,
+            horaInicio: value,
+            horaFin: "",
+          };
+        }
+
         if (field === "idRecinto") {
           const idRecinto = Number(value);
           const updated: SubeventoFormData = {
             ...subevento,
             idRecinto,
           };
+          if (idRecinto !== subevento.idRecinto) {
+            updated.horaInicio = "";
+            updated.horaFin = "";
+          }
+          if (
+            idRecinto === RecintoId.LABORATORIO_A ||
+            idRecinto === RecintoId.LABORATORIO_B
+          ) {
+            updated.accesoQR = true;
+          }
           if (idRecinto === RecintoId.SALA_14) {
             updated.accesoQR = undefined;
           }
@@ -230,7 +299,15 @@ export function SolicitudEvento() {
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
+    const usuario = JSON.parse(localStorage.getItem("usuario") ?? "null");
+    if (usuario?.esVerificado !== EstadoVerificacion.VERIFICADO) {
+      setMensajeError(
+        "Tu cuenta debe estar verificada para solicitar un evento.",
+      );
+      setModal("error");
+      return;
+    }
+    setMensajeError("");
     setTouched({
       nombre: true,
       idAlcance: true,
@@ -256,11 +333,11 @@ export function SolicitudEvento() {
       setModal("error");
       return;
     }
-
     setModal("confirmacion");
   };
 
   const confirmarModal = async () => {
+    setMensajeError("");
     setModal(null);
 
     const datos = new FormData();
@@ -272,17 +349,19 @@ export function SolicitudEvento() {
     datos.append(
       "subeventos",
       JSON.stringify(
-        form.subEventos.map((subevento): SubeventoPayload => ({
-          nombre: subevento.nombre,
-          descripcion: subevento.descripcion,
-          idRecinto: subevento.idRecinto,
-          fecha: subevento.fecha,
-          horaInicio: subevento.horaInicio,
-          horaFin: subevento.horaFin,
-          accesoQR:
-            subevento.idRecinto !== RecintoId.SALA_14 &&
-            subevento.accesoQR === true,
-        })),
+        form.subEventos.map(
+          (subevento): SubeventoPayload => ({
+            nombre: subevento.nombre,
+            descripcion: subevento.descripcion,
+            idRecinto: subevento.idRecinto,
+            fecha: subevento.fecha,
+            horaInicio: subevento.horaInicio,
+            horaFin: subevento.horaFin,
+            accesoQR:
+              subevento.idRecinto !== RecintoId.SALA_14 &&
+              subevento.accesoQR === true,
+          }),
+        ),
       ),
     );
 
@@ -297,6 +376,19 @@ export function SolicitudEvento() {
       headers: token ? { Authorization: `Bearer ${token}` } : undefined,
       body: datos,
     });
+
+    if (!response.ok) {
+      const data = await response.json();
+      setMensajeError(
+        typeof data.message === "string"
+          ? data.message
+          : "No se pudo enviar la solicitud.",
+      );
+      setModal("error");
+      return;
+    }
+
+    setModal("exito");
   };
 
   return (
@@ -331,16 +423,25 @@ export function SolicitudEvento() {
         </div>
 
         <Modal
-          titulo={modal === "error" ? `Error` : "Confirmar solicitud"}
+          titulo={
+            modal === "error"
+              ? `Error`
+              : modal === "exito"
+                ? `Operación exitosa`
+                : `Confirmar solicitud`
+          }
           contenido={
             modal === "error"
-              ? "Por favor, completa todos los campos obligatorios resaltados para continuar"
-              : "¿Desea enviar la solicitud de este evento?"
+              ? mensajeError ||
+                "Por favor, completa todos los campos obligatorios resaltados para continuar"
+              : modal === "exito"
+                ? "La solicitud se ha procesado éxitosamente y será evaluada por Subdirección de Servicios Académicos"
+                : "¿Desea enviar la solicitud de este evento?"
           }
           mostrarModal={modal !== null}
           cerrarModal={() => setModal(null)}>
           <div className="flex flex-col-reverse justify-end gap-3 sm:flex-row">
-            {modal === "error" ? (
+            {modal === "error" || modal === "exito" ? (
               <Button
                 text="Aceptar"
                 onClick={() => setModal(null)}

@@ -40,17 +40,35 @@ export function InputFile({
         disabled
           ? "cursor-not-allowed bg-gray-100 text-gray-400"
           : "cursor-pointer bg-white"
-      } ${  
+      } ${
         hasError
           ? "border-eventos-error focus:border-eventos-error focus:ring-red-200"
           : "border-secondary focus-within:ring-blue-100"
       } ${className}`}>
-      <span
-        className={`truncate ${
-          fileName && !disabled ? "text-gray-900" : "text-gray-400"
-        }`}>
-        {fileName || placeholder}
-      </span>
+      <div className="flex w-full min-w-0 items-center justify-between gap-3">
+        <span
+          className={`min-w-0 truncate ${
+            fileName && !disabled ? "text-gray-900" : "text-gray-400"
+          }`}>
+          {fileName || placeholder}
+        </span>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+          className="shrink-0">
+          <circle cx="12" cy="12" r="10" />
+          <path d="m16 12-4-4-4 4" />
+          <path d="M12 16V8" />
+        </svg>
+      </div>
       <input
         type="file"
         accept={accept}

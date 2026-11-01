@@ -29,9 +29,6 @@ export function AppRouter() {
              pero solo es para probar visualización)*/}
           <Route path="/demo-reservacion" element={<ReservationDemoPage />} />
           <Route path="/demo-boletos" element={<MyTicketsDemoPage />} />
-
-          <Route path="/solicitud-evento" element={<SolicitudEvento />} />
-
           <Route path="/detalles-solicitud/" element={<DetallesSolicitud />} />
         </Route>
 
@@ -43,7 +40,12 @@ export function AppRouter() {
         />
 
         {/* Rutas para asistente*/}
-        <Route element={<ProtectedRoute allowedRoles={["Asistente", "Usuario Externo", "Usuario Interno"]}/>}>
+        <Route
+          element={
+            <ProtectedRoute
+              allowedRoles={["Asistente", "Usuario Externo", "Usuario Interno", "Subdirección"]}
+            />
+          }>
           <Route element={<DashboardLayout />}>
             <Route path="/menu-asistente" element={<MenuAsistente />} />
             <Route path="/solicitud-evento" element={<SolicitudEvento />} />
