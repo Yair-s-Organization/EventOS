@@ -225,7 +225,7 @@ export class UsuariosService {
     });
   }
 
-  // SUBDIRECCIÓN: Listar solicitudes de verificación 
+  //Listar solicitudes de verificación
   async listarSolicitudesVerificacion(
     soloPendientes = true,
   ): Promise<SolicitudVerificacionItem[]> {
@@ -562,6 +562,7 @@ export class UsuariosService {
   async listarCandidatosOJefes(
     esJefe: boolean,
     buscar?: string,
+    idAdminActor?: number,
   ): Promise<JefeDepartamentoItem[]> {
     const usuarios = await this.usuarioRepository.find({
       where: {
@@ -572,6 +573,15 @@ export class UsuariosService {
     });
 
     const usuariosInstitucionales = usuarios.filter((u) => {
+      //Excluir cuentas de Subdirección y Administrador (y al propio Admin en sesión)
+      if (
+        u.tipoCuenta === TipoCuentaUsuario.SUBDIRECCION ||
+        u.tipoCuenta === TipoCuentaUsuario.ADMINISTRADOR ||
+        (idAdminActor && u.idUsuario === idAdminActor)
+      ) {
+        return false;
+      }
+
       const correoMin = u.correo.toLowerCase();
       return (
         u.tipoCuenta === TipoCuentaUsuario.INTERNO ||
@@ -614,8 +624,8 @@ export class UsuariosService {
     return lista;
   }
 
-  // Tab 1 -> Acción del botón [Asignar Jefe]
-  async asignarJefeDepartamento(idUsuario: number) {
+  // Tab 1 Acción del botón [Asignar Jefe]
+  async asignarJefeDepartamento(idUsuario: number, idAdminActor?: number) {
     const usuario = await this.usuarioRepository.findOne({
       where: { idUsuario, estatus: true },
     });
@@ -623,6 +633,23 @@ export class UsuariosService {
     if (!usuario) {
       throw new NotFoundException(
         'La cuenta de usuario no existe o se encuentra inactiva.',
+      );
+    }
+
+    //La cuenta de Admin no puede asignarse como jefe desde la misma cuenta de Admin
+    if (
+      (idAdminActor && usuario.idUsuario === idAdminActor) ||
+      usuario.tipoCuenta === TipoCuentaUsuario.ADMINISTRADOR
+    ) {
+      throw new ConflictException(
+        'La cuenta de Administrador no puede ser asignada como Jefe de Departamento.',
+      );
+    }
+
+    //La cuenta de Subdirección no puede ser asignada como jefe de departamento
+    if (usuario.tipoCuenta === TipoCuentaUsuario.SUBDIRECCION) {
+      throw new ConflictException(
+        'La cuenta de Subdirección no puede ser asignada como Jefe de Departamento.',
       );
     }
 
