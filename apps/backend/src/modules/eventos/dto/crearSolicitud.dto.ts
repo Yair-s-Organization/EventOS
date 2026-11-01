@@ -8,7 +8,7 @@ import {
   MaxLength,
   ValidateNested,
 } from 'class-validator';
-import { plainToInstance, Transform, Type } from 'class-transformer';
+import { plainToInstance, Transform } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { AlcanceEvento } from '@eventos/shared';
 import { CrearSubEventoDto } from './crearSubEvento.dto';
@@ -64,7 +64,6 @@ export class CrearSolicitudDto {
   @IsArray({ message: 'Los subeventos deben enviarse en formato de lista/arreglo.' })
   @ArrayMinSize(1, { message: 'La solicitud debe contener al menos un subevento.' })
   @ValidateNested({ each: true })
-  @Type(() => CrearSubEventoDto)
   subeventos: CrearSubEventoDto[];
 }
 

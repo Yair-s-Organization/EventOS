@@ -219,6 +219,35 @@ export interface EventoOrganizadorDetalle {
   cupoMaximo: number;
   boletosActivosCount: number;
   subEventos: EventoOrganizadorDetalleSubevento[];
+export interface SubEventoLogisticaPayload extends SubeventoPayload {
+  idSubEvento?: number;
+}
+
+export interface ModificarLogisticaPayload {
+  subeventos: SubEventoLogisticaPayload[];
+  motivoModificacion: string;
+}
+
+export interface PonentePayload {
+  idPonente?: number;
+  nombre: string;
+  apellidoPa: string;
+  apellidoMa?: string | null;
+  correo: string;
+  idSubEvento?: number;
+}
+
+export interface ActualizarInfoGeneralPayload {
+  nombre?: string;
+  descripcion?: string;
+  justificacion?: string;
+  idAlcance?: AlcanceEvento;
+  ponentes?: PonentePayload[];
+}
+
+export interface CancelarSolicitudPayload {
+  motivo: string;
+  motivoCancelacion?: string;
 }
 
 
