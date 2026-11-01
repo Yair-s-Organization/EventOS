@@ -219,6 +219,8 @@ export interface EventoOrganizadorDetalle {
   cupoMaximo: number;
   boletosActivosCount: number;
   subEventos: EventoOrganizadorDetalleSubevento[];
+}
+
 export interface SubEventoLogisticaPayload extends SubeventoPayload {
   idSubEvento?: number;
 }
