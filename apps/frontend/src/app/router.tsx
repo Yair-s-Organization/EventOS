@@ -29,9 +29,6 @@ export function AppRouter() {
              pero solo es para probar visualización)*/}
           <Route path="/demo-reservacion" element={<ReservationDemoPage />} />
           <Route path="/demo-boletos" element={<MyTicketsDemoPage />} />
-
-          <Route path="/solicitud-evento" element={<SolicitudEvento />} />
-
           <Route path="/detalles-solicitud/" element={<DetallesSolicitud />} />
         </Route>
 
@@ -46,7 +43,7 @@ export function AppRouter() {
         <Route
           element={
             <ProtectedRoute
-              allowedRoles={["Asistente", "Usuario Externo", "Usuario Interno"]}
+              allowedRoles={["Asistente", "Usuario Externo", "Usuario Interno", "Subdirección"]}
             />
           }>
           <Route element={<DashboardLayout />}>
@@ -79,7 +76,6 @@ export function AppRouter() {
               element={<MenuSubdireccion />}
             />
           </Route>
-          <Route path="/solicitud-evento" element={<SolicitudEvento />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/login" replace />} />

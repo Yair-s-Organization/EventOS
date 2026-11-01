@@ -3,9 +3,8 @@ import { useState, type FormEvent } from "react";
 import { SeccionSubeventos } from "../../components/organisms/SolicitudEventos/SeccionSubeventos";
 import Button from "../../components/atoms/Button/Button";
 import { Modal } from "../../components/molecules/Modal";
-import Badge from "../../components/atoms/Badge/Badge";
 import {
-  AlcanceEvento,
+  EstadoVerificacion,
   RecintoId,
   type SubeventoPayload,
 } from "@eventos/shared";
@@ -199,6 +198,7 @@ export function SolicitudEvento() {
     null,
   );
 
+  const [mensajeError, setMensajeError] = useState("");
   const errors = validarFormulario(form);
   const subeventErrors = validarSubeventos(form.subEventos);
 
@@ -299,7 +299,15 @@ export function SolicitudEvento() {
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
+    const usuario = JSON.parse(localStorage.getItem("usuario") ?? "null");
+    if (usuario?.esVerificado !== EstadoVerificacion.VERIFICADO) {
+      setMensajeError(
+        "Tu cuenta debe estar verificada para solicitar un evento.",
+      );
+      setModal("error");
+      return;
+    }
+    setMensajeError("");
     setTouched({
       nombre: true,
       idAlcance: true,
@@ -324,14 +332,12 @@ export function SolicitudEvento() {
     if (hayErrores) {
       setModal("error");
       return;
-    } else {
-      setModal("exito");
     }
-
     setModal("confirmacion");
   };
 
   const confirmarModal = async () => {
+    setMensajeError("");
     setModal(null);
 
     const datos = new FormData();
@@ -370,6 +376,19 @@ export function SolicitudEvento() {
       headers: token ? { Authorization: `Bearer ${token}` } : undefined,
       body: datos,
     });
+
+    if (!response.ok) {
+      const data = await response.json();
+      setMensajeError(
+        typeof data.message === "string"
+          ? data.message
+          : "No se pudo enviar la solicitud.",
+      );
+      setModal("error");
+      return;
+    }
+
+    setModal("exito");
   };
 
   return (
@@ -413,7 +432,8 @@ export function SolicitudEvento() {
           }
           contenido={
             modal === "error"
-              ? "Por favor, completa todos los campos obligatorios resaltados para continuar"
+              ? mensajeError ||
+                "Por favor, completa todos los campos obligatorios resaltados para continuar"
               : modal === "exito"
                 ? "La solicitud se ha procesado éxitosamente y será evaluada por Subdirección de Servicios Académicos"
                 : "¿Desea enviar la solicitud de este evento?"
