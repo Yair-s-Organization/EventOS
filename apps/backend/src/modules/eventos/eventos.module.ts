@@ -6,6 +6,7 @@ import { SubEventoEntity } from './entities/subevento.entity';
 import { FechaEntity } from './entities/fecha.entity';
 import { BitacoraEventoEntity } from './entities/bitacoraEvento.entity';
 import { EventosService } from './services/eventos.service';
+import { SolicitudesService } from './services/solicitudes.service';
 import { OrganizadorService } from './services/organizador.service';
 import { RecintosModule } from '../recintos/recintos.module';
 import { SolicitudesController } from './controllers/solicitudes.controller';
@@ -32,7 +33,7 @@ import { AsientoEntity } from '../reservas/entities/asiento.entity';
     OrganizadorController,
     EventosController,
   ],
-  providers: [EventosService, OrganizadorService],
-  exports: [EventosService, OrganizadorService],
+  providers: [EventosService, SolicitudesService, OrganizadorService],
+  exports: [EventosService, SolicitudesService, OrganizadorService],
 })
 export class EventosModule {}
