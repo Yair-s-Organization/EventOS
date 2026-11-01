@@ -2,7 +2,7 @@ import { useEffect, useId, useRef, type ReactNode } from "react";
 
 interface ModalProps {
   titulo: string;
-  contenido: string;
+  contenido?: string;
   children?: ReactNode;
   mostrarModal: boolean;
   cerrarModal: () => void;

@@ -11,6 +11,7 @@ import Input from "../../atoms/Input/Input";
 import Button from "../../atoms/Button/Button";
 import { SpaceRequerimentsDialog } from "../../organisms/SpaceRequirementsDialog/SpaceRequerimentsDialog";
 import { useState } from "react";
+import { ModalSubevento } from "../ModalSubevento/ModalSubevento";
 
 interface CardSubeventoBaseProps {
   subevento: SubeventoFormData;
@@ -101,7 +102,9 @@ export function CardSubevento(props: CardSubeventoProps) {
   const errors = readOnly ? {} : props.errors;
   const touched = readOnly ? {} : props.touched;
   const { subevento, index } = props;
-  const [mostrarModal, setMostrarModal] = useState(false);
+  const [mostrarModalEspacio, setMostrarModalEspacio] = useState(false);
+  const [mostrarModalSubevento, setMostrarModalSubevento] = useState(false);
+
 
   return (
     <div className="grid min-w-0 grid-cols-1 gap-4 rounded-md bg-eventos-primary-light p-4 sm:grid-cols-2 sm:p-6 lg:grid-cols-3 lg:px-10 lg:py-8">
@@ -270,19 +273,19 @@ export function CardSubevento(props: CardSubeventoProps) {
               !subevento.idRecinto
             }
             className="w-full sm:w-auto"
-            onClick={() => setMostrarModal(true)}
+            onClick={() => setMostrarModalEspacio(true)}
           />
         )}
       </FormField>
       <SpaceRequerimentsDialog
-        mostrar={mostrarModal}
+        mostrar={mostrarModalEspacio}
         laboratorio={
           RECINTOS.find(
             (recinto) => recinto.value === String(subevento.idRecinto),
           )?.label ?? "Espacio seleccionado"
         }
         id={subevento.idRecinto}
-        cerrar={() => setMostrarModal(false)}
+        cerrar={() => setMostrarModalEspacio(false)}
       />
       {!readOnly && (
         <div className="col-span-full flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -291,6 +294,19 @@ export function CardSubevento(props: CardSubeventoProps) {
             id={`botonVerInformacion-${subevento.id}`}
             type="button"
             className="w-full sm:w-auto"
+            onClick={() => setMostrarModalSubevento(true)}
+          />
+          <ModalSubevento
+            mostrar={mostrarModalSubevento}
+            nombre={subevento.nombre}
+            descripcion={subevento.descripcion}
+            cambiarNombre={(valor) =>
+              props.updateSubevento(index, "nombre", valor)
+            }
+            cambiarDescripcion={(valor) =>
+              props.updateSubevento(index, "descripcion", valor)
+            }
+            cerrar={() => setMostrarModalSubevento(false)}
           />
 
           {!readOnly && props.canRemove && !props.isDeleting && (
