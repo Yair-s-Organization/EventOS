@@ -5,10 +5,10 @@
 *                   @Yair-s-Organization/backend @Yair-s-Organization/frontend
 
 # Backend: API NestJS, Base de Datos, TypeORM y migraciones
-/apps/backend/      @Yair-s-Organization/backend @Yair-s-Organization/pruebas
+/apps/backend/      @Yair-s-Organization/backend @Yair-s-Organization/frontend @Yair-s-Organization/pruebas
 
 # Frontend: Interfaz de usuario React, Vite y estilos
-/apps/frontend/     @Yair-s-Organization/frontend @Yair-s-Organization/design @Yair-s-Organization/pruebas
+/apps/frontend/     @Yair-s-Organization/frontend @Yair-s-Organization/backend @Yair-s-Organization/design @Yair-s-Organization/pruebas
 
 # Paquete compartido: Tipos, contratos y DTOs comunes entre Front y Back
 /packages/shared/   @Yair-s-Organization/backend @Yair-s-Organization/frontend
