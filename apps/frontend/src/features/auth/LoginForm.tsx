@@ -139,8 +139,8 @@ export function LoginForm() {
 
       if (rol === "admin" || rol === "Administrador") {
         navigate("/gestion-espacios");
-      } else if (rol === "subdireccion") {
-        navigate("/detalles-solicitud"); 
+      } else if (rol === "Subdirección") {
+        navigate("/subdireccion/menu-principal"); 
       } else {
         navigate("/menu-asistente");
       }
