@@ -93,10 +93,13 @@ export function Perfil() {
   };
 
   const datosDinamicos = obtenerRolYDinamicas();
+  
+  const esPersonalDirectivoOAdmin = 
+    datosDinamicos.rol === "Administrador" || datosDinamicos.rol === "Subdirección";
 
   return (
     <div className="space-y-6 font-merriweather text-gray-800">
-      {!esVerificado && (
+      {!esVerificado && !esPersonalDirectivoOAdmin && (
         <div className="bg-[#fff7d6] border-y border-[#fce5a8] px-7 py-3.5 flex items-center justify-between shadow-sm -mx-7 -mt-8 mb-8">
           <p className="text-sm font-medium text-gray-900">
             Verifica tu cuenta para realizar una solicitud
@@ -122,15 +125,17 @@ export function Perfil() {
 
         <div className="bg-white rounded-2xl border mx-auto border-gray-200 shadow-sm p-8 relative max-w-300 font-merriweather">
           
-          <div className="absolute top-6 right-6">
-            <span className={`px-3 py-1 text-[14px] font-semibold rounded-full border ${
-              esVerificado 
-                ? "bg-green-50 text-green-700 border-green-200" 
-                : "bg-[#fff7d6] text-amber-800 border-[#fce5a8]"
-            }`}>
-              {esVerificado ? "Verificado" : "Sin verificar"}
-            </span>
-          </div>
+          {!esPersonalDirectivoOAdmin && (
+            <div className="absolute top-6 right-6">
+              <span className={`px-3 py-1 text-[14px] font-semibold rounded-full border ${
+                esVerificado 
+                  ? "bg-green-50 text-green-700 border-green-200" 
+                  : "bg-[#fff7d6] text-amber-800 border-[#fce5a8]"
+              }`}>
+                {esVerificado ? "Verificado" : "Sin verificar"}
+              </span>
+            </div>
+          )}
 
           <div className="flex items-start space-x-6">
             <div className="w-16 h-16 rounded-full bg-gray-50 border border-gray-300 flex items-center justify-center text-gray-600 shrink-0">
