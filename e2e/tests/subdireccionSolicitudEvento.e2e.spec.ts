@@ -6,6 +6,7 @@ import chrome from "selenium-webdriver/chrome";
 import { LoginPage } from "../pages/LoginPage";
 import { SubdireccionMenuPage } from "../pages/SubdireccionMenuPage";
 import { EventRequestPage } from "../pages/EventRequestPage";
+import { API_BASE_URL } from "../utils/testEnv";
 
 function ensureValidJpegFixture(): string {
   const fixturesDir = path.resolve(import.meta.dir, "../fixtures");
@@ -22,13 +23,59 @@ function ensureValidJpegFixture(): string {
   return filePath;
 }
 
-function getUniqueFutureDateIso(): string {
-  // Generate a future date between 8 and 35 days ahead (before Dec 19 semester end, and > 7 days to avoid urgent modal)
-  const daysAhead = 8 + (Math.floor(Date.now() / 1000) % 27);
-  const target = new Date(Date.now() + daysAhead * 24 * 60 * 60 * 1000);
-  const iso = target.toISOString().slice(0, 10);
+function horaATotalMinutos(hora: string): number {
+  const [h, m] = hora.slice(0, 5).split(":").map(Number);
+  return (h || 0) * 60 + (m || 0);
+}
+
+async function getAvailableAuditorioDateIso(
+  driver: WebDriver,
+  startHour = "10:00",
+  endHour = "12:00",
+): Promise<string> {
+  const token = await driver.executeScript<string>(
+    () => window.localStorage.getItem("token") || "",
+  );
+  const startMin = horaATotalMinutos(startHour);
+  const endMin = horaATotalMinutos(endHour);
+  const seed = Math.floor(Date.now() / 1000) % 27;
   const maxIso = `${new Date().getFullYear()}-12-19`;
-  return iso <= maxIso ? iso : maxIso;
+  const checked = new Set<string>();
+
+  for (let i = 0; i < 27; i++) {
+    const daysAhead = 8 + ((seed + i) % 27);
+    const target = new Date(Date.now() + daysAhead * 24 * 60 * 60 * 1000);
+    const rawIso = target.toISOString().slice(0, 10);
+    const iso = rawIso <= maxIso ? rawIso : maxIso;
+    if (checked.has(iso)) continue;
+    checked.add(iso);
+
+    try {
+      const res = await fetch(
+        `${API_BASE_URL}/espacios/1/horarios-disponibles?fecha=${encodeURIComponent(iso)}`,
+        {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        },
+      );
+      if (!res.ok) continue;
+      const body = (await res.json()) as {
+        agenda?: Array<{ horaInicio: string; horaFin: string }>;
+      };
+      const agenda = Array.isArray(body?.agenda) ? body.agenda : [];
+      const hasOverlap = agenda.some((bloque) => {
+        const bStart = horaATotalMinutos(bloque.horaInicio);
+        const bEnd = horaATotalMinutos(bloque.horaFin);
+        return bStart < endMin && bEnd > startMin;
+      });
+      if (!hasOverlap) {
+        return iso;
+      }
+    } catch {
+      // Continuar intentando con la siguiente fecha candidata
+    }
+  }
+
+  return maxIso;
 }
 
 async function runSubdireccionEventRequestSuite(): Promise<void> {
@@ -149,7 +196,7 @@ async function runSubdireccionEventRequestSuite(): Promise<void> {
     console.log(
       "Running TC-SUB-04: Schedule select enabling and valid hour range...",
     );
-    const testDate = getUniqueFutureDateIso();
+    const testDate = await getAvailableAuditorioDateIso(driver);
     await eventRequestPage.setSubEventDate(testDate, 0);
     await eventRequestPage.setSubEventVenue("1", 0);
     await eventRequestPage.setSubEventTimes("10:00", "12:00", 0);
@@ -214,10 +261,10 @@ async function runSubdireccionEventRequestSuite(): Promise<void> {
     // TC-SUB-07: Complete event request by Subdirección & verify RN-13 auto-approval
     // =========================================================================
     console.log(
-      "Running TC-SUB-07: Submit valid event request -> Confirm Modal -> Verify RN-13 auto-approval...",
+      "Running TC-SUB-07: Submit valid event request -> Confirm Modal -> Verify auto-approval...",
     );
     const eventName = `Simposio Subdirección QA ${Date.now()}`;
-    const futureDate = getUniqueFutureDateIso();
+    const futureDate = await getAvailableAuditorioDateIso(driver);
 
     await eventRequestPage.fillCompleteForm({
       nombre: eventName,

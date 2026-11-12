@@ -31,13 +31,35 @@ async function verifyUserInDatabase(email: string): Promise<void> {
   );
 }
 
-// Format a future date (8-35 days ahead, within semester) in YYYY-MM-DD avoiding collisions across test runs
-function getFutureDateIso(): string {
-  const randomOffset = Math.floor(Math.random() * 27) + 8;
-  const target = new Date(Date.now() + randomOffset * 24 * 60 * 60 * 1000);
-  const iso = target.toISOString().split("T")[0];
+// Pick a future date (8-35 days ahead, within semester) without schedule conflicts in Auditorio (idRecinto = 1)
+async function getFutureDateIso(): Promise<string> {
   const maxIso = `${new Date().getFullYear()}-12-19`;
-  return iso <= maxIso ? iso : maxIso;
+  const client = await connectTestDb();
+  try {
+    const busyRes = await client.query<{ fecha: string }>(
+      `SELECT DISTINCT to_char(f.fecha, 'YYYY-MM-DD') AS fecha
+       FROM "subEvento" se
+       INNER JOIN fecha f ON f."idFecha" = se."idFecha"
+       WHERE se."idRecinto" = 1
+         AND se.estado IN ('En Proceso', 'Aceptado')
+         AND f."horaInicio" < '12:00:00'
+         AND f."horaFin" > '10:00:00'`,
+    );
+    const busyDates = new Set(busyRes.rows.map((r) => r.fecha));
+    const seed = Math.floor(Math.random() * 27);
+    for (let i = 0; i < 27; i++) {
+      const offset = 8 + ((seed + i) % 27);
+      const target = new Date(Date.now() + offset * 24 * 60 * 60 * 1000);
+      const rawIso = target.toISOString().split("T")[0];
+      const iso = rawIso <= maxIso ? rawIso : maxIso;
+      if (!busyDates.has(iso)) {
+        return iso;
+      }
+    }
+    return maxIso;
+  } finally {
+    await client.end();
+  }
 }
 
 async function runEventLifecycleSuite(): Promise<void> {
@@ -71,7 +93,7 @@ async function runEventLifecycleSuite(): Promise<void> {
 
   const testEventName = `Congreso Nacional de TI ${timestamp}`;
   const posterPath = path.resolve(__dirname, "../fixtures/poster.jpg");
-  const eventDate = getFutureDateIso();
+  const eventDate = await getFutureDateIso();
 
   try {
     console.log("==========================================================================");
