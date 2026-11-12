@@ -6,22 +6,34 @@ interface CatalogEventSummary {
   idEvento: number;
 }
 
-function todayInMexico(): string {
+export interface CatalogEventsResult {
+  events: CatalogEventApi[];
+  failedCount: number;
+}
+
+function nowInMexico() {
   const parts = new Intl.DateTimeFormat("en-US", {
     timeZone: "America/Mexico_City",
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hourCycle: "h23",
   }).formatToParts(new Date());
 
   const part = (name: string) =>
-    parts.find((item) => item.type === name)?.value ?? "";
+    parts.find((item) => item.type === name)?.value ?? "00";
 
-  return `${part("year")}-${part("month")}-${part("day")}`;
+  return {
+    date: `${part("year")}-${part("month")}-${part("day")}`,
+    time: `${part("hour")}:${part("minute")}:${part("second")}`,
+  };
 }
 
 export const eventCatalogService = {
-  async getEvents(signal?: AbortSignal): Promise<CatalogEventApi[]> {
+  async getEvents(signal?: AbortSignal): Promise<CatalogEventsResult> {
     const summaries = await apiRequest<CatalogEventSummary[]>(
       "eventos",
       { signal },
@@ -32,10 +44,10 @@ export const eventCatalogService = {
     }
 
     if (summaries.length === 0) {
-      return [];
+      return { events: [], failedCount: 0 };
     }
 
-    const today = todayInMexico();
+    const now = nowInMexico();
 
     const results = await Promise.allSettled(
       summaries.map((event) =>
@@ -54,7 +66,11 @@ export const eventCatalogService = {
       throw new Error("No se pudieron cargar los detalles de los eventos.");
     }
 
-    return results.flatMap((result) => {
+    const failedCount = results.filter(
+      (result) => result.status === "rejected",
+    ).length;
+
+    const events = results.flatMap((result) => {
       if (result.status !== "fulfilled") {
         return [];
       }
@@ -63,11 +79,19 @@ export const eventCatalogService = {
 
       const subEventos = (event.subEventos ?? []).filter((activity) => {
         const date = activity.fecha?.fecha?.slice(0, 10);
+        const endTime = activity.fecha?.horaFin?.slice(0, 8);
+
+        if (
+          activity.estado !== EstadoSubEvento.ACEPTADO ||
+          !date ||
+          !endTime
+        ) {
+          return false;
+        }
 
         return (
-          activity.estado === EstadoSubEvento.ACEPTADO &&
-          Boolean(date) &&
-          date! >= today
+          date > now.date ||
+          (date === now.date && endTime > now.time)
         );
       });
 
@@ -77,5 +101,7 @@ export const eventCatalogService = {
 
       return [{ ...event, subEventos }];
     });
+
+    return { events, failedCount };
   },
 };

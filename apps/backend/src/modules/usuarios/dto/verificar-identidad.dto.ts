@@ -1,4 +1,4 @@
-import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsEnum, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { TipoPerfilVerificacion } from '@eventos/shared';
 
@@ -19,6 +19,7 @@ export class VerificarIdentidadDto {
   })
   @IsOptional()
   @IsString()
+  @MaxLength(200)
   informacionAdicional?: string;
 
   @ApiProperty({
@@ -26,5 +27,6 @@ export class VerificarIdentidadDto {
     format: 'binary',
     description: 'Documento probatorio en formato PDF',
   })
-  documentoPDF: any; 
+  @IsOptional()
+  documentoPDF: any;
 }

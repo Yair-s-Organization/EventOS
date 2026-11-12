@@ -5,6 +5,8 @@ import { useMyTickets } from "../hooks/useMyTickets";
 import { ticketsService } from "../services/tickets.service";
 import { mapTicketToCard } from "../utils/mapTicketToCard";
 import { MyTicketsPage } from "./MyTicketsPage";
+import { PageState } from "../../../components/organisms/PageState/PageState";
+import { PageContainer } from "../../../components/templates/PageContainer";
 
 export function MyTicketsRoute() {
   const navigate = useNavigate();
@@ -28,25 +30,54 @@ export function MyTicketsRoute() {
   };
 
   if (status === "loading") {
-    return <p role="status" className="mx-auto max-w-6xl py-16 text-center text-eventos-muted-text">Cargando tus boletos...</p>;
+    return (
+      <PageContainer>
+        <PageState
+          variant="loading"
+          title="Cargando tus boletos..."
+        />
+      </PageContainer>
+    );
   }
 
   if (status === "error") {
     const requiereLogin =
       errorStatus === 401 ||
       (errorStatus === 403 && !localStorage.getItem("token"));
+
     return (
-      <div className="mx-auto max-w-xl space-y-5 rounded-xl border border-eventos-panel-border bg-eventos-surface p-8 text-center">
-        <p role="alert" className="text-eventos-error">{error}</p>
-        <div className="flex flex-wrap justify-center gap-3">
-          <Button text="Reintentar" onClick={refresh} />
-          {requiereLogin ? (
-            <Link to="/login" className="rounded-lg border border-eventos-primary px-4 py-2 font-semibold text-eventos-primary">Iniciar sesión</Link>
-          ) : (
-            <Link to="/menu-asistente" className="rounded-lg border border-eventos-primary px-4 py-2 font-semibold text-eventos-primary">Volver al menú</Link>
-          )}
-        </div>
-      </div>
+      <PageContainer>
+        <PageState
+          variant="error"
+          title={
+            requiereLogin
+              ? "No se pudo verificar tu sesión"
+              : "No se pudieron cargar tus boletos"
+          }
+          description={error}
+          action={
+            <>
+              <Button text="Reintentar" onClick={refresh} />
+
+              {requiereLogin ? (
+                <Link
+                  to="/login"
+                  className="inline-flex min-h-11 cursor-pointer items-center justify-center rounded-lg border border-eventos-primary px-4 py-2 font-semibold text-eventos-primary hover:bg-eventos-primary-light focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-eventos-primary"
+                >
+                  Iniciar sesión
+                </Link>
+              ) : (
+                <Link
+                  to="/menu-asistente"
+                  className="inline-flex min-h-11 cursor-pointer items-center justify-center rounded-lg border border-eventos-primary px-4 py-2 font-semibold text-eventos-primary hover:bg-eventos-primary-light focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-eventos-primary"
+                >
+                  Volver al menú
+                </Link>
+              )}
+            </>
+          }
+        />
+      </PageContainer>
     );
   }
 

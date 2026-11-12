@@ -112,6 +112,17 @@ export async function runSeed() {
         tipoCuenta: TipoCuentaUsuario.INTERNO,
         esJefeAcademia: false,
       },
+      {
+        nombre: 'Laura Sofía',
+        apellidoPa: 'Márquez',
+        apellidoMa: 'Castillo',
+        correo: 'externo@gmail.com',
+        contrasena: passwordHash,
+        estatus: true,
+        esVerificado: EstadoVerificacion.VERIFICADO,
+        tipoCuenta: TipoCuentaUsuario.EXTERNO,
+        esJefeAcademia: false,
+      },
     ];
 
     const idsUsuarios: Record<string, number> = {};
@@ -256,13 +267,13 @@ export async function runSeed() {
 
     const eventosSeed: EventoSeed[] = [
       {
-        nombre: 'Semana de la Inteligencia Artificial 2026',
+        nombre: 'Microsoft Tech Day ESCOM 2026: Cloud Computing y GitHub',
         descripcion:
-          'Ciclo de conferencias magistrales y talleres prácticos sobre IA generativa, redes neuronales profundas y robótica autónoma aplicada a la industria.',
+          'Jornada de vinculación tecnológica organizada por Microsoft y la ESCOM, con conferencias magistrales y talleres sobre desarrollo en la nube con Azure, arquitectura de microservicios y flujos CI/CD con GitHub Enterprise.',
         poster:
-          'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=1200',
+          'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=1200',
         justificacion:
-          'Acercar las últimas innovaciones tecnológicas en Inteligencia Artificial a la comunidad estudiantil y docente de la ESCOM, fortaleciendo las competencias prácticas del nuevo plan de estudios.',
+          'Capacitar a la comunidad de la ESCOM en herramientas industriales de cómputo en la nube y DevOps demandadas por las principales empresas de tecnología.',
         esUrgente: false,
         motivoUrgencia: null,
         motivoRechazo: null,
@@ -271,9 +282,9 @@ export async function runSeed() {
         personalLogistica: ['logistica1@ipn.mx', 'logistica2@ipn.mx'],
         subeventos: [
           {
-            nombre: 'Conferencia Magistral: Modelos Fundacionales y Agentes Autónomos',
+            nombre: 'Conferencia Magistral: Arquitecturas Distribuidas y Cómputo Serverless en Azure',
             descripcion:
-              'Charla de apertura con investigadores invitados sobre arquitecturas Transformer y sistemas multi-agente.',
+              'Diseño de sistemas tolerantes a fallos y patrones de arquitectura en la nube con ingenieros de Microsoft México.',
             accesoQR: true,
             estado: EstadoSubEvento.EN_PROCESO,
             idRecinto: RecintoId.AUDITORIO,
@@ -282,42 +293,42 @@ export async function runSeed() {
             horaFin: '12:00:00',
             ponentes: [
               {
-                nombre: 'Enrique',
-                apellidoPa: 'Flores',
-                apellidoMa: 'García',
-                correo: 'efloresg@ipn.mx',
+                nombre: 'Diana',
+                apellidoPa: 'Morales',
+                apellidoMa: 'Rangel',
+                correo: 'dmorales@microsoft.com',
               },
               {
-                nombre: 'Sofía',
-                apellidoPa: 'Morales',
-                apellidoMa: 'Garza',
-                correo: 'smoralesg@unam.mx',
+                nombre: 'Carlos',
+                apellidoPa: 'Valdez',
+                apellidoMa: 'Ortiz',
+                correo: 'cvaldezo@ipn.mx',
               },
             ],
           },
           {
-            nombre: 'Taller Práctico: Fine-Tuning de LLMs en PyTorch',
+            nombre: 'Taller Práctico: Automatización de Pipelines y Despliegues con GitHub Actions',
             descripcion:
-              'Sesión práctica de laboratorio para entrenar y optimizar modelos de lenguaje con LoRA y QLoRA.',
+              'Configuración de flujos CI/CD, pruebas automatizadas y contenedores en laboratorio de cómputo.',
             accesoQR: true,
             estado: EstadoSubEvento.EN_PROCESO,
-            idRecinto: RecintoId.LABORATORIO_A,
+            idRecinto: RecintoId.LABORATORIO_2104,
             fecha: '2026-11-26',
             horaInicio: '12:00:00',
             horaFin: '14:00:00',
             ponentes: [
               {
-                nombre: 'Alejandro',
-                apellidoPa: 'Durán',
-                apellidoMa: 'Ruiz',
-                correo: 'aduranr@ipn.mx',
+                nombre: 'Roberto',
+                apellidoPa: 'Silva',
+                apellidoMa: 'Domínguez',
+                correo: 'rsilva@microsoft.com',
               },
             ],
           },
           {
-            nombre: 'Mesa Redonda: Ética, Regulación y Futuro de la IA en México',
+            nombre: 'Mesa de Diálogo: Empleabilidad y Trayectorias Profesionales en la Industria Tech',
             descripcion:
-              'Debate abierto entre especialistas académicos e industriales sobre el impacto social de la IA.',
+              'Sesión de orientación profesional, preguntas y reclutamiento temprano para alumnos de los últimos semestres de ESCOM.',
             accesoQR: false,
             estado: EstadoSubEvento.EN_PROCESO,
             idRecinto: RecintoId.SALA_14,
@@ -326,35 +337,35 @@ export async function runSeed() {
             horaFin: '17:00:00',
             ponentes: [
               {
-                nombre: 'Valeria',
-                apellidoPa: 'Sánchez',
-                apellidoMa: 'Molina',
-                correo: 'vsanchez@cinvestav.mx',
+                nombre: 'Mariana',
+                apellidoPa: 'Castellanos',
+                apellidoMa: 'Soto',
+                correo: 'mcastellanos@microsoft.com',
               },
             ],
           },
         ],
       },
       {
-        nombre: 'Simposio de Ciberseguridad y Criptografía Post-Cuántica',
+        nombre: 'Oracle Academy Day: Java Moderno y Bases de Datos Empresariales',
         descripcion:
-          'Encuentro especializado en seguridad ofensiva, análisis forense digital y preparación ante amenazas de cómputo cuántico en infraestructuras críticas.',
+          'Encuentro académico y profesional impartido por ingenieros de Oracle México sobre innovaciones en Java 21+, GraalVM, optimización de consultas SQL y bases de datos autónomas.',
         poster:
-          'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=1200',
+          'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=1200',
         justificacion:
-          'Fomentar la cultura de ciberseguridad y actualización técnica en protocolos criptográficos modernos para alumnos de Ingeniería en Sistemas Computacionales.',
+          'Actualizar a los alumnos y docentes en el ecosistema Java empresarial y gestión de bases de datos relacionales en la nube, con acreditación formal de Oracle Academy.',
         esUrgente: true,
         motivoUrgencia:
-          'Se confirmó de último momento la visita internacional de los investigadores invitados del NIST y OWASP, quienes únicamente estarán en la Ciudad de México durante la próxima semana.',
+          'El equipo de ingeniería y educación de Oracle Academy México confirmó su disponibilidad de gira académica con 5 días de anticipación para las únicas fechas disponibles antes del cierre de semestre.',
         motivoRechazo: null,
         idAlcance: AlcanceEvento.PUBLICO,
         idEstadoEvento: EstadoEvento.ENPROCESO,
         personalLogistica: ['logistica1@ipn.mx'],
         subeventos: [
           {
-            nombre: 'Keynote: Estándares de Criptografía Post-Cuántica (NIST)',
+            nombre: 'Conferencia Magistral: Novedades de Java 21+ y GraalVM para Alto Desempeño',
             descripcion:
-              'Presentación de los nuevos algoritmos estandarizados basados en retículos y firmas digitales resistentes a cómputo cuántico.',
+              'Análisis de hilos virtuales (Virtual Threads), concurrencia estructurada y compilación nativa en Java.',
             accesoQR: true,
             estado: EstadoSubEvento.EN_PROCESO,
             idRecinto: RecintoId.AUDITORIO,
@@ -363,20 +374,20 @@ export async function runSeed() {
             horaFin: '11:00:00',
             ponentes: [
               {
-                nombre: 'Laura Elena',
-                apellidoPa: 'Cárdenas',
-                apellidoMa: 'Reyes',
-                correo: 'lcardenas@owasp.org',
+                nombre: 'Gabriela',
+                apellidoPa: 'Ortega',
+                apellidoMa: 'Paz',
+                correo: 'gortega@oracle.com',
               },
             ],
           },
           {
-            nombre: 'Laboratorio CTF: Pentesting y Explotación de Vulnerabilidades Web',
+            nombre: 'Taller de Laboratorio: Optimización y Transacciones en Oracle Autonomous DB',
             descripcion:
-              'Reto práctico tipo Capture The Flag enfocado en auditoría de aplicaciones y mitigación de OWASP Top 10.',
+              'Prácticas de diseño relacional, planes de ejecución e índices avanzados en base de datos en laboratorio.',
             accesoQR: true,
             estado: EstadoSubEvento.EN_PROCESO,
-            idRecinto: RecintoId.LABORATORIO_B,
+            idRecinto: RecintoId.LABORATORIO_2105,
             fecha: '2026-11-13',
             horaInicio: '11:00:00',
             horaFin: '14:00:00',
@@ -385,20 +396,20 @@ export async function runSeed() {
                 nombre: 'Mauricio',
                 apellidoPa: 'Zepeda',
                 apellidoMa: 'Ortiz',
-                correo: 'mzepeda@ipn.mx',
+                correo: 'mzepeda@oracle.com',
               },
             ],
           },
         ],
       },
       {
-        nombre: 'Taller Intensivo de Compiladores con LLVM y Rust',
+        nombre: 'Torneo Clasificatorio de Programación Competitiva ICPC - Club de Algoritmia ESCOM',
         descripcion:
-          'Curso práctico intensivo sobre diseño de lenguajes de programación, generación de código intermedio (LLVM IR) y memoria segura con Rust.',
+          'Competencia interna por equipos bajo el formato oficial del ICPC (International Collegiate Programming Contest), organizada por el Club de Algoritmia de la ESCOM para seleccionar las representaciones politécnicas rumbo a la eliminatoria regional.',
         poster:
           'https://images.unsplash.com/photo-1515879218367-8466d910aaa4?w=1200',
         justificacion:
-          'Reforzar los conocimientos de las unidades de aprendizaje de Compiladores y Paradigmas de Programación mediante herramientas utilizadas en la industria.',
+          'Fomentar el pensamiento algorítmico, las estructuras de datos avanzadas y el trabajo cooperativo de alto rendimiento entre la comunidad estudiantil del IPN.',
         esUrgente: false,
         motivoUrgencia: null,
         motivoRechazo: null,
@@ -407,34 +418,34 @@ export async function runSeed() {
         personalLogistica: ['logistica2@ipn.mx'],
         subeventos: [
           {
-            nombre: 'Construcción de un Frontend Léxico/Sintáctico y Emisión de LLVM IR',
+            nombre: 'Contest Oficial ICPC ESCOM: Sesión de Competencia en Tiempo Real',
             descripcion:
-              'Implementación paso a paso de un compilador funcional desde el análisis sintáctico hasta la optimización de código máquina.',
+              'Resolución simultánea de 10 a 12 problemas algorítmicos en C++, Java y Python con juez en línea automatizado.',
             accesoQR: true,
             estado: EstadoSubEvento.ACEPTADO,
-            idRecinto: RecintoId.LABORATORIO_A,
+            idRecinto: RecintoId.LABORATORIO_2104,
             fecha: '2026-11-16',
             horaInicio: '10:00:00',
-            horaFin: '13:00:00',
+            horaFin: '15:00:00',
             ponentes: [
               {
-                nombre: 'Roberto',
-                apellidoPa: 'Galindo',
-                apellidoMa: 'Vera',
-                correo: 'rgalindov@ipn.mx',
+                nombre: 'Edgardo Adrián',
+                apellidoPa: 'Franco',
+                apellidoMa: 'Martínez',
+                correo: 'eafrancom@ipn.mx',
               },
             ],
           },
         ],
       },
       {
-        nombre: 'Jornada de Desarrollo de Videojuegos y Gráficos por Computadora',
+        nombre: 'Semana de la Computación y Expo ESCOM 2026',
         descripcion:
-          'Exposición de proyectos estudiantiles, talleres de motores gráficos modernos y conferencias sobre shaders, ray tracing y física en tiempo real.',
+          'El evento anual más representativo de la ESCOM que integra conferencias de egresados destacados en la industria, feria de proyectos de Trabajo Terminal (TT), exhibición de clubes estudiantiles y foros de innovación tecnológica.',
         poster:
-          'https://images.unsplash.com/photo-1511512578047-dfb367046420?w=1200',
+          'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=1200',
         justificacion:
-          'Impulsar el desarrollo de software interactivo, simulación gráfica y trabajo multidisciplinario entre los estudiantes del Instituto Politécnico Nacional.',
+          'Consolidar el sentido de comunidad politécnica y exhibir los prototipos y proyectos de ingeniería informática y ciencias de datos ante evaluadores y reclutadores externos.',
         esUrgente: false,
         motivoUrgencia: null,
         motivoRechazo: null,
@@ -443,47 +454,47 @@ export async function runSeed() {
         personalLogistica: ['logistica1@ipn.mx', 'logistica2@ipn.mx'],
         subeventos: [
           {
-            nombre: 'Arquitectura de Motores Gráficos y Render Pipelines Modernos',
+            nombre: 'Ceremonia Inaugural y Conferencia Magistral: Retos del Software en México',
             descripcion:
-              'Análisis técnico de Vulkan, DirectX 12 y técnicas de iluminación global en tiempo real.',
+              'Apertura institucional del ciclo con autoridades del Instituto Politécnico Nacional y ponencia sobre el futuro del desarrollo de software.',
             accesoQR: true,
             estado: EstadoSubEvento.ACEPTADO,
             idRecinto: RecintoId.AUDITORIO,
             fecha: '2026-12-02',
-            horaInicio: '13:00:00',
-            horaFin: '15:00:00',
+            horaInicio: '10:00:00',
+            horaFin: '12:00:00',
             ponentes: [
               {
-                nombre: 'Héctor',
-                apellidoPa: 'Navarro',
-                apellidoMa: 'Puga',
-                correo: 'hnavarrop@ipn.mx',
+                nombre: 'Andrés',
+                apellidoPa: 'Ortigoza',
+                apellidoMa: 'Campos',
+                correo: 'aortigozac@ipn.mx',
               },
             ],
           },
           {
-            nombre: 'Taller de Programación de Shaders en GLSL y Unreal Engine',
+            nombre: 'Taller Práctico: Desarrollo de Sistemas Embebidos y Conectividad IoT',
             descripcion:
-              'Creación de materiales procedurales y efectos visuales de post-procesamiento en laboratorio.',
+              'Laboratorio práctico de programación en microcontroladores y protocolos de red MQTT para domótica e industria.',
             accesoQR: true,
             estado: EstadoSubEvento.ACEPTADO,
-            idRecinto: RecintoId.LABORATORIO_B,
+            idRecinto: RecintoId.LABORATORIO_2105,
             fecha: '2026-12-03',
             horaInicio: '10:00:00',
             horaFin: '13:00:00',
             ponentes: [
               {
-                nombre: 'Brenda',
-                apellidoPa: 'Castillo',
-                apellidoMa: 'Ramos',
-                correo: 'bcastillor@ipn.mx',
+                nombre: 'Karina',
+                apellidoPa: 'Viveros',
+                apellidoMa: 'Vela',
+                correo: 'kviverosv@ipn.mx',
               },
             ],
           },
           {
-            nombre: 'Showcase y Demostración de Prototipos Indie Politécnicos',
+            nombre: 'Muestra Anual de Proyectos de Trabajo Terminal y Software Libre',
             descripcion:
-              'Sesión abierta de prueba de videojuegos desarrollados por alumnos y retroalimentación de estudios invitados.',
+              'Exhibición de prototipos funcionales desarrollados por egresantes de Ingeniería en Sistemas y Ciencia de Datos.',
             accesoQR: false,
             estado: EstadoSubEvento.ACEPTADO,
             idRecinto: RecintoId.SALA_14,
@@ -492,23 +503,23 @@ export async function runSeed() {
             horaFin: '17:00:00',
             ponentes: [
               {
-                nombre: 'Héctor',
-                apellidoPa: 'Navarro',
-                apellidoMa: 'Puga',
-                correo: 'hnavarrop@ipn.mx',
+                nombre: 'Flavio',
+                apellidoPa: 'Sánchez',
+                apellidoMa: 'García',
+                correo: 'fsanchezg@ipn.mx',
               },
             ],
           },
         ],
       },
       {
-        nombre: 'Encuentro Politécnico de Ciencia de Datos y Big Data',
+        nombre: 'Jornadas de Software Libre y Redes - Comunidad Linux ESCOM',
         descripcion:
-          'Seminario sobre ingeniería de datos a gran escala, arquitecturas Lakehouse, procesamiento distribuido con Apache Spark y visualización avanzada.',
+          'Ciclo formativo organizado por la comunidad estudiantil sobre administración de servidores GNU/Linux, contenedores Docker, ciberseguridad defensiva y herramientas de código abierto.',
         poster:
-          'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1200',
+          'https://images.unsplash.com/photo-1629654297299-c8506221ca97?w=1200',
         justificacion:
-          'Vincular a la comunidad politécnica con casos reales de ciencia de datos aplicada a finanzas, salud pública y movilidad urbana.',
+          'Proveer a los alumnos bases sólidas en sistemas operativos abiertos, infraestructura de telecomunicaciones y cultura open-source dentro del campus politécnico.',
         esUrgente: false,
         motivoUrgencia: null,
         motivoRechazo: null,
@@ -517,7 +528,7 @@ export async function runSeed() {
         personalLogistica: ['logistica1@ipn.mx'],
         solicitudModificacionPendiente: {
           motivoModificacion:
-            'Se solicita cambio de horario y ampliación de recinto para el Taller de MLOps por confirmación de asistencia de delegaciones foráneas del IPN.',
+            'Se solicita cambio de horario y reubicación al Auditorio Principal debido al sobrecupo en el pre-registro de alumnos para el Taller de Contenedores y Redes.',
           cambiosEnSubeventoIndice: 1,
           nuevoRecinto: RecintoId.AUDITORIO,
           nuevaFecha: '2026-12-09',
@@ -526,64 +537,64 @@ export async function runSeed() {
         },
         subeventos: [
           {
-            nombre: 'Pipelines de Datos en Tiempo Real con Kafka y Spark Streaming',
+            nombre: 'Conferencia: Arquitectura del Kernel Linux y Seguridad en Servidores',
             descripcion:
-              'Diseño de arquitecturas tolerantes a fallos para ingesta y análisis de millones de eventos por segundo.',
+              'Funcionamiento interno de módulos del núcleo, namespaces, cgroups y hardening de servidores.',
             accesoQR: true,
             estado: EstadoSubEvento.ACEPTADO,
-            idRecinto: RecintoId.AUDITORIO,
+            idRecinto: RecintoId.SALA_14,
             fecha: '2026-12-08',
             horaInicio: '11:00:00',
             horaFin: '13:00:00',
             ponentes: [
               {
-                nombre: 'Guillermo',
-                apellidoPa: 'Bautista',
-                apellidoMa: 'Santana',
-                correo: 'gbautistas@ipn.mx',
+                nombre: 'Miguel Ángel',
+                apellidoPa: 'Téllez',
+                apellidoMa: 'Morales',
+                correo: 'mtellezm@ipn.mx',
               },
             ],
           },
           {
-            nombre: 'Taller de Modelado Predictivo y MLOps en la Nube',
+            nombre: 'Taller Práctico: Despliegue de Servicios y Redes con Docker y Kubernetes',
             descripcion:
-              'Automatización del ciclo de vida de modelos predictivos, versionado de datos y monitoreo en producción.',
+              'Configuración paso a paso de contenedores, volúmenes persistentes y balanceo de carga en clúster.',
             accesoQR: true,
             estado: EstadoSubEvento.ACEPTADO,
-            idRecinto: RecintoId.SALA_14,
+            idRecinto: RecintoId.LABORATORIO_2104,
             fecha: '2026-12-09',
             horaInicio: '12:00:00',
             horaFin: '14:00:00',
             ponentes: [
               {
-                nombre: 'Claudia',
-                apellidoPa: 'Peralta',
-                apellidoMa: 'Reyes',
-                correo: 'cperaltar@ipn.mx',
+                nombre: 'Salvador',
+                apellidoPa: 'García',
+                apellidoMa: 'Mendoza',
+                correo: 'sgarciam@ipn.mx',
               },
             ],
           },
         ],
       },
       {
-        nombre: 'Congreso Metropolitano de Robótica y Automatización 2026',
+        nombre: 'Hackathon Interuniversitario de Desarrollo Web y Móvil ESCOM',
         descripcion:
-          'Encuentro intercolegial con demostraciones de robots velocistas, combate en arena y robots cooperativos industriales.',
+          'Maratón de 24 horas de programación continua en equipos multidisciplinarios de estudiantes de ESCOM, UPIITA y Facultades afines para resolver retos de movilidad y sustentabilidad urbana.',
         poster:
-          'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=1200',
+          'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=1200',
         justificacion:
-          'Fomentar el desarrollo de prototipos mecatrónicos y sistemas de control embebido en los estudiantes de ingeniería.',
+          'Incentivar la resolución ágil de problemas, el emprendimiento tecnológico y la colaboración interdisciplinaria entre futuros profesionistas del IPN.',
         esUrgente: false,
         motivoUrgencia: null,
         motivoRechazo:
-          'Se rechaza la solicitud de espacio debido a que el Auditorio Principal y los laboratorios seleccionados ya se encuentran reservados por la Dirección para la aplicación del Examen Institucional CENEVAL.',
+          'Se rechaza la solicitud de espacios debido a que las fechas solicitadas coinciden con el periodo de Evaluaciones Departamentales y la visita de acreditación del Consejo de Acreditación de la Enseñanza de la Ingeniería (CACEI) en el Auditorio Principal y laboratorios.',
         idAlcance: AlcanceEvento.PUBLICO,
         idEstadoEvento: EstadoEvento.RECHAZADO,
         subeventos: [
           {
-            nombre: 'Conferencia Inaugural: Avances en Cinemática Inversa y Robótica Burocrática',
+            nombre: 'Sesión Plenaria: Presentación del Reto de Programación y Reglas del Hackathon',
             descripcion:
-              'Demostración de algoritmos de navegación autónoma SLAM y control adaptativo en manipuladores industriales.',
+              'Ceremonia de inicio con autoridades y asignación de problemáticas a los equipos participantes.',
             accesoQR: true,
             estado: EstadoSubEvento.RECHAZADO,
             idRecinto: RecintoId.AUDITORIO,
@@ -592,17 +603,17 @@ export async function runSeed() {
             horaFin: '11:00:00',
             ponentes: [
               {
-                nombre: 'Dr. Fernando',
+                nombre: 'Fernando',
                 apellidoPa: 'Arámbula',
                 apellidoMa: 'Cosío',
-                correo: 'farambula@ipn.mx',
+                correo: 'farambulac@ipn.mx',
               },
             ],
           },
           {
-            nombre: 'Torneo Abierto de Mini-Sumo y Guerra de Robots 1lb',
+            nombre: 'Mesa de Mentoría y Evaluación Técnica de Prototipos de Software',
             descripcion:
-              'Competencia abierta de combate robótico en arena homologada con jueces de la Federación Mexicana de Robótica.',
+              'Sesión continua de asesoría con ingenieros mentores para la entrega y dictamen de proyectos.',
             accesoQR: false,
             estado: EstadoSubEvento.RECHAZADO,
             idRecinto: RecintoId.SALA_14,

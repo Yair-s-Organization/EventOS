@@ -29,6 +29,7 @@ export class CrearSolicitudDto {
   @ApiProperty()
   @IsNotEmpty({ message: 'Dato requerido faltante. La justificación no puede estar vacía.' }) // MSG-E-29
   @IsString({ message: 'La justificación debe ser una cadena de texto.' })
+  @MaxLength(2000, { message: 'La justificación excede el límite máximo de caracteres permitidos.' })
   justificacion: string;
 
   @ApiPropertyOptional()

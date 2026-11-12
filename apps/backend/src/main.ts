@@ -1,9 +1,26 @@
 import { NestFactory } from '@nestjs/core';
+import { ValidationPipe } from '@nestjs/common';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    bodyParser: false,
+  });
+
+  // Limitar payloads JSON y URL-encoded a 10kb para bloquear ataques DoS de payloads gigantes (HTTP 413)
+  app.useBodyParser('json', { limit: '10kb' });
+  app.useBodyParser('urlencoded', { limit: '10kb', extended: true });
+
+  // Validar y transformar todos los DTOs entrantes (rechaza bodies malformados o sin Content-Type con HTTP 400)
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      transform: true,
+      stopAtFirstError: true,
+    }),
+  );
 
   app.setGlobalPrefix('api');
 

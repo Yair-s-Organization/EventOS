@@ -223,6 +223,16 @@ export class MailService {
     this.logger.log(`Correo con PDF enviado a ${datos.destinatario} (Boleto #${datos.idBoleto})`);
   }
 
+  /** Escapa caracteres HTML especiales en texto ingresado por usuarios. */
+  private escaparHtml(texto: string): string {
+    return texto
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
   async enviarNotificacionCambioRecinto(datos: {
     destinatario: string;
     nombreAsistente: string;
@@ -240,19 +250,19 @@ export class MailService {
         </div>
         
         <div style="padding: 24px; color: #334155;">
-          <p>Hola <strong>${datos.nombreAsistente}</strong>,</p>
-          <p>Te informamos que la logística del evento <strong>${datos.nombreEvento}</strong> ha sido actualizada. La actividad en la que estás inscrito ha sido reubicada de espacio físico:</p>
+          <p>Hola <strong>${this.escaparHtml(datos.nombreAsistente)}</strong>,</p>
+          <p>Te informamos que la logística del evento <strong>${this.escaparHtml(datos.nombreEvento)}</strong> ha sido actualizada. La actividad en la que estás inscrito ha sido reubicada de espacio físico:</p>
           
           <table style="width: 100%; border-collapse: collapse; margin-top: 16px; background-color: #f8fafc; border-radius: 8px; padding: 12px;">
-            <tr><td style="padding: 8px 12px; font-weight: bold;">Actividad:</td><td style="padding: 8px 12px;">${datos.nombreSubEvento}</td></tr>
-            <tr><td style="padding: 8px 12px; font-weight: bold;">Nuevo Recinto:</td><td style="padding: 8px 12px;"><strong>${datos.nuevoRecinto}</strong></td></tr>
-            <tr><td style="padding: 8px 12px; font-weight: bold;">Horario:</td><td style="padding: 8px 12px;">${datos.fecha} (${datos.horaInicio} - ${datos.horaFin})</td></tr>
+            <tr><td style="padding: 8px 12px; font-weight: bold;">Actividad:</td><td style="padding: 8px 12px;">${this.escaparHtml(datos.nombreSubEvento)}</td></tr>
+            <tr><td style="padding: 8px 12px; font-weight: bold;">Nuevo Recinto:</td><td style="padding: 8px 12px;"><strong>${this.escaparHtml(datos.nuevoRecinto)}</strong></td></tr>
+            <tr><td style="padding: 8px 12px; font-weight: bold;">Horario:</td><td style="padding: 8px 12px;">${this.escaparHtml(datos.fecha)} (${this.escaparHtml(datos.horaInicio)} - ${this.escaparHtml(datos.horaFin)})</td></tr>
             <tr><td style="padding: 8px 12px; font-weight: bold;">Modalidad:</td><td style="padding: 8px 12px;">Entrada General (Asiento libre al ingresar)</td></tr>
           </table>
 
-          <p style="margin-top: 20px; padding: 12px; background-color: #eff6ff; border-left: 4px solid #3b82f6; border-radius: 4px; font-size: 14px; color: #1e40af;">
-            <strong>Nota importante:</strong> Tu boleto digital continúa <strong>100% activo y válido</strong> con el mismo código QR. Debido a la reubicación, tu acceso será bajo la modalidad de admisión general sin butaca numerada específica.
-          </p>
+          <div style="margin-top: 20px; padding: 12px 14px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; color: #334155; line-height: 1.5;">
+            <strong>Nota importante:</strong> Tu boleto digital continúa <strong>100% activo y válido</strong> con el mismo código QR. Debido a la reubicación, tu acceso será bajo la modalidad de <strong>admisión general</strong> sin butaca numerada específica.
+          </div>
 
           <p style="font-size: 12px; color: #64748b; margin-top: 24px; border-top: 1px solid #e2e8f0; padding-top: 12px;">
             Puedes consultar tus boletos vigentes en la sección "Mis Boletos" dentro de EventOS.
@@ -471,8 +481,14 @@ export class MailService {
     nombreUsuario: string;
     enlaceRecuperacion: string;
   }): Promise<void> {
+    const timestamp = new Date().getTime();
+    const randomSuffix = Math.floor(Math.random() * 10000)
+      .toString()
+      .padStart(4, '0');
+
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
+        <span style="display:none; color:transparent; font-size:1px;">Ref: ${timestamp}</span>
         <div style="background-color: #6b1d2f; color: #ffffff; padding: 20px; text-align: center;">
           <h2 style="margin: 0;">Recuperación de Contraseña - EventOS</h2>
         </div>
@@ -493,6 +509,7 @@ export class MailService {
           </p>
 
           <p style="font-size: 12px; color: #64748b; margin-top: 24px; border-top: 1px solid #e2e8f0; padding-top: 12px;">
+            ID Solicitud: ${timestamp} <br>
             Si tú no solicitaste este cambio, puedes ignorar este correo con seguridad; tu contraseña actual no será modificada.
           </p>
         </div>
@@ -503,7 +520,7 @@ export class MailService {
       await this.transporter.sendMail({
         from: process.env.SMTP_FROM || process.env.SMTP_USER,
         to: datos.destinatario,
-        subject: 'Restablecer contraseña - EventOS',
+        subject: `Restablecer contraseña - EventOS [Ref #${randomSuffix}]`,
         html,
       });
       this.logger.log(
@@ -524,8 +541,14 @@ export class MailService {
     tipoCuenta: string;
     enlaceConfirmacion: string;
   }): Promise<void> {
+    const timestamp = new Date().getTime();
+    const randomSuffix = Math.floor(Math.random() * 10000)
+      .toString()
+      .padStart(4, '0');
+
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
+        <span style="display:none; color:transparent; font-size:1px;">Ref: ${timestamp}</span>
         <div style="background-color: #6b1d2f; color: #ffffff; padding: 20px; text-align: center;">
           <h2 style="margin: 0;">Confirma tu correo electrónico - EventOS</h2>
         </div>
@@ -546,6 +569,7 @@ export class MailService {
           </p>
 
           <p style="font-size: 12px; color: #64748b; margin-top: 24px; border-top: 1px solid #e2e8f0; padding-top: 12px;">
+            ID Solicitud: ${timestamp} <br>
             Si tú no solicitaste este registro, puedes ignorar este mensaje y la cuenta no será creada.
           </p>
         </div>
@@ -556,7 +580,7 @@ export class MailService {
       await this.transporter.sendMail({
         from: process.env.SMTP_FROM || process.env.SMTP_USER,
         to: datos.destinatario,
-        subject: 'Verifica tu correo para completar tu registro - EventOS',
+        subject: `Verifica tu correo para completar tu registro - EventOS [Ref #${randomSuffix}]`,
         html,
       });
       this.logger.log(
@@ -571,13 +595,95 @@ export class MailService {
     }
   }
 
+  /** Envía aviso por cancelación de evento completo o subevento individual. */
+  async enviarNotificacionCancelacionEvento(datos: {
+    destinatario: string;
+    nombreDestinatario: string;
+    destinatarioRol: 'asistente' | 'organizador';
+    nombreEvento: string;
+    motivo: string;
+    nombreSubEvento?: string;
+  }): Promise<void> {
+    const esSubevento = Boolean(datos.nombreSubEvento);
+    const nombreDestinatario = this.escaparHtml(datos.nombreDestinatario || 'Usuario');
+    const nombreEvento = this.escaparHtml(datos.nombreEvento);
+    const nombreSubEvento = datos.nombreSubEvento
+      ? this.escaparHtml(datos.nombreSubEvento)
+      : '';
+    const motivoHtml = this.escaparHtml(datos.motivo).replace(/\r?\n/g, '<br>');
+
+    const titulo = esSubevento
+      ? 'Actividad Cancelada - EventOS'
+      : 'Evento Cancelado - EventOS';
+    const subject = esSubevento
+      ? `Actividad cancelada: ${datos.nombreSubEvento} - EventOS`
+      : `Evento cancelado: ${datos.nombreEvento} - EventOS`;
+
+    let mensajePrincipal = `Te informamos que el evento <strong>${nombreEvento}</strong> ha sido cancelado, por lo que los boletos asociados quedaron invalidados.`;
+    if (datos.destinatarioRol === 'organizador') {
+      mensajePrincipal = `Te informamos que la Subdirección de Servicios Educativos ha cancelado tu evento <strong>${nombreEvento}</strong>. Los espacios asignados fueron liberados y los boletos emitidos quedaron invalidados.`;
+    } else if (esSubevento) {
+      mensajePrincipal = `Te informamos que la actividad <strong>${nombreSubEvento}</strong> del evento <strong>${nombreEvento}</strong> ha sido cancelada, por lo que tu boleto correspondiente a esta actividad quedó invalidado.`;
+    }
+
+    const textoPie =
+      datos.destinatarioRol === 'organizador'
+        ? 'Puedes consultar el estado actualizado de tus eventos en la sección "Mis Eventos" dentro de EventOS.'
+        : 'Puedes consultar el estado de tus reservaciones en la sección "Mis Boletos" dentro de EventOS.';
+
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
+        <div style="background-color: #6b1d2f; color: #ffffff; padding: 20px; text-align: center;">
+          <h2 style="margin: 0;">${titulo}</h2>
+        </div>
+
+        <div style="padding: 24px; color: #334155;">
+          <p>Hola <strong>${nombreDestinatario}</strong>,</p>
+          <p>${mensajePrincipal}</p>
+
+          <div style="margin-top: 20px; padding: 12px 14px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; color: #334155; line-height: 1.5;">
+            <strong>Motivo de cancelación:</strong><br>
+            ${motivoHtml}
+          </div>
+
+          <p style="font-size: 12px; color: #64748b; margin-top: 24px; border-top: 1px solid #e2e8f0; padding-top: 12px;">
+            ${textoPie}
+          </p>
+        </div>
+      </div>
+    `;
+
+    try {
+      await this.transporter.sendMail({
+        from: process.env.SMTP_FROM || process.env.SMTP_USER,
+        to: datos.destinatario,
+        subject,
+        html,
+      });
+      this.logger.log(
+        `Aviso de cancelación (${datos.destinatarioRol}) enviado a ${datos.destinatario}`,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Fallo al enviar aviso de cancelación a ${datos.destinatario}`,
+        error,
+      );
+    }
+  }
+
   async enviarCorreoVerificacionAprobada(datos: {
     destinatario: string;
     nombreUsuario: string;
     perfilVerificado: string;
   }): Promise<void> {
+    const timestamp = new Date().getTime();
+    const randomSuffix = Math.floor(Math.random() * 10000)
+      .toString()
+      .padStart(4, '0');
+
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
+        <span style="display:none; color:transparent; font-size:1px;">Ref: ${timestamp}</span>
         <div style="background-color: #6b1d2f; color: #ffffff; padding: 20px; text-align: center;">
           <h2 style="margin: 0;">Verificación de Cuenta Aprobada - EventOS</h2>
         </div>
@@ -595,6 +701,7 @@ export class MailService {
           <p>Ya puedes ingresar a tu cuenta en EventOS y hacer uso de todas las funciones correspondientes a tu perfil verificado.</p>
 
           <p style="font-size: 12px; color: #64748b; margin-top: 24px; border-top: 1px solid #e2e8f0; padding-top: 12px;">
+            ID Solicitud: ${timestamp} <br>
             EventOS — Escuela Superior de Cómputo (IPN).
           </p>
         </div>
@@ -605,7 +712,7 @@ export class MailService {
       await this.transporter.sendMail({
         from: process.env.SMTP_FROM || process.env.SMTP_USER,
         to: datos.destinatario,
-        subject: 'Tu solicitud de verificación de cuenta ha sido aprobada - EventOS',
+        subject: `Tu solicitud de verificación de cuenta ha sido aprobada - EventOS [Ref #${randomSuffix}]`,
         html,
       });
       this.logger.log(
@@ -625,8 +732,14 @@ export class MailService {
     perfilSolicitado: string;
     motivoRechazo: string;
   }): Promise<void> {
+    const timestamp = new Date().getTime();
+    const randomSuffix = Math.floor(Math.random() * 10000)
+      .toString()
+      .padStart(4, '0');
+
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
+        <span style="display:none; color:transparent; font-size:1px;">Ref: ${timestamp}</span>
         <div style="background-color: #6b1d2f; color: #ffffff; padding: 20px; text-align: center;">
           <h2 style="margin: 0;">Resultado de Solicitud de Verificación - EventOS</h2>
         </div>
@@ -643,6 +756,7 @@ export class MailService {
           <p>Puedes ingresar nuevamente a la sección de <strong>Mi Perfil</strong> en EventOS para enviar una nueva solicitud adjuntando tu documento probatorio corregido en formato PDF.</p>
 
           <p style="font-size: 12px; color: #64748b; margin-top: 24px; border-top: 1px solid #e2e8f0; padding-top: 12px;">
+            ID Solicitud: ${timestamp} <br>
             EventOS — Escuela Superior de Cómputo (IPN).
           </p>
         </div>
@@ -653,7 +767,7 @@ export class MailService {
       await this.transporter.sendMail({
         from: process.env.SMTP_FROM || process.env.SMTP_USER,
         to: datos.destinatario,
-        subject: 'Actualización sobre tu solicitud de verificación de cuenta - EventOS',
+        subject: `Actualización sobre tu solicitud de verificación de cuenta - EventOS [Ref #${randomSuffix}]`,
         html,
       });
       this.logger.log(

@@ -9,6 +9,7 @@ interface CatalogState {
   events: CatalogEventApi[];
   status: CatalogStatus;
   error: string | null;
+  failedCount: number;
 }
 
 export function useEventCatalog() {
@@ -17,6 +18,7 @@ export function useEventCatalog() {
     events: [],
     status: "loading",
     error: null,
+    failedCount: 0,
   });
 
   const retry = useCallback(() => {
@@ -25,24 +27,34 @@ export function useEventCatalog() {
 
   useEffect(() => {
     const controller = new AbortController();
-    setState({ events: [], status: "loading", error: null });
+
+    setState({
+      events: [],
+      status: "loading",
+      error: null,
+      failedCount: 0,
+    });
 
     void eventCatalogService
       .getEvents(controller.signal)
-      .then((events) => {
+      .then(({ events, failedCount }) => {
         if (controller.signal.aborted) return;
+
         setState({
-          events: Array.isArray(events) ? events : [],
+          events,
           status: "success",
           error: null,
+          failedCount,
         });
       })
       .catch(() => {
         if (controller.signal.aborted) return;
+
         setState({
           events: [],
           status: "error",
           error: "No se pudo cargar la cartelera. Comprueba tu conexión e inténtalo de nuevo.",
+          failedCount: 0,
         });
       });
 

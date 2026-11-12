@@ -1089,6 +1089,30 @@ El repositorio cuenta con una GitHub Action automatizada (`.github/workflows/dep
 | `bunx tsc -p apps/frontend/tsconfig.json --noEmit` | Comprueba TypeScript en el frontend                                                                                       |
 | `bun run db:migrate`                               | Aplica las migraciones pendientes                                                                                         |
 | `bun run db:revert`                                | Revierte la última migración aplicada                                                                                   |
+| `bun run db:init`                                  | Inicializa el esquema completo de base de datos                                                                           |
+| `bun run db:seed`                                  | Carga usuarios, recintos, asientos y eventos semilla                                                                      |
+| `bun run test:e2e`                                 | Ejecuta las 20 suites de pruebas E2E (124 casos) en modo headless (ver [`e2e/README.md`](./e2e/README.md))                |
+| `bun run test:e2e:headed`                          | Ejecuta las 20 suites de pruebas E2E abriendo el navegador Chrome                                                         |
+| `bun run test:e2e:auth`                            | Suite E2E 01: Autenticación y bloqueo por intentos (`CU01`)                                                               |
+| `bun run test:e2e:register`                        | Suite E2E 02: Registro de usuarios y validación de dominios (`CU11`)                                                      |
+| `bun run test:e2e:email-verification`              | Suite E2E 03: Confirmación de correo electrónico por token                                                                |
+| `bun run test:e2e:register-login`                  | Suite E2E 04: Flujo continuo de registro, confirmación y login                                                            |
+| `bun run test:e2e:password-reset`                  | Suite E2E 05: Recuperación y restablecimiento de contraseña                                                               |
+| `bun run test:e2e:account-verification`            | Suite E2E 06: Verificación de identidad con PDF y dictamen de Subdirección                                                |
+| `bun run test:e2e:ticket-reservation`              | Suite E2E 07: Reserva de boletos en Auditorio, Sala General y Entrada Libre (`UI04`–`UI07`)                               |
+| `bun run test:e2e:tickets-module`                  | Suite E2E 08: Mis Boletos, código QR, PDF, cancelación y seguridad IDOR (`UI08`)                                          |
+| `bun run test:e2e:organizer-events`                | Suite E2E 09: Gestión, edición y cancelación de eventos del Organizador                                                   |
+| `bun run test:e2e:subdireccion-login`              | Suite E2E 10: Inicio de sesión y panel principal de Subdirección                                                          |
+| `bun run test:e2e:subdireccion-solicitud`          | Suite E2E 11: Solicitud de eventos, laboratorios y validación de póster                                                   |
+| `bun run test:e2e:event-lifecycle`                 | Suite E2E 12: Ciclo de vida completo de un evento (Solicitud -> Aprobación -> Bitácora)                                   |
+| `bun run test:e2e:logistics`                       | Suite E2E 13: Personal de logística, control de aforo y escaneo de QR (`UI18`)                                            |
+| `bun run test:e2e:admin-bitacora`                  | Suite E2E 14: Administración y Bitácora histórica con búsqueda en tiempo real                                             |
+| `bun run test:e2e:admin-espacios`                  | Suite E2E 15: Gestión de espacios e inventario de equipos de laboratorio                                                  |
+| `bun run test:e2e:admin-jefes`                     | Suite E2E 16: Asignación y revocación de Jefes de Departamento                                                            |
+| `bun run test:e2e:admin-usuarios`                  | Suite E2E 17: Gestión e inhabilitación de cuentas de usuario                                                              |
+| `bun run test:e2e:admin-perfil`                    | Suite E2E 18: Visualización de perfil y cierre de sesión                                                                  |
+| `bun run test:e2e:security`                        | Suite E2E 19: Seguridad, peticiones sin `Content-Type` y ataques DoS (`413`)                                              |
+| `bun run test:e2e:full-workflow`                   | Suite E2E 20: Flujo multi-actor completo de 6 etapas + ataques adversariales y DoS                                        |
 | `bun add <paquete>`                                | Agrega una dependencia; ejecutarlo dentro de `apps/backend`, `apps/frontend` o `packages/shared` según corresponda |
 | `bun --bun run nest g resource <nombre>`           | Genera un módulo CRUD de Nest (ejecutar desde `apps/backend`)                                                          |
 | `docker compose up -d minio minio-init`            | Levanta el almacenamiento de archivos local (MinIO) y crea los buckets                                                   |

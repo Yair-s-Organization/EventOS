@@ -1,112 +1,31 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { AlertCircle, CalendarDays, ChevronDown, LoaderCircle, Search } from "lucide-react";
-
+import { useMemo, useState } from "react";
+import { useMatch } from "react-router";
 import { CatalogEventCard } from "../components/CatalogEventCard";
 import { useEventCatalog } from "../hooks/useEventCatalog";
-import {
-  speakerName,
-  visibleEvents,
-  type DateFilter,
-} from "../utils/catalogFilters";
-
-interface FilterOption {
-  value: string;
-  label: string;
-}
-
-interface MobileFilterDropdownProps {
-  label: string;
-  allLabel: string;
-  allValue?: string;
-  value: string;
-  options: FilterOption[];
-  onChange: (value: string) => void;
-}
+import { PageHeader } from "../../../components/organisms/PageHeader/PageHeader";
+import { visibleEvents, type DateFilter } from "../utils/catalogFilters";
+import { PageContainer } from "../../../components/templates/PageContainer";
+import { SearchField } from "../../../components/molecules/SearchField";
+import { FilterDropdown, type FilterOption } from "../../../components/molecules/FilterDropdown";
+import { DateRangeFields } from "../../../components/molecules/DateRangeFields";
+import { ClearFiltersButton } from "../../../components/molecules/ClearFiltersButton";
+import { FeedbackNotice } from "../../../components/molecules/FeedbackNotice";
+import { PageState } from "../../../components/organisms/PageState/PageState";
 
 const dateOptions: FilterOption[] = [
-  { value: "hoy", label: "Hoy" },
-  { value: "semana", label: "Esta semana" },
-  { value: "mes", label: "Este mes" },
+  { value: "proximos", label: "Próximos 7 días" },
+  { value: "mes_actual", label: "Este mes" },
+  { value: "mes_siguiente", label: "Próximo mes" },
+  { value: "personalizado", label: "Rango personalizado" },
 ];
 
-function MobileFilterDropdown({
-  label,
-  allLabel,
-  allValue = "",
-  value,
-  options,
-  onChange,
-}: MobileFilterDropdownProps) {
-  const selectedOption = options.find((option) => option.value === value);
-  const selectedLabel = value === allValue ? label : selectedOption?.label ?? label;
-  const detailsRef = useRef<HTMLDetailsElement>(null);
-  const summaryRef = useRef<HTMLElement>(null);
-
-  useEffect(() => {
-    function handlePointerDown(event: PointerEvent) {
-      if (
-        detailsRef.current &&
-        !detailsRef.current.contains(event.target as Node)
-      ) {
-        detailsRef.current.open = false;
-      }
-    }
-
-    document.addEventListener("pointerdown", handlePointerDown);
-    return () => document.removeEventListener("pointerdown", handlePointerDown);
-  }, []);
-
-  return (
-    <details
-      ref={detailsRef}
-      className="relative min-w-0 md:hidden"
-      onKeyDown={(event) => {
-        if (event.key === "Escape") {
-          if (detailsRef.current) detailsRef.current.open = false;
-          summaryRef.current?.focus();
-          event.stopPropagation();
-        }
-      }}
-    >
-      <summary
-        ref={summaryRef}
-        aria-label={`${label}: ${value === allValue ? allLabel : selectedLabel}`}
-        className="flex h-11 w-full cursor-pointer list-none items-center justify-between gap-2 rounded-md border border-eventos-divider-strong bg-eventos-on-primary px-3 text-sm text-eventos-body-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-eventos-secondary [&::-webkit-details-marker]:hidden"
-      >
-        <span className="min-w-0 truncate">{selectedLabel}</span>
-        <ChevronDown size={18} aria-hidden="true" className="shrink-0" />
-      </summary>
-      <div
-        role="group"
-        aria-label={`Opciones de ${label.toLowerCase()}`}
-        className="absolute inset-x-0 top-full z-30 mt-1 max-h-60 overflow-y-auto rounded-md border border-eventos-divider-strong bg-eventos-on-primary p-1 shadow-lg"
-      >
-        {[{ value: allValue, label: allLabel }, ...options].map((option) => (
-          <button
-            key={option.value || "all"}
-            type="button"
-            aria-pressed={value === option.value}
-            onClick={() => {
-              onChange(option.value);
-              if (detailsRef.current) detailsRef.current.open = false;
-              summaryRef.current?.focus();
-            }}
-            className="block w-full rounded px-3 py-2 text-left text-sm break-words text-eventos-body-text hover:bg-eventos-primary-light focus-visible:outline-2 focus-visible:outline-eventos-secondary aria-pressed:bg-eventos-primary-light"
-          >
-            {option.label}
-          </button>
-        ))}
-      </div>
-    </details>
-  );
-}
-
 export function EventCatalogPage() {
-  const { events, status, error, retry } = useEventCatalog();
+  const { events, status, error, retry, failedCount } = useEventCatalog();
   const [search, setSearch] = useState("");
   const [dateFilter, setDateFilter] = useState<DateFilter>("todas");
+  const [rangeStart, setRangeStart] = useState("");
+  const [rangeEnd, setRangeEnd] = useState("");
   const [venue, setVenue] = useState("");
-  const [speaker, setSpeaker] = useState("");
 
   const venues = useMemo(() =>
     [...new Set(events.flatMap((event) =>
@@ -115,148 +34,167 @@ export function EventCatalogPage() {
     [events],
   );
 
-  const speakers = useMemo(() =>
-    [...new Set(events.flatMap((event) =>
-      (event.subEventos ?? []).flatMap((activity) => (activity.ponentes ?? []).map(speakerName)),
-    ))].sort((a, b) => a.localeCompare(b, "es")),
-    [events],
-  );
-
   const filteredEvents = useMemo(
-    () => visibleEvents(events, search, dateFilter, venue, speaker),
-    [events, search, dateFilter, venue, speaker],
+    () =>
+      visibleEvents(
+        events,
+        search,
+        dateFilter,
+        venue,
+        rangeStart,
+        rangeEnd,
+      ),
+    [events, search, dateFilter, venue, rangeStart, rangeEnd],
   );
 
-  const hasFilters = search.trim() !== "" || dateFilter !== "todas" || venue !== "" || speaker !== "";
+  const hasFilters = search.trim() !== "" || dateFilter !== "todas" || venue !== "";
   const resetFilters = () => {
     setSearch("");
     setDateFilter("todas");
     setVenue("");
-    setSpeaker("");
+    setRangeStart("");
+    setRangeEnd("");
   };
 
+  const isAssistantCatalog = useMatch("/asistente/cartelera") !== null;
+
   return (
-    <section className="mx-auto w-full max-w-7xl px-2 py-4 font-merriweather sm:px-6 lg:px-8 lg:justify-start">
-      <div className="mb-10 flex flex-col gap-5 lg:mb-12 lg:flex-row lg:items-start lg:justify-between">
-        <h1 className="shrink-0 text-3xl font-bold text-eventos-ink">
-          Cartelera de Eventos
-        </h1>
+    <PageContainer>
+      <div
+        className={
+          dateFilter === "personalizado"
+            ? "mb-4 flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between"
+            : "mb-6 flex flex-col gap-6 lg:mb-8 xl:flex-row xl:items-start xl:justify-between"
+        }
+      >
+      <div className="min-w-0 xl:max-w-sm xl:shrink-0">
+          <PageHeader
+            title="Cartelera de Eventos"
+            description="Explora los próximos eventos y actividades."
+            back={
+              isAssistantCatalog
+                ? {
+                  to: "/menu-asistente",
+                  label: "Volver al menú principal",
+                }
+                : undefined
+            }
+          />
+        </div>
 
-        <div className="grid w-full grid-cols-1 gap-3 md:grid-cols-2 lg:flex lg:max-w-4xl lg:flex-wrap lg:items-center lg:justify-end">
-          <label className="relative min-w-0 md:col-span-2 lg:min-w-[230px] lg:flex-1 lg:max-w-sm">
-            <span className="sr-only">Buscar evento o ponente</span>
-            <input
-              type="search"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Buscar evento o ponente..."
-              className="h-11 w-full rounded-md border border-eventos-divider-strong bg-eventos-on-primary py-2 pl-3 pr-11 text-sm text-eventos-body-text outline-offset-2 placeholder:text-eventos-placeholder-text focus-visible:outline-2 focus-visible:outline-eventos-secondary"
-            />
-            <Search size={19} aria-hidden="true" className="pointer-events-none absolute right-3 top-3 text-eventos-muted-text" />
-          </label>
+        <div className="w-full min-w-0 space-y-3 xl:max-w-5xl">
+          <SearchField
+            value={search}
+            onChange={setSearch}
+          />
 
-          <div className="min-w-0">
-            <MobileFilterDropdown
-              label="Fecha"
-              allLabel="Todas las fechas"
-              allValue="todas"
-              value={dateFilter}
-              options={dateOptions}
-              onChange={(value) => setDateFilter(value as DateFilter)}
-            />
-            <label className="hidden min-w-0 md:block">
-              <span className="sr-only">Filtrar por fecha</span>
-              <select
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="min-w-0">
+              <FilterDropdown
+                label="Fecha"
+                allLabel="Todas las fechas"
+                allValue="todas"
                 value={dateFilter}
-                onChange={(event) => setDateFilter(event.target.value as DateFilter)}
-                className="h-11 w-full rounded-md border border-eventos-divider-strong bg-eventos-on-primary px-3 text-sm text-eventos-body-text focus-visible:outline-2 focus-visible:outline-eventos-secondary"
-              >
-                <option value="todas">Fecha</option>
-                <option value="hoy">Hoy</option>
-                <option value="semana">Esta semana</option>
-                <option value="mes">Este mes</option>
-              </select>
-            </label>
-          </div>
+                options={dateOptions}
+                onChange={(value) => setDateFilter(value as DateFilter)}
+              />
+            </div>
 
-          <div className="min-w-0">
-            <MobileFilterDropdown
-              label="Espacio"
-              allLabel="Todos los espacios"
-              value={venue}
-              options={venues.map((name) => ({ value: name, label: name }))}
-              onChange={setVenue}
-            />
-            <label className="hidden min-w-0 md:block">
-              <span className="sr-only">Filtrar por espacio</span>
-              <select
+            <div className="min-w-0">
+              <FilterDropdown
+                label="Espacio"
+                allLabel="Todos los espacios"
                 value={venue}
-                onChange={(event) => setVenue(event.target.value)}
-                className="h-11 w-full rounded-md border border-eventos-divider-strong bg-eventos-on-primary px-3 text-sm text-eventos-body-text focus-visible:outline-2 focus-visible:outline-eventos-secondary"
-              >
-                <option value="">Espacio</option>
-                {venues.map((name) => <option value={name} key={name}>{name}</option>)}
-              </select>
-            </label>
-          </div>
-
-          <div className="min-w-0">
-            <MobileFilterDropdown
-              label="Ponente"
-              allLabel="Todos los ponentes"
-              value={speaker}
-              options={speakers.map((name) => ({ value: name, label: name }))}
-              onChange={setSpeaker}
-            />
-            <label className="hidden min-w-0 md:block">
-              <span className="sr-only">Filtrar por ponente</span>
-              <select
-                value={speaker}
-                onChange={(event) => setSpeaker(event.target.value)}
-                className="h-11 w-full rounded-md border border-eventos-divider-strong bg-eventos-on-primary px-3 text-sm text-eventos-body-text focus-visible:outline-2 focus-visible:outline-eventos-secondary"
-              >
-                <option value="">Ponente</option>
-                {speakers.map((name) => <option value={name} key={name}>{name}</option>)}
-              </select>
-            </label>
+                options={venues.map((name) => ({
+                  value: name,
+                  label: name,
+                }))}
+                onChange={setVenue}
+              />
+            </div>
           </div>
         </div>
       </div>
 
-      {status === "loading" && (
-        <div role="status" aria-live="polite" className="flex min-h-72 flex-col items-center justify-center gap-4 text-eventos-muted-text">
-          <LoaderCircle size={32} className="animate-spin" aria-hidden="true" />
-          <p>Cargando eventos próximos...</p>
+      {dateFilter === "personalizado" && (
+        <DateRangeFields
+          startDate={rangeStart}
+          endDate={rangeEnd}
+          onStartDateChange={setRangeStart}
+          onEndDateChange={setRangeEnd}
+          className="mb-3"
+        />
+      )}
+
+      {hasFilters && (
+        <div className="mb-6 flex justify-end">
+          <ClearFiltersButton onClick={resetFilters} />
         </div>
+      )}
+
+      {status === "loading" && (
+        <PageState
+          variant="loading"
+          title="Cargando eventos próximos..."
+        />
       )}
 
       {status === "error" && (
-        <div role="alert" className="flex min-h-64 flex-col items-center justify-center gap-4 rounded-lg border border-eventos-divider p-6 text-center">
-          <AlertCircle size={34} className="text-eventos-error-strong" aria-hidden="true" />
-          <p>{error}</p>
-          <button
-            type="button"
-            onClick={retry}
-            className="rounded-md bg-eventos-primary px-5 py-2 font-semibold text-eventos-on-primary hover:bg-eventos-action-hover"
+        <PageState
+          variant="error"
+          title="No se pudo cargar la cartelera"
+          description={error}
+          action={
+            <button
+              type="button"
+              onClick={retry}
+              className="inline-flex cursor-pointer items-center justify-center rounded-md bg-eventos-primary px-5 py-2 font-semibold text-eventos-on-primary hover:bg-eventos-action-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-eventos-primary"
+            >
+              Reintentar
+            </button>
+          }
+        />
+      )}
+
+      {status === "success" && failedCount > 0 && (
+        <div className="mb-6">
+          <FeedbackNotice
+            variant="warning"
+            title="No se pudieron cargar todos los eventos"
+            action={
+              <button
+                type="button"
+                onClick={retry}
+                className="inline-flex cursor-pointer items-center justify-center rounded-md bg-eventos-primary px-4 py-2 text-sm font-semibold text-eventos-on-primary hover:bg-eventos-action-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-eventos-primary"
+              >
+                Reintentar carga
+              </button>
+            }
           >
-            Reintentar
-          </button>
+            <p>
+              {failedCount === 1
+                ? "No se pudo recuperar la información de un evento."
+                : `No se pudo recuperar la información de ${failedCount} eventos.`}{" "}
+              Puedes consultar los eventos disponibles o intentar cargar nuevamente.
+            </p>
+          </FeedbackNotice>
         </div>
       )}
 
-      {status === "success" && filteredEvents.length === 0 && (
-        <div role="status" className="flex min-h-64 flex-col items-center justify-center gap-4 rounded-lg border border-eventos-divider p-6 text-center">
-          <CalendarDays size={34} className="text-eventos-muted-text" aria-hidden="true" />
-          <h2 className="text-lg font-semibold text-eventos-ink">
-            {events.length === 0 ? "No hay eventos próximos" : "No encontramos eventos con esos filtros"}
-          </h2>
-          {hasFilters && (
-            <button type="button" onClick={resetFilters} className="rounded-md border border-eventos-primary px-5 py-2 font-semibold text-eventos-primary hover:bg-eventos-action-hover-soft">
-              Limpiar filtros
-            </button>
-          )}
-        </div>
-      )}
+      {status === "success" &&
+        filteredEvents.length === 0 &&
+        (events.length > 0 || failedCount === 0) && (
+          <PageState
+            variant="empty"
+            title={
+              events.length === 0
+                ? "No hay eventos próximos"
+                : failedCount > 0
+                  ? "No hay coincidencias entre los eventos cargados"
+                  : "No encontramos eventos con esos filtros"
+            }
+          />
+        )}
 
       {status === "success" && filteredEvents.length > 0 && (
         <>
@@ -270,6 +208,6 @@ export function EventCatalogPage() {
           </div>
         </>
       )}
-    </section>
+    </PageContainer>
   );
 }

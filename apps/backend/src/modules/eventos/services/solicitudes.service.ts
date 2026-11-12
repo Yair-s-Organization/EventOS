@@ -7,7 +7,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, In, Repository } from 'typeorm';
+import { DataSource, EntityManager, In, Repository } from 'typeorm';
 import {
   EstadoBoleto,
   EstadoEvento,
@@ -16,6 +16,7 @@ import {
   TipoCuentaUsuario,
   type SolicitanteResumen,
   type SubeventoPayload,
+  type SubEventoLogisticaPayload,
 } from '@eventos/shared';
 import { EventoEntity } from '../entities/evento.entity';
 import { UsuarioEntity } from '../../auth/entities/usuario.entity';
@@ -575,6 +576,7 @@ export class SolicitudesService {
         idEvento,
         solicitudPendiente.subeventosPropuestos,
         idUsuarioActor,
+        solicitudPendiente.motivoModificacion,
       );
 
       return {
@@ -620,6 +622,7 @@ export class SolicitudesService {
     idEvento: number,
     subeventosPropuestos: SubEventoLogisticaPayload[],
     idUsuarioActor?: number,
+    motivoModificacion?: string,
   ) {
     await this.validarSubeventos(subeventosPropuestos, idEvento);
     const nuevoEsUrgente = this.calcularEsUrgente(subeventosPropuestos);
@@ -631,6 +634,17 @@ export class SolicitudesService {
       fecha: string;
       horaInicio: string;
       horaFin: string;
+    }[] = [];
+
+    const subeventosCancelados: {
+      idSubEvento: number;
+      nombreSubEvento: string;
+      asistentes: {
+        idUsuario: number;
+        correo: string;
+        nombre: string;
+        apellidoPa: string;
+      }[];
     }[] = [];
 
     const evento = await this.eventoRepository.findOneBy({ idEvento });
@@ -723,6 +737,18 @@ export class SolicitudesService {
           !idsConservados.has(anterior.idSubEvento) &&
           anterior.estado !== EstadoSubEvento.CANCELADO
         ) {
+          const asistentes = await this.obtenerAsistentesConBoletoValido(
+            { idSubEvento: anterior.idSubEvento },
+            manager,
+          );
+          if (asistentes.length > 0) {
+            subeventosCancelados.push({
+              idSubEvento: anterior.idSubEvento,
+              nombreSubEvento: anterior.nombre,
+              asistentes,
+            });
+          }
+
           await manager.update(SubEventoEntity, anterior.idSubEvento, {
             estado: EstadoSubEvento.CANCELADO,
           });
@@ -759,6 +785,13 @@ export class SolicitudesService {
 
     if (subeventosConCambioRecinto.length > 0) {
       void this.notificarAsistentesCambioRecinto(idEvento, subeventosConCambioRecinto);
+    }
+    if (subeventosCancelados.length > 0) {
+      void this.notificarSubeventosCancelados(
+        evento.nombre,
+        subeventosCancelados,
+        motivoModificacion,
+      );
     }
 
     return {
@@ -856,6 +889,11 @@ export class SolicitudesService {
       );
     }
 
+    if (motivo !== undefined && motivo.trim() === '') {
+      throw new BadRequestException(
+        'Dato requerido faltante. La justificación no puede estar vacía.',
+      );
+    }
     const motivoLimpio = motivo?.trim() || null;
     if (motivoLimpio && motivoLimpio.length > 500) {
       throw new BadRequestException(
@@ -930,7 +968,19 @@ export class SolicitudesService {
       );
     }
 
+    let asistentesAfectados: {
+      idUsuario: number;
+      correo: string;
+      nombre: string;
+      apellidoPa: string;
+    }[] = [];
+
     await this.dataSource.transaction(async (manager) => {
+      asistentesAfectados = await this.obtenerAsistentesConBoletoValido(
+        { idEvento },
+        manager,
+      );
+
       await manager.update(
         EventoEntity,
         { idEvento },
@@ -965,6 +1015,17 @@ export class SolicitudesService {
         });
       }
     });
+
+    const notificarOrganizador =
+      idUsuarioActor !== undefined && evento.idOrganizador !== idUsuarioActor;
+
+    void this.notificarCancelacionEvento(
+      evento.nombre,
+      evento.idOrganizador,
+      motivoLimpio,
+      asistentesAfectados,
+      notificarOrganizador,
+    );
 
     return {
       mensaje: 'El evento se ha cancelado exitosamente.',
@@ -1009,6 +1070,133 @@ export class SolicitudesService {
     return await this.crearEvento(nuevoEvento, dto.subeventos);
   }
 
+  /** Obtiene usuarios distintos con boleto válido para un evento o subevento. */
+  private async obtenerAsistentesConBoletoValido(
+    filtro: { idEvento?: number; idSubEvento?: number },
+    manager?: EntityManager,
+  ): Promise<
+    { idUsuario: number; correo: string; nombre: string; apellidoPa: string }[]
+  > {
+    const ejecutor = manager ?? this.dataSource;
+    const condicion =
+      filtro.idSubEvento !== undefined
+        ? 'ae."idSubEvento" = $1'
+        : 'se."idEvento" = $1';
+    const idObjetivo = filtro.idSubEvento ?? filtro.idEvento;
+
+    return ejecutor.query(
+      `SELECT DISTINCT u."idUsuario", u.correo, u.nombre, u."apellidoPa"
+       FROM "asistenteEvento" ae
+       INNER JOIN "subEvento" se ON ae."idSubEvento" = se."idSubEvento"
+       INNER JOIN boleto b ON ae."idBoleto" = b."idBoleto"
+       INNER JOIN usuario u ON ae."idUsuario" = u."idUsuario"
+       WHERE ${condicion}
+         AND b."idEstadoBoleto" = $2`,
+      [idObjetivo, EstadoBoleto.VALIDO],
+    );
+  }
+
+  /** Elimina el marcador interno de urgencia al mostrar el motivo en correos. */
+  private limpiarMotivoParaNotificacion(motivo?: string): string {
+    const marcador = '\n\nMotivo de urgencia: ';
+    const texto = motivo?.trim() ?? '';
+    if (!texto) {
+      return 'Actividad cancelada en la programación del evento.';
+    }
+    const indice = texto.lastIndexOf(marcador);
+    const base = indice >= 0 ? texto.slice(0, indice).trim() : texto;
+    return base || texto;
+  }
+
+  private async notificarCancelacionEvento(
+    nombreEvento: string,
+    idOrganizador: number,
+    motivo: string,
+    asistentes: {
+      idUsuario: number;
+      correo: string;
+      nombre: string;
+      apellidoPa: string;
+    }[],
+    notificarOrganizador: boolean,
+  ): Promise<void> {
+    try {
+      let idOrganizadorNotificado: number | null = null;
+
+      if (notificarOrganizador) {
+        const organizador = await this.usuarioRepository.findOneBy({
+          idUsuario: idOrganizador,
+        });
+        if (organizador?.correo) {
+          idOrganizadorNotificado = organizador.idUsuario;
+          await this.mailService.enviarNotificacionCancelacionEvento({
+            destinatario: organizador.correo,
+            nombreDestinatario:
+              `${organizador.nombre} ${organizador.apellidoPa}`.trim(),
+            destinatarioRol: 'organizador',
+            nombreEvento,
+            motivo,
+          });
+        }
+      }
+
+      for (const asist of asistentes) {
+        if (asist.idUsuario === idOrganizadorNotificado || !asist.correo) {
+          continue;
+        }
+        await this.mailService.enviarNotificacionCancelacionEvento({
+          destinatario: asist.correo,
+          nombreDestinatario: `${asist.nombre} ${asist.apellidoPa}`.trim(),
+          destinatarioRol: 'asistente',
+          nombreEvento,
+          motivo,
+        });
+      }
+    } catch (err) {
+      this.logger.error(
+        'Error al enviar notificaciones de cancelación de evento',
+        err,
+      );
+    }
+  }
+
+  private async notificarSubeventosCancelados(
+    nombreEvento: string,
+    subeventos: {
+      idSubEvento: number;
+      nombreSubEvento: string;
+      asistentes: {
+        idUsuario: number;
+        correo: string;
+        nombre: string;
+        apellidoPa: string;
+      }[];
+    }[],
+    motivoModificacion?: string,
+  ): Promise<void> {
+    try {
+      const motivo = this.limpiarMotivoParaNotificacion(motivoModificacion);
+      for (const sub of subeventos) {
+        for (const asist of sub.asistentes) {
+          if (!asist.correo) continue;
+          await this.mailService.enviarNotificacionCancelacionEvento({
+            destinatario: asist.correo,
+            nombreDestinatario: `${asist.nombre} ${asist.apellidoPa}`.trim(),
+            destinatarioRol: 'asistente',
+            nombreEvento,
+            nombreSubEvento: sub.nombreSubEvento,
+            motivo,
+          });
+        }
+      }
+    } catch (err) {
+      this.logger.error(
+        'Error al enviar notificaciones de cancelación de subeventos',
+        err,
+      );
+    }
+  }
+
   private async notificarAsistentesCambioRecinto(
     idEvento: number,
     cambios: {
@@ -1029,14 +1217,9 @@ export class SolicitudesService {
         );
         const nombreRecinto = recinto[0]?.nombre || 'Nuevo Recinto';
 
-        const asistentes = await this.dataSource.query(
-          `SELECT DISTINCT u.correo, u.nombre, u."apellidoPa"
-           FROM "asistenteEvento" ae
-           INNER JOIN boleto b ON ae."idBoleto" = b."idBoleto"
-           INNER JOIN usuario u ON ae."idUsuario" = u."idUsuario"
-           WHERE ae."idSubEvento" = $1 AND b."idEstadoBoleto" = $2`,
-          [cambio.idSubEvento, EstadoBoleto.VALIDO],
-        );
+        const asistentes = await this.obtenerAsistentesConBoletoValido({
+          idSubEvento: cambio.idSubEvento,
+        });
 
         for (const asist of asistentes) {
           const nombreCompleto = `${asist.nombre} ${asist.apellidoPa}`.trim();

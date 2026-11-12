@@ -12,7 +12,11 @@ export function crearUploadOptions(
 ): MulterOptions {
   return {
     storage: memoryStorage(),
-    limits: { fileSize: maxMB * 1024 * 1024 }, // si se excede responde 413
+    limits: {
+      fileSize: maxMB * 1024 * 1024, // si se excede responde 413
+      fieldSize: 10 * 1024, // máximo 10 KB por campo de texto en multipart/form-data (anti-DoS)
+      fields: 25,
+    },
     fileFilter: (_req, file, cb) => {
       if (!tiposPermitidos.includes(file.mimetype)) {
         return cb(

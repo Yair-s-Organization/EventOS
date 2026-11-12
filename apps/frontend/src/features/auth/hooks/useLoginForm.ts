@@ -25,6 +25,13 @@ export function useLoginForm() {
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [modalBloqueoAbierto, setModalBloqueoAbierto] = useState(false);
   const recaptchaRef = useRef<ReCAPTCHA>(null);
+  const isCaptchaDisabled =
+    !import.meta.env.PROD &&
+    (import.meta.env.VITE_DISABLE_CAPTCHA === "true" ||
+      import.meta.env.MODE === "test" ||
+      (typeof window !== "undefined" &&
+        (window.location.search.includes("disable_captcha=true") ||
+          window.sessionStorage.getItem("DISABLE_CAPTCHA") === "true")));
 
   const handleCaptchaChange = (token: string | null) => {
     setCaptchaToken(token);
@@ -78,7 +85,7 @@ export function useLoginForm() {
       hasError = true;
     }
 
-    if (!captchaToken) {
+    if (!isCaptchaDisabled && !captchaToken) {
       newCaptchaError = "Por favor, confirma que no eres un robot.";
       hasError = true;
     }
@@ -107,7 +114,7 @@ export function useLoginForm() {
         body: JSON.stringify({
           correo: formData.correo,
           contrasena: formData.contrasena,
-          captchaToken: captchaToken,
+          captchaToken: captchaToken || undefined,
         }),
       });
 
@@ -174,6 +181,7 @@ export function useLoginForm() {
     modalBloqueoAbierto,
     recaptchaRef,
     returnPath,
+    isCaptchaDisabled,
     handleChange,
     handleCaptchaChange,
     handleSubmit,

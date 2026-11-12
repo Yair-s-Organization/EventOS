@@ -1,18 +1,24 @@
-import type {
-  CatalogActivityApi,
-  CatalogEventApi,
-} from "../types/eventCatalog.types";
+import type { CatalogEventApi } from "../types/eventCatalog.types";
 
-export type DateFilter = "todas" | "hoy" | "semana" | "mes";
+export type DateFilter =
+  | "todas"
+  | "proximos"
+  | "mes_actual"
+  | "mes_siguiente"
+  | "personalizado";
 
-function normalizeText(value: string): string {
-  return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+interface DateRange {
+  start: string;
+  end: string;
+  includeTime: boolean;
 }
 
-export function speakerName(speaker: CatalogActivityApi["ponentes"][number]): string {
-  return [speaker.nombre, speaker.apellidoPa, speaker.apellidoMa]
-    .filter(Boolean)
-    .join(" ");
+function normalizeText(value: string): string {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
 }
 
 function dateValue(value: string | null | undefined): string | null {
@@ -20,42 +26,88 @@ function dateValue(value: string | null | undefined): string | null {
   return found ? found[1] : null;
 }
 
-function datePartsToday(): { year: number; month: number; day: number } {
+function mexicoDateTime(date: Date): string {
   const parts = new Intl.DateTimeFormat("en-US", {
     timeZone: "America/Mexico_City",
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
-  }).formatToParts(new Date());
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(date);
 
-  const get = (type: string) => Number(parts.find((part) => part.type === type)?.value ?? 0);
-  return { year: get("year"), month: get("month"), day: get("day") };
+  const part = (name: string) =>
+    parts.find((item) => item.type === name)?.value ?? "00";
+
+  return `${part("year")}-${part("month")}-${part("day")}T${part("hour")}:${part("minute")}:${part("second")}`;
 }
 
 function isoFromDate(date: Date): string {
   return date.toISOString().slice(0, 10);
 }
 
-function dateRange(filter: DateFilter): { start: string; end: string } | null {
-  if (filter === "todas") return null;
-
-  const today = datePartsToday();
-  const date = new Date(Date.UTC(today.year, today.month - 1, today.day));
-  const start = isoFromDate(date);
-
-  if (filter === "hoy") return { start, end: start };
-
-  if (filter === "mes") {
-    const from = new Date(Date.UTC(today.year, today.month - 1, 1));
-    const to = new Date(Date.UTC(today.year, today.month, 0));
-    return { start: isoFromDate(from), end: isoFromDate(to) };
+function dateRange(
+  filter: DateFilter,
+  customStart: string,
+  customEnd: string,
+): DateRange | null {
+  if (filter === "todas") {
+    return null;
   }
 
-  const monday = new Date(date);
-  monday.setUTCDate(monday.getUTCDate() - ((monday.getUTCDay() + 6) % 7));
-  const sunday = new Date(monday);
-  sunday.setUTCDate(sunday.getUTCDate() + 6);
-  return { start: isoFromDate(monday), end: isoFromDate(sunday) };
+  const now = new Date();
+  const nowMexico = mexicoDateTime(now);
+  const today = nowMexico.slice(0, 10);
+  const year = Number(today.slice(0, 4));
+  const month = Number(today.slice(5, 7));
+
+  if (filter === "proximos") {
+    const end = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+    return {
+      start: nowMexico,
+      end: mexicoDateTime(end),
+      includeTime: true,
+    };
+  }
+
+  if (filter === "mes_actual") {
+    return {
+      start: isoFromDate(new Date(Date.UTC(year, month - 1, 1))),
+      end: isoFromDate(new Date(Date.UTC(year, month, 0))),
+      includeTime: false,
+    };
+  }
+
+  if (filter === "mes_siguiente") {
+    return {
+      start: isoFromDate(new Date(Date.UTC(year, month, 1))),
+      end: isoFromDate(new Date(Date.UTC(year, month + 1, 0))),
+      includeTime: false,
+    };
+  }
+
+  return {
+    start: customStart || "0000-01-01",
+    end: customEnd || "9999-12-31",
+    includeTime: false,
+  };
+}
+
+function nextActivityStart(event: CatalogEventApi): string {
+  const starts = (event.subEventos ?? [])
+    .map((activity) => {
+      const date = dateValue(activity.fecha?.fecha);
+      const time = activity.fecha?.horaInicio;
+
+      return date && time ? `${date}T${time}` : null;
+    })
+    .filter((value): value is string => value !== null)
+    .sort();
+
+  return starts[0] ?? "9999-12-31T23:59:59";
 }
 
 export function visibleEvents(
@@ -63,49 +115,65 @@ export function visibleEvents(
   search: string,
   selectedDate: DateFilter,
   venue: string,
-  speaker: string,
+  customStart = "",
+  customEnd = "",
 ): CatalogEventApi[] {
   const query = normalizeText(search);
-  const range = dateRange(selectedDate);
+  const range = dateRange(selectedDate, customStart, customEnd);
 
-  return events.filter((event) => {
-    const matchesEventName =
-      query !== "" && normalizeText(event.nombre).includes(query);
+  return events
+    .flatMap((event) => {
+      const matchesEventName =
+        query !== "" && normalizeText(event.nombre).includes(query);
 
-    return (event.subEventos ?? []).some((activity) => {
-      const date = dateValue(activity.fecha?.fecha);
+      const subEventos = (event.subEventos ?? []).filter((activity) => {
+        const date = dateValue(activity.fecha?.fecha);
 
-      const matchesDate =
-        !range ||
-        (date !== null &&
-          date >= range.start &&
-          date <= range.end);
+        if (!date) {
+          return false;
+        }
 
-      const matchesVenue =
-        !venue || activity.recinto?.nombre === venue;
+        let matchesDate = true;
 
-      const matchesSpeaker =
-        !speaker ||
-        (activity.ponentes ?? []).some(
-          (person) => speakerName(person) === speaker,
-        );
+        if (range) {
+          if (range.includeTime) {
+            const startTime = activity.fecha?.horaInicio;
+            const endTime = activity.fecha?.horaFin;
 
-      const matchesSearch =
-        !query ||
-        matchesEventName ||
-        normalizeText(activity.nombre).includes(query) ||
-        (activity.ponentes ?? []).some((person) =>
-          normalizeText(speakerName(person)).includes(query),
-        );
+            matchesDate = Boolean(
+              startTime &&
+              endTime &&
+              `${date}T${endTime}` > range.start &&
+              `${date}T${startTime}` <= range.end
+            );
+          } else {
+            matchesDate = date >= range.start && date <= range.end;
+          }
+        }
 
+        const matchesVenue =
+          !venue || activity.recinto?.nombre === venue;
+
+        const matchesSearch =
+          !query ||
+          matchesEventName ||
+          normalizeText(activity.nombre).includes(query);
+
+        return matchesDate && matchesVenue && matchesSearch;
+      });
+
+      if (subEventos.length === 0) {
+        return [];
+      }
+
+      return [{ ...event, subEventos }];
+    })
+    .sort((first, second) => {
       return (
-        matchesDate &&
-        matchesVenue &&
-        matchesSpeaker &&
-        matchesSearch
+        nextActivityStart(first).localeCompare(nextActivityStart(second)) ||
+        first.idEvento - second.idEvento
       );
     });
-  });
 }
 
 export function getEventDates(event: CatalogEventApi): string[] {

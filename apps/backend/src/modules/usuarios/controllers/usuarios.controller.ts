@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Patch,
+  Delete,
   Body,
   Param,
   Query,
@@ -174,6 +175,20 @@ export class UsuariosController {
       id,
       idAdminActor,
       body?.estatus,
+    );
+  }
+
+  @Delete('admin/cuentas/:id')
+  @Roles(TipoCuentaUsuario.ADMINISTRADOR)
+  async deshabilitarCuenta(
+    @Param('id', ParseIntPipe) id: number,
+    @Req() req: any,
+  ) {
+    const idAdminActor = Number(req.user.sub ?? req.user.idUsuario);
+    return await this.usuariosService.cambiarEstatusCuenta(
+      id,
+      idAdminActor,
+      false,
     );
   }
 

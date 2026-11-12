@@ -19,6 +19,7 @@ export function LoginForm() {
     modalBloqueoAbierto,
     recaptchaRef,
     returnPath,
+    isCaptchaDisabled,
     handleChange,
     handleCaptchaChange,
     handleSubmit,
@@ -45,9 +46,11 @@ export function LoginForm() {
         <div className="-mt-8">
           <PasswordField id="contrasena" name="contrasena" label="Contraseña" placeholder="Ejemplo01!" value={formData.contrasena} onChange={handleChange} error={errors.contrasena}/>
         </div>    
-        <CaptchaField recaptchaRef={recaptchaRef} onChange={handleCaptchaChange} error={captchaError}
-          sitekey="6LddCvktAAAAAM980VTf7Y1lBBjUbjKEIOqMEXBi"
-        />
+        {!isCaptchaDisabled && (
+          <CaptchaField recaptchaRef={recaptchaRef} onChange={handleCaptchaChange} error={captchaError}
+            sitekey="6LddCvktAAAAAM980VTf7Y1lBBjUbjKEIOqMEXBi"
+          />
+        )}
 
         <Button fullWidth size="md" variant="primary" className="mt-2" type="submit" text="Iniciar Sesión" loadingText="Iniciando sesión..." loading={loading}/>
 

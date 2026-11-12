@@ -69,9 +69,13 @@ export function CatalogEventCard({
 
       <div className="flex flex-1 flex-col gap-2">
         <span className="w-fit rounded bg-eventos-primary-light px-2 py-0.5 text-xs font-medium text-eventos-primary">
-          {event.idAlcance === AlcanceEvento.INTERNO
-            ? "Interno"
-            : "Público"}
+          {event.idAlcance === AlcanceEvento.PUBLICO
+            ? "Público"
+            : event.idAlcance === AlcanceEvento.INTERNO
+              ? "Interno"
+              : event.idAlcance === AlcanceEvento.PRIVADO
+                ? "Privado"
+                : "No especificado"}
         </span>
 
         <Heading className="font-merriweather text-lg font-semibold leading-snug text-eventos-ink">

@@ -57,18 +57,18 @@ export class AuthService {
     }
   }
 
-  async registrar(dto: {
-    nombre: string;
-    apellidoPa: string;
+  async registrar(dto?: {
+    nombre?: string;
+    apellidoPa?: string;
     apellidoMa?: string;
-    correo: string;
-    contrasena: string;
+    correo?: string;
+    contrasena?: string;
   }) {
-    const nombre = dto.nombre?.trim() ?? '';
-    const apellidoPa = dto.apellidoPa?.trim() ?? '';
-    const apellidoMa = dto.apellidoMa?.trim() ?? '';
-    const correo = dto.correo?.trim().toLowerCase() ?? '';
-    const contrasenaRaw = dto.contrasena ?? '';
+    const nombre = typeof dto?.nombre === 'string' ? dto.nombre.trim() : '';
+    const apellidoPa = typeof dto?.apellidoPa === 'string' ? dto.apellidoPa.trim() : '';
+    const apellidoMa = typeof dto?.apellidoMa === 'string' ? dto.apellidoMa.trim() : '';
+    const correo = typeof dto?.correo === 'string' ? dto.correo.trim().toLowerCase() : '';
+    const contrasenaRaw = typeof dto?.contrasena === 'string' ? dto.contrasena : '';
 
     // Rechazar campos nulos, vacíos o solo con espacios
     if (
@@ -171,6 +171,7 @@ export class AuthService {
         'Te hemos enviado un correo de verificación. Haz clic en el enlace enviado a tu bandeja para completar tu registro.',
       requiereVerificacionCorreo: true,
       correo,
+      token: process.env.NODE_ENV === 'production' ? undefined : token,
     };
   }
 
@@ -244,11 +245,17 @@ export class AuthService {
     };
   }
 
-  async login(dto: {
-    correo: string;
-    contrasena: string;
+  async login(dto?: {
+    correo?: string;
+    contrasena?: string;
     captchaToken?: string;
   }) {
+    if (!dto || typeof dto !== 'object') {
+      throw new BadRequestException(
+        'Por favor, completa todos los campos obligatorios.',
+      );
+    }
+
     if (process.env.RECAPTCHA_SECRET_KEY) {
       if (!dto.captchaToken) {
         throw new UnauthorizedException(
@@ -275,7 +282,15 @@ export class AuthService {
       }
     }
 
-    const correoLimpio = dto.correo?.trim().toLowerCase() ?? '';
+    const correoLimpio =
+      typeof dto.correo === 'string' ? dto.correo.trim().toLowerCase() : '';
+    const contrasenaInput =
+      typeof dto.contrasena === 'string' ? dto.contrasena : '';
+    if (!correoLimpio || !contrasenaInput) {
+      throw new BadRequestException(
+        'Por favor, completa todos los campos obligatorios.',
+      );
+    }
     const usuario = await this.usuarioRepository.findOne({
       where: { correo: correoLimpio },
     });
@@ -433,6 +448,7 @@ export class AuthService {
     return {
       mensaje:
         'Correo enviado con éxito. Revisa tu bandeja de entrada para restablecer tu contraseña.',
+      token: process.env.NODE_ENV === 'production' ? undefined : token,
     };
   }
 
@@ -551,6 +567,17 @@ export class AuthService {
     if (nuevaContrasena !== confirmarContrasena) {
       throw new BadRequestException(
         'Las contraseñas ingresadas no coinciden.',
+      );
+    }
+
+    // Validar que la nueva contraseña no sea igual a la contraseña actual
+    const esMismaContrasena = await bcrypt.compare(
+      nuevaContrasena,
+      usuario.contrasena,
+    );
+    if (esMismaContrasena) {
+      throw new BadRequestException(
+        'La nueva contraseña debe ser diferente a la contraseña anterior.',
       );
     }
 

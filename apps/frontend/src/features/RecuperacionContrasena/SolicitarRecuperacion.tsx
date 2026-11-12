@@ -60,7 +60,7 @@ export function SolicitarRecuperacion() {
 
   return (
     <AuthLayout title="Recuperar Contraseña" generalError={error}>
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} noValidate className="space-y-6">
         <p className="text-sm text-gray-600 font-merriweather">
           Ingresa tu correo electrónico registrado y te enviaremos un enlace para restablecer tu contraseña.
         </p>

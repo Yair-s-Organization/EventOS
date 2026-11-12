@@ -257,6 +257,11 @@ export function useRegistro() {
       }
 
       setCorreoRegistrado(data.correo || formData.correo.trim());
+
+      if (!import.meta.env.PROD && typeof window !== "undefined" && data.token) {
+        (window as any).__lastRegistrationToken = data.token;
+      }
+
       setModalExitoAbierto(true);
 
     } catch (error: any) {
