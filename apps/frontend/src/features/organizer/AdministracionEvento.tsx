@@ -473,19 +473,25 @@ export function AdministracionEvento() {
       {datosEvento && (
         <>
           {datosEvento.idEstadoEvento === EstadoEvento.RECHAZADO && (
-            <div
-              role="alert"
-              className=" border border-red-500 space-y-2 bg-red-50 p-5 shadow-md">
-              <div className="flex items-center gap-2">
-                <Badge variant="error">Solicitud rechazada</Badge>
-                <h2 className="font-bold text-gray-900">
-                  Motivo de rechazo
-                </h2>
+            <div className="flex flex-col space-y-2 border border-red-500 rounded-md bg-red-50 p-5 shadow-md">
+              <div
+                role="alert"
+                className="flex flex-row justify-between">
+                <div className="flex items-center gap-2">
+                  <h2 className="font-bold text-gray-900">
+                    Motivo de rechazo
+                  </h2>
+                </div>
+                <div>
+                  <Badge variant="error">Solicitud rechazada</Badge>
+                </div>
               </div>
-              <p className="break-words text-sm text-gray-700">
-                {datosEvento.motivoRechazo ||
-                  "No se especificó un motivo para el rechazo de la solicitud."}
-              </p>
+              <div>
+                <p className="break-words text-base text-red-900  ">
+                  {datosEvento.motivoRechazo ||
+                    "No se especificó un motivo para el rechazo de la solicitud."}
+                </p>
+              </div>
             </div>
           )}
 
