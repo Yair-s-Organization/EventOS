@@ -8,9 +8,10 @@ import type {
   ErroresSubevento,
 } from "../../../features/events/SolicitudEventos";
 import Input from "../../atoms/Input/Input";
+import { DateInput } from "../../atoms/DateInput/DateInput";
 import Button from "../../atoms/Button/Button";
 import { SpaceRequerimentsDialog } from "../../organisms/SpaceRequirementsDialog/SpaceRequerimentsDialog";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ModalSubevento } from "../ModalSubevento/ModalSubevento";
 import { apiRequest } from "../../../lib/apiClient";
 
@@ -63,12 +64,12 @@ const RECINTOS_BASE: EspacioInfo[] = [
 ];
 
 const HORASINICIO = [
-  { value: "07:00", label: "7:00" },
-  { value: "07:30", label: "7:30" },
-  { value: "08:00", label: "8:00" },
-  { value: "08:30", label: "8:30" },
-  { value: "09:00", label: "9:00" },
-  { value: "09:30", label: "9:30" },
+  { value: "07:00", label: "07:00" },
+  { value: "07:30", label: "07:30" },
+  { value: "08:00", label: "08:00" },
+  { value: "08:30", label: "08:30" },
+  { value: "09:00", label: "09:00" },
+  { value: "09:30", label: "09:30" },
   { value: "10:00", label: "10:00" },
   { value: "10:30", label: "10:30" },
   { value: "11:00", label: "11:00" },
@@ -95,10 +96,10 @@ const HORASINICIO = [
 ];
 
 const HORASFIN = [
-  { value: "08:00", label: "8:00" },
-  { value: "08:30", label: "8:30" },
-  { value: "09:00", label: "9:00" },
-  { value: "09:30", label: "9:30" },
+  { value: "08:00", label: "08:00" },
+  { value: "08:30", label: "08:30" },
+  { value: "09:00", label: "09:00" },
+  { value: "09:30", label: "09:30" },
   { value: "10:00", label: "10:00" },
   { value: "10:30", label: "10:30" },
   { value: "11:00", label: "11:00" },
@@ -126,13 +127,52 @@ const HORASFIN = [
   { value: "22:00", label: "22:00" },
 ];
 
+interface HorarioOcupadoAgenda {
+  horaInicio: string;
+  horaFin: string;
+}
+
+function horaEnMinutos(hora: string): number {
+  const [horas, minutos] = hora.slice(0, 5).split(":").map(Number);
+  return horas * 60 + minutos;
+}
+
 function seTraslapan(
   horaInicio: string,
   horaFin: string,
   otraHoraInicio: string,
   otraHoraFin: string,
 ): boolean {
-  return horaInicio < otraHoraFin && otraHoraInicio < horaFin;
+  return (
+    horaEnMinutos(horaInicio) < horaEnMinutos(otraHoraFin) &&
+    horaEnMinutos(otraHoraInicio) < horaEnMinutos(horaFin)
+  );
+}
+
+function obtenerFechaHoraActualCdmx(): {
+  fechaHoy: string;
+  minutosActuales: number;
+} {
+  const ahora = new Date();
+  const fechaHoy = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Mexico_City",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(ahora);
+  const partes = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "America/Mexico_City",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(ahora);
+  const horas = Number(partes.find((p) => p.type === "hour")?.value ?? "0");
+  const minutos = Number(partes.find((p) => p.type === "minute")?.value ?? "0");
+
+  return {
+    fechaHoy,
+    minutosActuales: horas * 60 + minutos,
+  };
 }
 
 function sumarDias(fechaStr: string, dias: number): string {
@@ -158,6 +198,20 @@ export function CardSubevento(props: CardSubeventoProps) {
   const [mostrarModalEspacio, setMostrarModalEspacio] = useState(false);
   const [mostrarModalSubevento, setMostrarModalSubevento] = useState(false);
   const [espacios, setEspacios] = useState<EspacioInfo[]>(RECINTOS_BASE);
+  const [agendaOcupada, setAgendaOcupada] = useState<HorarioOcupadoAgenda[]>(
+    [],
+  );
+  const [cargandoAgenda, setCargandoAgenda] = useState(false);
+  const [errorAgenda, setErrorAgenda] = useState(false);
+
+  const horaInicioRef = useRef(subevento.horaInicio);
+  horaInicioRef.current = subevento.horaInicio;
+  const horaFinRef = useRef(subevento.horaFin);
+  horaFinRef.current = subevento.horaFin;
+  const updateSubeventoRef = useRef(
+    readOnly ? undefined : props.updateSubevento,
+  );
+  updateSubeventoRef.current = readOnly ? undefined : props.updateSubevento;
 
   useEffect(() => {
     let activo = true;
@@ -179,6 +233,80 @@ export function CardSubevento(props: CardSubeventoProps) {
     };
   }, []);
 
+  useEffect(() => {
+    if (readOnly || !subevento.idRecinto || !subevento.fecha) {
+      setAgendaOcupada([]);
+      setCargandoAgenda(false);
+      setErrorAgenda(false);
+      return;
+    }
+
+    const controller = new AbortController();
+    setAgendaOcupada([]);
+    setCargandoAgenda(true);
+    setErrorAgenda(false);
+
+    const cargarAgenda = async () => {
+      try {
+        const respuesta = await apiRequest<{
+          agenda?: HorarioOcupadoAgenda[];
+        }>(
+          `espacios/${subevento.idRecinto}/horarios-disponibles?fecha=${encodeURIComponent(subevento.fecha)}`,
+          { signal: controller.signal },
+        );
+        if (controller.signal.aborted) return;
+
+        const agenda = Array.isArray(respuesta?.agenda) ? respuesta.agenda : [];
+        setAgendaOcupada(agenda);
+
+        const inicioActual = horaInicioRef.current;
+        const finActual = horaFinRef.current;
+        if (inicioActual && agenda.length > 0) {
+          const inicioSigueDisponible = HORASFIN.some(
+            ({ value: horaFin }) =>
+              horaEnMinutos(horaFin) > horaEnMinutos(inicioActual) &&
+              !agenda.some((bloque) =>
+                seTraslapan(
+                  inicioActual,
+                  horaFin,
+                  bloque.horaInicio,
+                  bloque.horaFin,
+                ),
+              ),
+          );
+
+          if (!inicioSigueDisponible) {
+            updateSubeventoRef.current?.(index, "horaInicio", "");
+          } else if (
+            finActual &&
+            agenda.some((bloque) =>
+              seTraslapan(
+                inicioActual,
+                finActual,
+                bloque.horaInicio,
+                bloque.horaFin,
+              ),
+            )
+          ) {
+            updateSubeventoRef.current?.(index, "horaFin", "");
+          }
+        }
+      } catch {
+        if (!controller.signal.aborted) {
+          setAgendaOcupada([]);
+          setErrorAgenda(true);
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setCargandoAgenda(false);
+        }
+      }
+    };
+
+    void cargarAgenda();
+    return () => controller.abort();
+  }, [index, readOnly, subevento.fecha, subevento.idRecinto]);
+
   const opcionesRecintos = espacios.map((recinto) => ({
     value: String(recinto.idRecinto),
     label: recinto.nombre,
@@ -188,30 +316,41 @@ export function CardSubevento(props: CardSubeventoProps) {
     (recinto) => recinto.idRecinto === Number(subevento.idRecinto),
   );
 
+  const { fechaHoy: fechaMinima, minutosActuales } =
+    obtenerFechaHoraActualCdmx();
+
+  const bloquesOcupados: HorarioOcupadoAgenda[] = [
+    ...agendaOcupada,
+    ...otrosSubeventos.map((otro) => ({
+      horaInicio: otro.horaInicio,
+      horaFin: otro.horaFin,
+    })),
+  ];
+
   const horaDisponible = (horaInicio: string, horaFin: string) =>
-    !otrosSubeventos.some((otro) =>
-      seTraslapan(horaInicio, horaFin, otro.horaInicio, otro.horaFin),
+    !bloquesOcupados.some((bloque) =>
+      seTraslapan(horaInicio, horaFin, bloque.horaInicio, bloque.horaFin),
     );
 
-  const horasInicioDisponibles = HORASINICIO.filter(({ value: horaInicio }) =>
-    HORASFIN.some(
+  const esHoy = !readOnly && subevento.fecha === fechaMinima;
+
+  const horasInicioDisponibles = HORASINICIO.filter(({ value: horaInicio }) => {
+    if (esHoy && horaEnMinutos(horaInicio) <= minutosActuales) {
+      return false;
+    }
+    return HORASFIN.some(
       ({ value: horaFin }) =>
-        horaFin > horaInicio && horaDisponible(horaInicio, horaFin),
-    ),
-  );
+        horaEnMinutos(horaFin) > horaEnMinutos(horaInicio) &&
+        horaDisponible(horaInicio, horaFin),
+    );
+  });
+
   const horasFinDisponibles = HORASFIN.filter(
     ({ value: horaFin }) =>
       subevento.horaInicio &&
-      horaFin > subevento.horaInicio &&
+      horaEnMinutos(horaFin) > horaEnMinutos(subevento.horaInicio) &&
       horaDisponible(subevento.horaInicio, horaFin),
   );
-
-  const fechaMinima = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "America/Mexico_City",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(new Date());
 
   const anioActual = new Date().getFullYear();
   const FECHA_FIN_SEMESTRE = `${anioActual}-12-19`;
@@ -241,19 +380,18 @@ export function CardSubevento(props: CardSubeventoProps) {
               : undefined
         }
         errorMessage={touched.fecha ? errors.fecha : undefined}>
-        <Input
+        <DateInput
           id={`selectFecha-${index}`}
           min={minFecha}
           max={maxFecha}
-          type="date"
           value={subevento.fecha}
           disabled={readOnly || (index > 0 && !fechaInicio)}
           hasError={Boolean(touched.fecha && errors.fecha)}
-          onChange={
-            readOnly
-              ? undefined
-              : (e) => props.updateSubevento(index, "fecha", e.target.value)
-          }
+          onValueChange={(fecha) => {
+            if (!readOnly) {
+              props.updateSubevento(index, "fecha", fecha);
+            }
+          }}
           onBlur={
             readOnly ? undefined : () => props.markSubeventoTouched(index, "fecha")
           }
@@ -300,6 +438,17 @@ export function CardSubevento(props: CardSubeventoProps) {
         htmlFor={`selectHoraInicio-${index}`}
         readOnly={readOnly}
         required
+        mensajeAyuda={
+          cargandoAgenda
+            ? "Consultando horarios disponibles..."
+            : errorAgenda
+              ? "No se pudo consultar la agenda; se validará al enviar."
+              : subevento.fecha &&
+                  subevento.idRecinto &&
+                  horasInicioDisponibles.length === 0
+                ? "No hay horarios disponibles para esta fecha y espacio."
+                : undefined
+        }
         errorMessage={touched.horaInicio ? errors.horaInicio : undefined}>
         <Select
           id={`selectHoraInicio-${index}`}
@@ -327,6 +476,16 @@ export function CardSubevento(props: CardSubeventoProps) {
         htmlFor={`selectHoraFinal-${index}`}
         readOnly={readOnly}
         required
+        mensajeAyuda={
+          !cargandoAgenda &&
+          !errorAgenda &&
+          subevento.fecha &&
+          subevento.idRecinto &&
+          subevento.horaInicio &&
+          horasFinDisponibles.length === 0
+            ? "No hay horarios de finalización disponibles para este inicio."
+            : undefined
+        }
         errorMessage={touched.horaFin ? errors.horaFin : undefined}>
         <Select
           id={`selectHoraFinal-${index}`}

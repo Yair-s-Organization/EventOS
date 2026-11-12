@@ -8,6 +8,7 @@ import { FormField } from "../../components/molecules/FormField";
 import { useNavigate } from "react-router";
 import { SearchBar } from "../../components/molecules/SearchBar";
 import { apiRequest } from "../../lib/apiClient";
+import { formatearFechaDdMmAaaa } from "../../utils/fechaHorario";
 
 type SolicitudesAprobadas = {
   idEvento: number;
@@ -111,10 +112,7 @@ function convertirSolicitudes(valor: unknown): SolicitudesAprobadas[] {
 }
 
 function mostrarFecha(fecha: string | null): string {
-  if (!fecha) {
-    return "No disponible";
-  }
-  return new Date(`${fecha}T00:00:00`).toLocaleDateString("es-MX");
+  return formatearFechaDdMmAaaa(fecha, "No disponible");
 }
 
 function normalizarTexto(texto: string): string {

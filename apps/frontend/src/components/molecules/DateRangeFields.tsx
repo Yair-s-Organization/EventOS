@@ -1,3 +1,5 @@
+import { DateInput } from "../atoms/DateInput/DateInput";
+
 type DateRangeFieldsProps = {
   startDate: string;
   endDate: string;
@@ -13,9 +15,6 @@ export function DateRangeFields({
                                   onEndDateChange,
                                   className = "",
                                 }: DateRangeFieldsProps) {
-  const inputClassName =
-    "h-11 w-full min-w-0 rounded-lg border border-eventos-panel-border bg-eventos-on-primary px-3 text-sm text-eventos-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-eventos-primary";
-
   return (
     <div
       className={`grid w-full min-w-0 grid-cols-1 gap-3 rounded-lg border border-eventos-panel-border bg-eventos-surface p-4 sm:grid-cols-2 ${className}`}
@@ -25,14 +24,11 @@ export function DateRangeFields({
           Desde
         </span>
 
-        <input
-          type="date"
+        <DateInput
+          variant="filter"
           value={startDate}
           max={endDate || undefined}
-          onChange={(event) =>
-            onStartDateChange(event.target.value)
-          }
-          className={inputClassName}
+          onValueChange={onStartDateChange}
         />
       </label>
 
@@ -41,14 +37,11 @@ export function DateRangeFields({
           Hasta
         </span>
 
-        <input
-          type="date"
+        <DateInput
+          variant="filter"
           value={endDate}
           min={startDate || undefined}
-          onChange={(event) =>
-            onEndDateChange(event.target.value)
-          }
-          className={inputClassName}
+          onValueChange={onEndDateChange}
         />
       </label>
     </div>
