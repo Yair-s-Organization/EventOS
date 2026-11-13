@@ -1039,6 +1039,14 @@ export class OrganizadorService {
       };
     }
 
+    if (dto.soloVerificar) {
+      return {
+        asignadoDirecto: false,
+        invitacionEnviada: false,
+        mensaje: 'El usuario aún no está registrado.',
+      };
+    }
+
     const payload = {
       correo,
       idEvento,

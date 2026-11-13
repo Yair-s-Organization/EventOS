@@ -1,6 +1,6 @@
-import { IsEmail, IsNotEmpty } from 'class-validator';
+import { IsBoolean, IsEmail, IsNotEmpty, IsOptional } from 'class-validator';
 import { Transform } from 'class-transformer';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class AgregarPersonalLogisticaDto {
   @ApiProperty({
@@ -14,4 +14,12 @@ export class AgregarPersonalLogisticaDto {
     typeof value === 'string' ? value.trim().toLowerCase() : value,
   )
   correo: string;
+
+  @ApiPropertyOptional({
+    description:
+      'Si es true, solo verifica si el usuario existe (asignándolo si existe) sin enviar aún el correo de invitación a usuarios no registrados',
+  })
+  @IsOptional()
+  @IsBoolean()
+  soloVerificar?: boolean;
 }
