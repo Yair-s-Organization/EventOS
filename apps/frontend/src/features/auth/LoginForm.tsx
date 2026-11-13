@@ -9,6 +9,7 @@ import { AuthLayout } from "../../components/templates/AuthLayout";
 import { Modal } from "../../components/molecules/Modal";
 import { getAuthPathWithReturnUrl } from "../event-details/utils/eventReturnUrl";
 import { useLoginForm } from "../auth/hooks/useLoginForm";
+import { useLocation } from "react-router";
 
 export function LoginForm() {
   const {
@@ -26,8 +27,28 @@ export function LoginForm() {
     cerrarModalBloqueo,
   } = useLoginForm();
 
+  const location = useLocation();
+
+  const cierreSesionNoConfirmado =
+    location.state?.cierreSesionNoConfirmado === true;
+
   return (
     <AuthLayout title="Iniciar Sesión" generalError={errors.general}>
+      {cierreSesionNoConfirmado && (
+        <div
+          role="alert"
+          className="mb-4 rounded-md border border-eventos-error bg-eventos-surface px-4 py-3 font-merriweather text-sm text-eventos-ink"
+        >
+          <p className="font-semibold text-eventos-error">
+            No se pudo confirmar el cierre de sesión en el servidor
+          </p>
+          <p className="mt-2">
+            Tu sesión se cerró en este navegador, pero hubo un problema de
+            conexión y no pudimos confirmar que el servidor invalidara tu
+            sesión.
+          </p>
+        </div>
+      )}
       <form onSubmit={handleSubmit} className="space-y-4">
         
         <FormField label="Correo Electrónico" htmlFor="correo">

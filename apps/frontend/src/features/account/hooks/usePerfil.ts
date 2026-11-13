@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router";
 import { API_BASE_URL } from "../../../lib/apiClient";
 
@@ -17,14 +17,12 @@ export interface PerfilData {
 
 export function usePerfil() {
   const navigate = useNavigate();
+  const cerrandoSesion = useRef(false);
   const [perfil, setPerfil] = useState<PerfilData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const getToken = () => {
-    const usuario = JSON.parse(localStorage.getItem("usuario") || "{}");
-    return usuario.token || localStorage.getItem("token") || "";
-  };
+  const getToken = () => localStorage.getItem("token") || "";
 
   useEffect(() => {
     const fetchPerfil = async () => {
@@ -53,10 +51,50 @@ export function usePerfil() {
     fetchPerfil();
   }, []);
 
-  const handleCerrarSesion = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("usuario");
-    navigate("/login");
+  const handleCerrarSesion = async () => {
+    if (cerrandoSesion.current) return;
+
+    cerrandoSesion.current = true;
+
+    const token = getToken();
+    let revocacionConfirmada = !token;
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), 8000);
+
+    try {
+      if (token) {
+        const response = await fetch(`${API_BASE_URL}/auth/logout`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: "application/json",
+          },
+          signal: controller.signal,
+        });
+
+        revocacionConfirmada = response.ok;
+      }
+    } catch {
+      revocacionConfirmada = false;
+    } finally {
+      window.clearTimeout(timeoutId);
+
+      localStorage.removeItem("token");
+      localStorage.removeItem("usuario");
+
+      if (!revocacionConfirmada) {
+        console.warn(
+          "Se cerró la sesión local, pero no se pudo confirmar la revocación del JWT en el servidor.",
+        );
+      }
+
+      navigate("/login", {
+        replace: true,
+        state: revocacionConfirmada
+          ? null
+          : { cierreSesionNoConfirmado: true },
+      });
+    }
   };
 
   const esVerificado = perfil?.cuenta === "Verificado" || perfil?.verificacionVigente === true;
