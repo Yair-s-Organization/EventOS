@@ -1,6 +1,7 @@
 import { Pencil } from "lucide-react";
 import { AlcanceEvento, RecintoId, type Recinto } from "@eventos/shared";
 import { Input } from "../../../components/atoms/Input/Input";
+import { DateInput } from "../../../components/atoms/DateInput/DateInput";
 import { Select } from "../../../components/atoms/Select/Select";
 import { TextArea } from "../../../components/atoms/TextArea/TextArea";
 import { InputFile } from "../../../components/atoms/InputFile/InputFile";
@@ -315,16 +316,14 @@ export function EditLogisticsSection({
             className="!font-bold !text-black"
             label="Fecha"
             errorMessage={intentoGuardar ? errores?.fecha : undefined}>
-            <Input
+            <DateInput
               id="campoFecha"
-              type="date"
               value={valores.fecha}
               min={fechaMinima}
               max={FECHA_FIN_SEMESTRE}
               disabled={deshabilitado}
               hasError={Boolean(intentoGuardar && errores?.fecha)}
-              onChange={(event) => {
-                const fecha = event.currentTarget.value;
+              onValueChange={(fecha) => {
                 if (fecha !== valores.fecha) {
                   onCambioLogistica("horaInicio", "");
                   onCambioLogistica("horaFin", "");

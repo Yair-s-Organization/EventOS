@@ -7,9 +7,11 @@ import { AdminEquipmentPage } from "../pages/AdminEquipmentPage";
 
 const ALL_SPACES = [
   { name: "Auditorio Principal", isLab: false },
-  { name: "Laboratorio de Cómputo A", isLab: true, id: 2 },
-  { name: "Laboratorio de Cómputo B", isLab: true, id: 3 },
+  { name: "Laboratorio 2104", isLab: true, id: 2 },
+  { name: "Laboratorio 2105", isLab: true, id: 3 },
   { name: "Sala 14", isLab: false },
+  { name: "Laboratorio 2106", isLab: true, id: 5 },
+  { name: "Laboratorio 2107", isLab: true, id: 6 },
 ];
 
 async function runAdminSuite(): Promise<void> {
@@ -54,10 +56,10 @@ async function runAdminSuite(): Promise<void> {
     console.log("  ✓ TC-ADM-01 passed");
 
     // =========================================================================
-    // TC-ADM-02: Inhabilitar and Habilitar ALL 4 spaces (Auditorio, Lab A, Lab B, Sala 14)
+    // TC-ADM-02: Inhabilitar and Habilitar across all 6 spaces
     // =========================================================================
     console.log(
-      "Running TC-ADM-02: Inhabilitar and Habilitar across all 4 physical spaces...",
+      "Running TC-ADM-02: Inhabilitar and Habilitar across all 6 physical spaces...",
     );
     for (const space of ALL_SPACES) {
       // Ensure space starts Habilitado
@@ -116,9 +118,9 @@ async function runAdminSuite(): Promise<void> {
     console.log("  ✓ TC-ADM-02 passed");
 
     // =========================================================================
-    // TC-ADM-03 & TC-ADM-04: 'Gestionar equipos' & Inhabilitar/Habilitar equipos in Lab A and Lab B
+    // TC-ADM-03 & TC-ADM-04: 'Gestionar equipos' & Inhabilitar/Habilitar equipos in Labs 2104 and 2105
     // =========================================================================
-    const laboratories = ALL_SPACES.filter((s) => s.isLab);
+    const laboratories = ALL_SPACES.filter((s) => s.id === 2 || s.id === 3);
 
     for (const lab of laboratories) {
       const tcId = lab.id === 2 ? "TC-ADM-03" : "TC-ADM-04";

@@ -15,6 +15,7 @@ import {
 import { ArrowLeft, Pencil } from "lucide-react";
 import { EventBanner } from "../event-details/components/molecules/EventBanner";
 import { Input } from "../../components/atoms/Input/Input";
+import { DateInput } from "../../components/atoms/DateInput/DateInput";
 import { InputFile } from "../../components/atoms/InputFile/InputFile";
 import { Select } from "../../components/atoms/Select/Select";
 import { TextArea } from "../../components/atoms/TextArea/TextArea";
@@ -1034,18 +1035,17 @@ export function EditarEventoConSubeventos() {
                           : undefined
                       }
                       errorMessage={errorAct?.fecha}>
-                      <Input
+                      <DateInput
                         id={`selectFecha-${indice}`}
                         min={minFecha}
                         max={maxFecha}
-                        type="date"
                         value={actividad.fecha}
                         hasError={Boolean(errorAct?.fecha)}
-                        onChange={(e) =>
+                        onValueChange={(fecha) =>
                           actualizarActividad(
                             actividad.llave,
                             "fecha",
-                            e.target.value,
+                            fecha,
                           )
                         }
                       />

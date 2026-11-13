@@ -4,6 +4,10 @@ import { useNavigate } from "react-router";
 import { AlcanceEvento } from "@eventos/shared";
 import type { MisEventosItem } from "@eventos/shared";
 import { EstadoEvento } from "@eventos/shared";
+import {
+  formatearFechaDdMmAaaa,
+  formatearHorarioRango,
+} from "../../../utils/fechaHorario";
 
 export function CardMenuPrincipal({
   nombre,
@@ -18,6 +22,13 @@ export function CardMenuPrincipal({
   const primerSubevento = subeventos?.[0];
   const ultimoSubevento = subeventos?.[subeventos.length - 1];
   const tieneUnSubevento = subeventos?.length === 1;
+  const espacios = [
+    ...new Set(
+      (subeventos ?? [])
+        .map((sub) => sub.nombreRecinto)
+        .filter((recinto): recinto is string => Boolean(recinto)),
+    ),
+  ];
 
 
   return (
@@ -64,30 +75,36 @@ export function CardMenuPrincipal({
           <h2 className="break-words font-merriweather text-xl font-semibold sm:text-2xl">
             {nombre}
           </h2>
-          {tieneUnSubevento ? (
-            <>
-              <p className={estiloTexto}>
-                Fecha: {primerSubevento?.fecha ?? "Fecha no disponible"}
-              </p>
-              <p className={estiloTexto}>
-                Hora inicio: {primerSubevento?.horaInicio ?? "Hora no disponible"}
-              </p>
-              <p className={estiloTexto}>
-                Hora fin: {primerSubevento?.horaFin ?? "Hora no disponible"}
-              </p>
-            </>
+          {tieneUnSubevento || primerSubevento?.fecha === ultimoSubevento?.fecha ? (
+            <p className={estiloTexto}>
+              <strong>Fecha:</strong>{" "}
+              {formatearFechaDdMmAaaa(primerSubevento?.fecha, "Fecha no disponible")}
+            </p>
           ) : (
             <>
               <p className={estiloTexto}>
-                Fecha inicio: {primerSubevento?.fecha ?? "Fecha no disponible"}
+                <strong>Fecha inicio:</strong>{" "}
+                {formatearFechaDdMmAaaa(primerSubevento?.fecha, "Fecha no disponible")}
               </p>
               <p className={estiloTexto}>
-                Fecha final: {ultimoSubevento?.fecha ?? "Fecha no disponible"}
+                <strong>Fecha fin:</strong>{" "}
+                {formatearFechaDdMmAaaa(ultimoSubevento?.fecha, "Fecha no disponible")}
               </p>
             </>
           )}
+          {tieneUnSubevento && (
+            <p className={estiloTexto}>
+              <strong>Horario:</strong>{" "}
+              {formatearHorarioRango(
+                primerSubevento?.horaInicio,
+                primerSubevento?.horaFin,
+                "Hora no disponible",
+              )}
+            </p>
+          )}
           <p className={estiloTexto}>
-            Espacio: {primerSubevento?.nombreRecinto ?? "Recinto no disponible"}
+            <strong>{espacios.length > 1 ? "Espacios:" : "Espacio:"}</strong>{" "}
+            {espacios.length > 0 ? espacios.join(", ") : "Recinto no disponible"}
           </p>
         </div>
       </div>

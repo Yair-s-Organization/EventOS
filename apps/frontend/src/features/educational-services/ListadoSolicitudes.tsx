@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { API_BASE_URL } from "../../lib/apiClient";
+import { formatearFechaDdMmAaaa } from "../../utils/fechaHorario";
 import { Button } from "../../components/atoms/Button/Button";
 import { Table, type Columna } from "../../components/organisms/Table/Table";
 import Badge from "../../components/atoms/Badge/Badge";
@@ -125,10 +126,7 @@ function convertirSolicitudes(valor: unknown): SolicitudTabla[] {
 }
 
 function mostrarFecha(fecha: string | null): string {
-  if (!fecha) {
-    return "No disponible";
-  }
-  return new Date(`${fecha}T00:00:00`).toLocaleDateString("es-MX");
+  return formatearFechaDdMmAaaa(fecha, "No disponible");
 }
 
 export function ListadoSolicitudes() {
