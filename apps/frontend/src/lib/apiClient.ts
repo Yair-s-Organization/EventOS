@@ -3,6 +3,9 @@ export const API_BASE_URL = (
   "http://localhost:3000/api"
 ).replace(/\/+$/, "");
 
+
+export const SESSION_REVALIDATION_EVENT = "eventos:session-revalidation";
+
 export class ApiError extends Error {
   constructor(
     public readonly status: number,
@@ -61,6 +64,16 @@ export async function apiRequest<T>(
   }
 
   if (!response.ok) {
+    if (
+      (response.status === 401 || response.status === 403) &&
+      normalizedPath.split(/[?#]/, 1)[0] !== "usuarios/perfil" &&
+      token &&
+      headers.get("Authorization") === `Bearer ${token}` &&
+      typeof window !== "undefined"
+    ) {
+      window.dispatchEvent(new Event(SESSION_REVALIDATION_EVENT));
+    }
+
     let message = `Error HTTP ${response.status}`;
 
     if (data && typeof data === "object" && "message" in data) {

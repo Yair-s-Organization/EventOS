@@ -11,12 +11,57 @@ import { ConfirmationDialog } from "../../components/organisms/ConfirmationDialo
 import { ApiError } from "../../lib/apiClient";
 import { PageContainer } from "../../components/templates/PageContainer";
 
+export function puedeCancelarAsistencia(
+  ticket: { dateIso?: string; startTime: string },
+  ahora: number,
+): boolean {
+  const fecha = ticket.dateIso?.slice(0, 10) ?? "";
+  const horaInicio = ticket.startTime.slice(0, 5);
+
+  if (
+    !/^\d{4}-\d{2}-\d{2}$/.test(fecha) ||
+    !/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(horaInicio) ||
+    !Number.isFinite(ahora)
+  ) {
+    return false;
+  }
+
+  const fechaUtc = new Date(`${fecha}T00:00:00Z`);
+
+  if (
+    Number.isNaN(fechaUtc.getTime()) ||
+    fechaUtc.toISOString().slice(0, 10) !== fecha
+  ) {
+    return false;
+  }
+
+  const partes = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Mexico_City",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(new Date(ahora));
+
+  const parte = (tipo: string) =>
+    partes.find((item) => item.type === tipo)?.value ?? "";
+
+  const inicio = `${fecha}T${horaInicio}`;
+  const actual = `${parte("year")}-${parte("month")}-${parte("day")}T${parte("hour")}:${parte("minute")}`;
+
+  return inicio > actual;
+}
+
 export function MenuAsistente() {
   const navigate = useNavigate();
   const { events, status, error, retry, failedCount } = useEventCatalog();
   const agenda = useMyTickets();
 
-  const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
+  const [selectedTicket, setSelectedTicket] = useState<
+    ReturnType<typeof mapTicketToCard> | null
+  >(null);
   const [isCancelling, setIsCancelling] = useState(false);
   const [cancelError, setCancelError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -24,17 +69,40 @@ export function MenuAsistente() {
   const [clockNow, setClockNow] = useState(() => Date.now());
 
   useEffect(() => {
+    let timeoutId: number | undefined;
+
     const updateClock = () => {
-      setClockNow(Date.now());
+      const now = Date.now();
+
+      setClockNow(now);
+
+      if (timeoutId !== undefined) {
+        window.clearTimeout(timeoutId);
+      }
+
+      const delay = 60000 - (now % 60000) + 50;
+
+      timeoutId = window.setTimeout(updateClock, delay);
     };
 
-    const intervalId = window.setInterval(updateClock, 15000);
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        updateClock();
+      }
+    };
+
+    updateClock();
 
     window.addEventListener("focus", updateClock);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
-      window.clearInterval(intervalId);
+      if (timeoutId !== undefined) {
+        window.clearTimeout(timeoutId);
+      }
+
       window.removeEventListener("focus", updateClock);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, []);
 
@@ -146,12 +214,31 @@ export function MenuAsistente() {
       .slice(0, 3);
   }, [agenda.tickets, clockNow]);
 
-  const selectedTicket = agendaItems.find(
-    (ticket) => ticket.id === selectedTicketId,
-  );
+  useEffect(() => {
+    if (!selectedTicket || isCancelling) {
+      return;
+    }
+
+    if (!puedeCancelarAsistencia(selectedTicket, Date.now())) {
+      setSelectedTicket(null);
+      setSuccessMessage(null);
+      setCancelError(
+        "El plazo de cancelación de esta actividad ha finalizado.",
+      );
+    }
+  }, [selectedTicket, isCancelling, clockNow]);
 
   const confirmCancel = async () => {
     if (!selectedTicket || isCancelling) return;
+
+    if (!puedeCancelarAsistencia(selectedTicket, Date.now())) {
+      setSelectedTicket(null);
+      setCancelError(
+        "La actividad ya comenzó. Ya no es posible cancelar la asistencia.",
+      );
+      setClockNow(Date.now());
+      return;
+    }
 
     setIsCancelling(true);
     setCancelError(null);
@@ -159,7 +246,7 @@ export function MenuAsistente() {
 
     try {
       await ticketsService.cancelTicket(Number(selectedTicket.id));
-      setSelectedTicketId(null);
+      setSelectedTicket(null);
       setSuccessMessage("Tu asistencia se canceló correctamente.");
       agenda.refresh();
     } catch (cause: unknown) {
@@ -168,7 +255,7 @@ export function MenuAsistente() {
           ? cause.message
           : "No fue posible cancelar tu asistencia. Intenta nuevamente.",
       );
-      setSelectedTicketId(null);
+      setSelectedTicket(null);
     } finally {
       setIsCancelling(false);
     }
@@ -344,11 +431,23 @@ export function MenuAsistente() {
                   onViewQr={() =>
                     navigate(`/asistente/boletos/${ticket.id}`)
                   }
-                  onCancel={() => {
-                    setCancelError(null);
-                    setSuccessMessage(null);
-                    setSelectedTicketId(ticket.id);
-                  }}
+                  onCancel={
+                    puedeCancelarAsistencia(ticket, clockNow)
+                      ? () => {
+                        if (!puedeCancelarAsistencia(ticket, Date.now())) {
+                          setClockNow(Date.now());
+                          setCancelError(
+                            "La actividad ya comenzó. Ya no es posible cancelar la asistencia.",
+                          );
+                          return;
+                        }
+
+                        setCancelError(null);
+                        setSuccessMessage(null);
+                        setSelectedTicket(ticket);
+                      }
+                      : undefined
+                  }
                 />
               ))}
             </div>
@@ -384,7 +483,7 @@ export function MenuAsistente() {
           isLoading={isCancelling}
           onConfirm={() => void confirmCancel()}
           onCancel={() => {
-            if (!isCancelling) setSelectedTicketId(null);
+            if (!isCancelling) setSelectedTicket(null);
           }}
         />
       </div>
