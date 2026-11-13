@@ -82,10 +82,10 @@ export function SeccionDatosEvento({
           </FormField>
 
           <FormField
-            label="Póster del evento"
+            label="Banner del evento"
             htmlFor="campoPoster"
             required
-            mensajeAyuda="El poster debe estar en formato jpg y con una resolución de 2048 x 1152 píxeles"
+            mensajeAyuda="El banner debe estar en formato jpg y con una resolución de 2048 x 1152 píxeles"
             errorMessage={touched.rutaPoster ? errors.rutaPoster : undefined}>
             <InputFile
               id="campoPoster"
