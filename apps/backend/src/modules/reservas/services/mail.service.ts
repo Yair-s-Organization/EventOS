@@ -290,6 +290,9 @@ export class MailService {
     organizador: string;
     enlaceActivacion: string;
   }): Promise<void> {
+    const organizadorHtml = this.escaparHtml(datos.organizador);
+    const nombreEventoHtml = this.escaparHtml(datos.nombreEvento);
+
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
         <div style="background-color: #6b1d2f; color: #ffffff; padding: 20px; text-align: center;">
@@ -298,17 +301,18 @@ export class MailService {
         
         <div style="padding: 24px; color: #334155;">
           <p>Hola,</p>
-          <p>El organizador <strong>${datos.organizador}</strong> te ha invitado a formar parte del <strong>Personal de Logística</strong> para el evento institucional:</p>
+          <p>El organizador <strong>${organizadorHtml}</strong> te ha invitado a formar parte del <strong>Personal de Logística</strong> para el evento institucional:</p>
           
           <div style="margin: 20px 0; padding: 16px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; text-align: center;">
-            <h3 style="margin: 0; color: #6b1d2f; font-size: 18px;">${datos.nombreEvento}</h3>
+            <h3 style="margin: 0; color: #6b1d2f; font-size: 18px;">${nombreEventoHtml}</h3>
           </div>
 
           <p>Como colaborador de logística, podrás validar los accesos de los asistentes mediante escaneo de código QR durante la realización de las actividades.</p>
+          <p>Para completar tu registro en EventOS con este correo electrónico y unirte automáticamente al equipo del evento, haz clic en el siguiente botón:</p>
 
           <div style="text-align: center; margin: 32px 0;">
             <a href="${datos.enlaceActivacion}" style="background-color: #6b1d2f; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px; display: inline-block;">
-              Activar mi cuenta y unirme al equipo
+              Completar mi registro y unirme al equipo
             </a>
           </div>
 
@@ -333,6 +337,7 @@ export class MailService {
       this.logger.log(`Invitación de logística enviada a ${datos.destinatario}`);
     } catch (error) {
       this.logger.error(`Fallo al enviar invitación de logística a ${datos.destinatario}`, error);
+      throw error;
     }
   }
 
@@ -429,7 +434,31 @@ export class MailService {
     descripcionEvento: string;
     organizador: string;
     enlaceEvento: string;
+    requiereRegistro?: boolean;
+    enlaceRegistro?: string;
   }): Promise<void> {
+    const nombreUsuarioHtml = this.escaparHtml(datos.nombreUsuario);
+    const organizadorHtml = this.escaparHtml(datos.organizador);
+    const nombreEventoHtml = this.escaparHtml(datos.nombreEvento);
+    const descripcionEventoHtml = this.escaparHtml(datos.descripcionEvento);
+    const requiereRegistro = Boolean(datos.requiereRegistro);
+    const enlaceDestino =
+      requiereRegistro && datos.enlaceRegistro
+        ? datos.enlaceRegistro
+        : datos.enlaceEvento;
+    const saludoHtml = nombreUsuarioHtml
+      ? `Hola <strong>${nombreUsuarioHtml}</strong>,`
+      : 'Hola,';
+    const instruccionHtml = requiereRegistro
+      ? 'Para visualizar este evento privado y tramitar tu boleto digital, completa tu registro en EventOS con este correo electrónico mediante el siguiente botón:'
+      : 'Al estar registrado en la lista de invitados, este evento ahora se encuentra disponible en tu cartelera para que puedas consultar sus actividades y reservar tu lugar.';
+    const textoBoton = requiereRegistro
+      ? 'Completar mi registro y acceder al evento'
+      : 'Ver detalles y reservar mi lugar';
+    const notaPieHtml = requiereRegistro
+      ? 'Este enlace de registro es de un solo uso y expirará en <strong>48 horas naturales</strong>. Si no reconoces esta invitación, puedes ignorar este mensaje con seguridad.'
+      : 'Inicia sesión con tu cuenta en EventOS para acceder a la cartelera y tramitar tu boleto digital.';
+
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
         <div style="background-color: #6b1d2f; color: #ffffff; padding: 20px; text-align: center;">
@@ -437,24 +466,24 @@ export class MailService {
         </div>
         
         <div style="padding: 24px; color: #334155;">
-          <p>Hola <strong>${datos.nombreUsuario}</strong>,</p>
-          <p>El organizador <strong>${datos.organizador}</strong> te ha invitado a participar en el siguiente evento privado institucional:</p>
+          <p>${saludoHtml}</p>
+          <p>El organizador <strong>${organizadorHtml}</strong> te ha invitado a participar en el siguiente evento privado institucional:</p>
           
           <div style="margin: 20px 0; padding: 16px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;">
-            <h3 style="margin: 0 0 8px 0; color: #6b1d2f; font-size: 18px;">${datos.nombreEvento}</h3>
-            <p style="margin: 0; color: #475569; font-size: 14px;">${datos.descripcionEvento}</p>
+            <h3 style="margin: 0 0 8px 0; color: #6b1d2f; font-size: 18px;">${nombreEventoHtml}</h3>
+            <p style="margin: 0; color: #475569; font-size: 14px;">${descripcionEventoHtml}</p>
           </div>
 
-          <p>Al estar registrado en la lista de invitados, este evento ahora se encuentra disponible en tu cartelera para que puedas consultar sus actividades y reservar tu lugar.</p>
+          <p>${instruccionHtml}</p>
 
           <div style="text-align: center; margin: 32px 0;">
-            <a href="${datos.enlaceEvento}" style="background-color: #6b1d2f; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px; display: inline-block;">
-              Ver detalles y reservar mi lugar
+            <a href="${enlaceDestino}" style="background-color: #6b1d2f; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px; display: inline-block;">
+              ${textoBoton}
             </a>
           </div>
 
           <p style="font-size: 12px; color: #64748b; margin-top: 24px; border-top: 1px solid #e2e8f0; padding-top: 12px;">
-            Inicia sesión con tu cuenta en EventOS para acceder a la cartelera y tramitar tu boleto digital.
+            ${notaPieHtml}
           </p>
         </div>
       </div>
@@ -473,6 +502,7 @@ export class MailService {
         `Fallo al enviar invitación a evento privado a ${datos.destinatario}`,
         error,
       );
+      throw error;
     }
   }
 

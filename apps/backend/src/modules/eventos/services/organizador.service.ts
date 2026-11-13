@@ -3,6 +3,7 @@ import {
   ConflictException,
   ForbiddenException,
   Injectable,
+  InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -33,6 +34,10 @@ import { AgregarInvitadoDto } from '../dto/invitadoPrivado.dto';
 import { StorageService } from '../../../common/storage/storage.service';
 import { JwtService } from '@nestjs/jwt';
 import { MailService } from '../../reservas/services/mail.service';
+import {
+  registrarInvitacionPendiente,
+  verificarDominioCorreoValido,
+} from '../../../common/utils/correo.util';
 import { AgregarPersonalLogisticaDto } from '../dto/agregarPersonalLogistica.dto';
 import {
   calcularClaveOrdenProximo,
@@ -770,25 +775,12 @@ export class OrganizadorService {
 
     const correoBuscado = dto.correo.trim().toLowerCase();
     const usuarioDestinatario = await this.usuarioRepository.findOne({
-      where: { correo: correoBuscado, estatus: true },
+      where: { correo: correoBuscado },
     });
 
-    if (!usuarioDestinatario) {
+    if (usuarioDestinatario && !usuarioDestinatario.estatus) {
       throw new NotFoundException(
         'No se encontró una cuenta activa para el destinatario del boleto directo.',
-      );
-    }
-
-    const invitacionPrevia = await this.invitacionRepository.findOne({
-      where: {
-        idEvento,
-        idUsuario: usuarioDestinatario.idUsuario,
-      },
-    });
-
-    if (invitacionPrevia) {
-      throw new ConflictException(
-        'El destinatario ya cuenta con un boleto activo para este evento.',
       );
     }
 
@@ -804,14 +796,6 @@ export class OrganizadorService {
       }
     }
 
-    const nuevaInvitacion = this.invitacionRepository.create({
-      idEvento,
-      idUsuario: usuarioDestinatario.idUsuario,
-      fechaUltimoEnvio: new Date(),
-    });
-
-    const guardada = await this.invitacionRepository.save(nuevaInvitacion);
-
     const organizador = await this.usuarioRepository.findOneBy({
       idUsuario,
     });
@@ -824,14 +808,83 @@ export class OrganizadorService {
     ).replace(/\/+$/, '');
     const enlaceEvento = `${frontendBaseUrl}/eventos/${idEvento}`;
 
-    void this.mailService.enviarInvitacionEventoPrivado({
-      destinatario: usuarioDestinatario.correo,
-      nombreUsuario: `${usuarioDestinatario.nombre} ${usuarioDestinatario.apellidoPa}`.trim(),
-      nombreEvento: evento.nombre,
-      descripcionEvento: evento.descripcion,
-      organizador: nombreOrganizador,
-      enlaceEvento,
+    if (!usuarioDestinatario) {
+      await verificarDominioCorreoValido(correoBuscado);
+
+      const token = this.jwtService.sign(
+        {
+          correo: correoBuscado,
+          idEvento,
+          tipo: 'INVITACION_EVENTO_PRIVADO',
+        },
+        {
+          expiresIn: '48h',
+          secret: process.env.JWT_PASS || 'clave_secreta',
+        },
+      );
+
+      registrarInvitacionPendiente(
+        correoBuscado,
+        idEvento,
+        'INVITACION_EVENTO_PRIVADO',
+      );
+
+      const enlaceRegistro = `${frontendBaseUrl}/registro?token=${encodeURIComponent(token)}`;
+      try {
+        await this.mailService.enviarInvitacionEventoPrivado({
+          destinatario: correoBuscado,
+          nombreUsuario: '',
+          nombreEvento: evento.nombre,
+          descripcionEvento: evento.descripcion,
+          organizador: nombreOrganizador,
+          enlaceEvento,
+          requiereRegistro: true,
+          enlaceRegistro,
+        });
+      } catch {
+        throw new InternalServerErrorException(
+          'No se pudo enviar el correo de invitación. Verifica la dirección o inténtalo de nuevo más tarde.',
+        );
+      }
+
+      return {
+        mensaje: 'Operación realizada con éxito.',
+        invitacionEnviada: true,
+        correo: correoBuscado,
+      };
+    }
+
+    const invitacionPrevia = await this.invitacionRepository.findOne({
+      where: {
+        idEvento,
+        idUsuario: usuarioDestinatario.idUsuario,
+      },
     });
+
+    if (invitacionPrevia) {
+      throw new ConflictException(
+        'El destinatario ya cuenta con un boleto activo para este evento.',
+      );
+    }
+
+    const nuevaInvitacion = this.invitacionRepository.create({
+      idEvento,
+      idUsuario: usuarioDestinatario.idUsuario,
+      fechaUltimoEnvio: new Date(),
+    });
+
+    const guardada = await this.invitacionRepository.save(nuevaInvitacion);
+
+    void this.mailService
+      .enviarInvitacionEventoPrivado({
+        destinatario: usuarioDestinatario.correo,
+        nombreUsuario: `${usuarioDestinatario.nombre} ${usuarioDestinatario.apellidoPa}`.trim(),
+        nombreEvento: evento.nombre,
+        descripcionEvento: evento.descripcion,
+        organizador: nombreOrganizador,
+        enlaceEvento,
+      })
+      .catch(() => {});
 
     const nombreCompleto = `${usuarioDestinatario.nombre} ${usuarioDestinatario.apellidoPa}${usuarioDestinatario.apellidoMa ? ' ' + usuarioDestinatario.apellidoMa : ''}`;
 
@@ -918,14 +971,16 @@ export class OrganizadorService {
       ).replace(/\/+$/, '');
       const enlaceEvento = `${frontendBaseUrl}/eventos/${idEvento}`;
 
-      void this.mailService.enviarInvitacionEventoPrivado({
-        destinatario: invitacion.usuario.correo,
-        nombreUsuario: `${invitacion.usuario.nombre} ${invitacion.usuario.apellidoPa}`.trim(),
-        nombreEvento: evento.nombre,
-        descripcionEvento: evento.descripcion,
-        organizador: nombreOrganizador,
-        enlaceEvento,
-      });
+      void this.mailService
+        .enviarInvitacionEventoPrivado({
+          destinatario: invitacion.usuario.correo,
+          nombreUsuario: `${invitacion.usuario.nombre} ${invitacion.usuario.apellidoPa}`.trim(),
+          nombreEvento: evento.nombre,
+          descripcionEvento: evento.descripcion,
+          organizador: nombreOrganizador,
+          enlaceEvento,
+        })
+        .catch(() => {});
     }
 
     return {
@@ -983,13 +1038,15 @@ export class OrganizadorService {
     idEvento: number,
     idUsuarioOrganizador: number,
     dto: AgregarPersonalLogisticaDto,
+    rolActor?: string,
   ) {
     const evento = await this.eventoRepository.findOneBy({ idEvento });
     if (!evento) {
       throw new NotFoundException('Evento no encontrado o cancelado.');
     }
 
-    if (evento.idOrganizador !== idUsuarioOrganizador) {
+    const esSubdireccion = rolActor === TipoCuentaUsuario.SUBDIRECCION;
+    if (evento.idOrganizador !== idUsuarioOrganizador && !esSubdireccion) {
       throw new ForbiddenException(
         'No cuenta con los permisos necesarios para registrar personal de logística.',
       );
@@ -1067,6 +1124,8 @@ export class OrganizadorService {
       };
     }
 
+    await verificarDominioCorreoValido(correo);
+
     const payload = {
       correo,
       idEvento,
@@ -1077,10 +1136,12 @@ export class OrganizadorService {
       secret: process.env.JWT_PASS || 'clave_secreta',
     });
 
+    registrarInvitacionPendiente(correo, idEvento, 'INVITACION_LOGISTICA');
+
     const frontendBaseUrl = (
       process.env.FRONTEND_URL ?? 'http://localhost:5173'
     ).replace(/\/+$/, '');
-    const enlaceActivacion = `${frontendBaseUrl}/activar-logistica?token=${token}`;
+    const enlaceActivacion = `${frontendBaseUrl}/registro?token=${encodeURIComponent(token)}`;
 
     const organizador = await this.usuarioRepository.findOneBy({
       idUsuario: idUsuarioOrganizador,
@@ -1089,15 +1150,22 @@ export class OrganizadorService {
       ? `${organizador.nombre} ${organizador.apellidoPa}`.trim()
       : 'Organizador';
 
-    void this.mailService.enviarInvitacionLogistica({
-      destinatario: correo,
-      nombreEvento: evento.nombre,
-      organizador: nombreOrganizador,
-      enlaceActivacion,
-    });
+    try {
+      await this.mailService.enviarInvitacionLogistica({
+        destinatario: correo,
+        nombreEvento: evento.nombre,
+        organizador: nombreOrganizador,
+        enlaceActivacion,
+      });
+    } catch {
+      throw new InternalServerErrorException(
+        'No se pudo enviar el correo de invitación. Verifica la dirección o inténtalo de nuevo más tarde.',
+      );
+    }
 
     return {
       asignadoDirecto: false,
+      invitacionEnviada: true,
       mensaje: 'Operación realizada con éxito.',
     };
   }
