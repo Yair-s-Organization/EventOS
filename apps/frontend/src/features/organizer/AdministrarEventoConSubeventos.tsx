@@ -39,16 +39,10 @@ interface EventoSubeventosVista {
 
 const columnasLogistica: Columna<PersonalLogisticaItem>[] = [
   {
-    id: "nombreCompleto",
-    encabezado: "Nombre",
-    render: (personal) => personal.nombreCompleto,
-    className: "min-w-[10rem] break-all px-3",
-  },
-  {
     id: "correo",
     encabezado: "Correo",
     render: (personal) => personal.correo,
-    className: "min-w-[12rem] break-all px-3",
+    className: "min-w-[32rem] max-w-[32rem] break-all px-3",
   },
 ];
 
@@ -405,12 +399,12 @@ export function AdministracionEventoConSubeventos() {
               Personal de logística del evento
             </h2>
             {datosEvento.personalLogistica.length > 0 ? (
-              <div className="w-full min-w-0 overflow-x-auto rounded-md border border-gray-200 shadow-md">
+              <div id="contenedorLogistica" className="shadow-md w-fit overflow-x-auto rounded-md">
                 <Table
                   columnas={columnasLogistica}
                   filas={datosEvento.personalLogistica}
                   obtenerClave={(personal) => personal.idUsuario}
-                  className="table-auto min-w-full bg-white text-left text-sm [&_tbody_tr]:h-12 [&_thead_tr]:h-10 [&_th]:py-2 [&_td]:py-2"
+                  className="bg-white text-left text-sm [&_tbody_tr]:h-12 [&_thead_tr]:h-10 [&_th]:py-2 [&_td]:py-2"
                 />
               </div>
             ) : (
