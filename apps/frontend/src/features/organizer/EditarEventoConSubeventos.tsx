@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import { useNavigate, useParams } from "react-router";
 import {
@@ -31,11 +31,9 @@ import {
 } from "./components/OrganizerSubeventCard";
 import { Table, type Columna } from "../../components/organisms/Table/Table";
 import Badge from "../../components/atoms/Badge/Badge";
-import {
-  MARCADOR_MOTIVO_URGENCIA,
-  ModalMotivo,
-} from "./organism/ModalMotivo";
+import { MARCADOR_MOTIVO_URGENCIA, ModalMotivo } from "./organism/ModalMotivo";
 import { ModalMotivoUrgente } from "../../components/organisms/ModalMotivoUrgente/ModalMotivoUrgente";
+import { AgregarLogistica } from "./components/AgregarLogistica";
 
 interface ActividadEditable {
   llave: string;
@@ -138,22 +136,33 @@ const HORAS_FIN = [
   "22:00",
 ].map((h) => ({ value: h, label: h }));
 
-const columnasLogistica: Columna<PersonalLogisticaItem>[] = [
-  {
-    id: "correo",
-    encabezado: "Correo",
-    render: (personal) => personal.correo,
-    className: "min-w-[12rem] break-all px-3",
-  },
-  {
-    id: "acciones",
-    encabezado: "Acción",
-    render: () => {
-      return <Button text="Eliminar" variant="primary" type="button" />;
+function crearColumnasLogistica(
+  onEliminar: (personal: PersonalLogisticaItem) => void,
+): Columna<PersonalLogisticaItem>[] {
+  return [
+    {
+      id: "correo",
+      encabezado: "Correo",
+      render: (personal) => personal.correo,
+      className: "min-w-[16rem] max-w-[16rem] break-all px-3",
     },
-    className: "min-w-[8rem] max-w-[8rem] break-all px-3",
-  },
-];
+    {
+      id: "acciones",
+      encabezado: "Acción",
+      render: (personal) => {
+        return (
+          <Button
+            text="Eliminar"
+            variant="danger"
+            type="button"
+            onClick={() => onEliminar(personal)}
+          />
+        );
+      },
+      className: "min-w-[16rem] max-w-[16rem] break-all px-3",
+    },
+  ];
+}
 
 function separarMotivoUrgencia(motivo: string) {
   const indice = motivo.lastIndexOf(MARCADOR_MOTIVO_URGENCIA);
@@ -279,8 +288,8 @@ function obtenerPayloadActividades(
     ...(actividad.idSubEvento !== undefined
       ? { idSubEvento: actividad.idSubEvento }
       : {}),
-    nombre: (actividad.nombre.trim() || nombreEvento.trim()),
-    descripcion: (actividad.descripcion.trim() || descripcionEvento.trim()),
+    nombre: actividad.nombre.trim() || nombreEvento.trim(),
+    descripcion: actividad.descripcion.trim() || descripcionEvento.trim(),
     idRecinto: Number(actividad.idRecinto),
     accesoQR: actividad.accesoQR,
     fecha: actividad.fecha,
@@ -325,6 +334,44 @@ export function EditarEventoConSubeventos() {
     id: number;
     nombre: string;
   } | null>(null);
+  const [personalAEliminar, setPersonalAEliminar] =
+    useState<PersonalLogisticaItem | null>(null);
+  const [eliminandoPersonal, setEliminandoPersonal] = useState(false);
+
+  const columnasLogistica = useMemo(
+    () => crearColumnasLogistica(setPersonalAEliminar),
+    [],
+  );
+
+  const handleEliminarPersonalLogistica = async () => {
+    if (!personalAEliminar || !idEvento) return;
+    try {
+      setEliminandoPersonal(true);
+      await apiRequest(
+        `eventos/${idEvento}/personal-logistica/${personalAEliminar.idUsuario}`,
+        { method: "DELETE" },
+      );
+      setEvento((prev) =>
+        prev
+          ? {
+              ...prev,
+              personalLogistica: (prev.personalLogistica ?? []).filter(
+                (p) => p.idUsuario !== personalAEliminar.idUsuario,
+              ),
+            }
+          : prev,
+      );
+      setPersonalAEliminar(null);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "No se pudo eliminar al personal de logística.",
+      );
+    } finally {
+      setEliminandoPersonal(false);
+    }
+  };
 
   const usuarioGuardado = JSON.parse(localStorage.getItem("usuario") || "{}");
   const esSubdireccion = usuarioGuardado?.tipoCuenta === "Subdirección";
@@ -398,13 +445,12 @@ export function EditarEventoConSubeventos() {
 
   const cambiosGenerales = Boolean(
     datosGenerales &&
-      datosGeneralesIniciales &&
-      (datosGenerales.nombre !== datosGeneralesIniciales.nombre ||
-        datosGenerales.descripcion !== datosGeneralesIniciales.descripcion ||
-        datosGenerales.justificacion !==
-          datosGeneralesIniciales.justificacion ||
-        datosGenerales.idAlcance !== datosGeneralesIniciales.idAlcance ||
-        archivoPoster),
+    datosGeneralesIniciales &&
+    (datosGenerales.nombre !== datosGeneralesIniciales.nombre ||
+      datosGenerales.descripcion !== datosGeneralesIniciales.descripcion ||
+      datosGenerales.justificacion !== datosGeneralesIniciales.justificacion ||
+      datosGenerales.idAlcance !== datosGeneralesIniciales.idAlcance ||
+      archivoPoster),
   );
   const payloadActividades = obtenerPayloadActividades(
     actividades,
@@ -439,8 +485,13 @@ export function EditarEventoConSubeventos() {
         if (!act.fecha) {
           err.fecha = "Selecciona la fecha del evento";
         } else if (act.fecha > FECHA_FIN_SEMESTRE) {
-          err.fecha = "La fecha no debe exceder el fin de semestre (19 de diciembre)";
-        } else if (idx > 0 && baseFecha && diferenciaEntreFechas(baseFecha, act.fecha) > 14) {
+          err.fecha =
+            "La fecha no debe exceder el fin de semestre (19 de diciembre)";
+        } else if (
+          idx > 0 &&
+          baseFecha &&
+          diferenciaEntreFechas(baseFecha, act.fecha) > 14
+        ) {
           err.fecha = "Máximo 15 días a partir de la fecha de inicio";
         }
 
@@ -454,8 +505,13 @@ export function EditarEventoConSubeventos() {
 
         if (!act.horaFin) {
           err.horaFin = "Selecciona la hora final";
-        } else if (act.horaInicio && act.horaFin && act.horaInicio >= act.horaFin) {
-          err.horaFin = "La hora de finalización debe ser posterior a la de inicio";
+        } else if (
+          act.horaInicio &&
+          act.horaFin &&
+          act.horaInicio >= act.horaFin
+        ) {
+          err.horaFin =
+            "La hora de finalización debe ser posterior a la de inicio";
         }
 
         if (Object.keys(err).length > 0) {
@@ -615,7 +671,8 @@ export function EditarEventoConSubeventos() {
       setActividades(listaActividades);
       setActividadesIniciales(listaActividades);
       const motivos = separarMotivoUrgencia(
-        detalleActualizado.solicitudModificacionPendiente?.motivoModificacion ?? "",
+        detalleActualizado.solicitudModificacionPendiente?.motivoModificacion ??
+          "",
       );
       setMotivo(motivos.motivoModificacion);
       setMotivoUrgente(motivos.motivoUrgente);
@@ -654,12 +711,12 @@ export function EditarEventoConSubeventos() {
 
     const hayErroresGenerales = Boolean(
       !datosGenerales ||
-        !datosGenerales.nombre.trim() ||
-        datosGenerales.nombre.trim().length > 150 ||
-        !datosGenerales.descripcion.trim() ||
-        datosGenerales.descripcion.trim().length > 500 ||
-        !datosGenerales.justificacion.trim() ||
-        datosGenerales.justificacion.trim().length > 500,
+      !datosGenerales.nombre.trim() ||
+      datosGenerales.nombre.trim().length > 150 ||
+      !datosGenerales.descripcion.trim() ||
+      datosGenerales.descripcion.trim().length > 500 ||
+      !datosGenerales.justificacion.trim() ||
+      datosGenerales.justificacion.trim().length > 500,
     );
 
     if (hayErroresGenerales || hayErroresActividades) {
@@ -703,9 +760,9 @@ export function EditarEventoConSubeventos() {
     calcularErroresActividades(actividades);
   const formularioGeneralInvalido = Boolean(
     !datosGenerales ||
-      !datosGenerales.nombre.trim() ||
-      !datosGenerales.descripcion.trim() ||
-      !datosGenerales.justificacion.trim(),
+    !datosGenerales.nombre.trim() ||
+    !datosGenerales.descripcion.trim() ||
+    !datosGenerales.justificacion.trim(),
   );
 
   return (
@@ -715,7 +772,8 @@ export function EditarEventoConSubeventos() {
         className="flex cursor-pointer items-center gap-2"
         onClick={() =>
           navigate(`/organizador/administrar-evento-subeventos/${idEvento}`)
-        }>
+        }
+      >
         <ArrowLeft size={20} aria-hidden="true" />
         <span>Volver</span>
       </button>
@@ -735,7 +793,8 @@ export function EditarEventoConSubeventos() {
           titulo="Error"
           contenido={error}
           mostrarModal={Boolean(error)}
-          cerrarModal={() => setError(null)}>
+          cerrarModal={() => setError(null)}
+        >
           <Button
             text="Cerrar"
             variant="primary"
@@ -754,15 +813,18 @@ export function EditarEventoConSubeventos() {
       {intentoGuardar && (formularioInvalido || formularioGeneralInvalido) && (
         <div
           role="alert"
-          className="rounded-md border border-red-300 bg-red-50 p-4 text-sm font-semibold text-red-800">
-          Por favor, completa todos los campos obligatorios resaltados para continuar
+          className="rounded-md border border-red-300 bg-red-50 p-4 text-sm font-semibold text-red-800"
+        >
+          Por favor, completa todos los campos obligatorios resaltados para
+          continuar
         </div>
       )}
 
       {evento?.solicitudModificacionPendiente && (
         <div
           role="status"
-          className="space-y-2 rounded-lg border border-amber-300 bg-amber-50 p-5 text-amber-950 shadow-sm">
+          className="space-y-2 rounded-lg border border-amber-300 bg-amber-50 p-5 text-amber-950 shadow-sm"
+        >
           <div className="flex flex-wrap items-center gap-2">
             <span className="inline-flex items-center rounded-md bg-amber-200 px-2.5 py-0.5 text-xs font-semibold text-amber-900">
               Solicitud en Revisión
@@ -790,7 +852,8 @@ export function EditarEventoConSubeventos() {
         <form
           data-editar-evento-subeventos
           onSubmit={manejarEnvio}
-          className="space-y-8">
+          className="space-y-8"
+        >
           <fieldset disabled={guardando} className="space-y-8 border-0 p-0">
             <section className="space-y-4 border border-gray-200 bg-white p-5 shadow-md">
               <div className="grid grid-cols-1 items-start gap-4 sm:grid-cols-2">
@@ -798,7 +861,8 @@ export function EditarEventoConSubeventos() {
                   <FormField
                     className="!font-bold !text-black"
                     label="Banner del evento"
-                    mensajeAyuda="Resolución: 2048 x 1152">
+                    mensajeAyuda="Resolución: 2048 x 1152"
+                  >
                     <InputFile
                       id="campoPoster"
                       accept=".jpg"
@@ -813,7 +877,8 @@ export function EditarEventoConSubeventos() {
                   <FormField
                     label="Alcance"
                     htmlFor="campoAlcance"
-                    className="!font-bold !text-black">
+                    className="!font-bold !text-black"
+                  >
                     <Select
                       id="campoAlcance"
                       placeholder="Selecciona una opción"
@@ -856,15 +921,17 @@ export function EditarEventoConSubeventos() {
                       : datosGenerales.nombre.trim().length > 150
                         ? "El nombre no puede exceder los 150 caracteres"
                         : undefined
-                  }>
+                  }
+                >
                   <Input
                     id="campoNombre"
                     className="pr-10 font-merriweather text-xl font-bold text-secondary sm:text-2xl"
                     value={datosGenerales.nombre}
                     maxLength={150}
                     hasError={
-                      Boolean(intentoGuardar && !datosGenerales.nombre.trim()) ||
-                      datosGenerales.nombre.trim().length > 150
+                      Boolean(
+                        intentoGuardar && !datosGenerales.nombre.trim(),
+                      ) || datosGenerales.nombre.trim().length > 150
                     }
                     onChange={(event) =>
                       setDatosGenerales({
@@ -891,7 +958,8 @@ export function EditarEventoConSubeventos() {
                       : datosGenerales.descripcion.trim().length >= 500
                         ? "La descripción no puede exceder los 500 caracteres"
                         : ""
-                  }>
+                  }
+                >
                   <TextArea
                     value={datosGenerales.descripcion}
                     maxLength={500}
@@ -926,7 +994,8 @@ export function EditarEventoConSubeventos() {
                       : datosGenerales.justificacion.trim().length >= 500
                         ? "La justificación no puede exceder los 500 caracteres"
                         : undefined
-                  }>
+                  }
+                >
                   <TextArea
                     value={datosGenerales.justificacion}
                     maxLength={500}
@@ -945,32 +1014,73 @@ export function EditarEventoConSubeventos() {
                   />
                 </FormField>
               </div>
+            </section>
 
-              <div id="contenedorLogistica" className="space-y-4 pt-2">
-                <h3 className="text-lg font-bold">
-                  Personal de logística del evento
-                </h3>
-                {(evento?.personalLogistica ?? []).length > 0 ? (
-                  <div className="w-full min-w-0 overflow-x-auto rounded-md border border-gray-200 shadow-sm">
-                    <Table
-                      columnas={columnasLogistica}
-                      filas={evento?.personalLogistica ?? []}
-                      obtenerClave={(personal) => personal.idUsuario}
-                      className="table-auto min-w-full bg-white text-left text-sm [&_tbody_tr]:h-12 [&_thead_tr]:h-10 [&_th]:py-2 [&_td]:py-2"
+            {personalAEliminar && (
+              <Modal
+                mostrarModal={Boolean(personalAEliminar)}
+                titulo="Confirmar eliminación"
+                cerrarModal={() => {
+                  if (!eliminandoPersonal) setPersonalAEliminar(null);
+                }}
+              >
+                <div className="space-y-4">
+                  <p className="text-gray-700">
+                    ¿Estás seguro que deseas eliminar al personal
+                    <strong className="text-gray-900">
+                      {personalAEliminar.correo}
+                    </strong>
+                    ?
+                  </p>
+                  <div className="flex justify-end gap-3 pt-2">
+                    <Button
+                      text="Cancelar"
+                      variant="secondary"
+                      type="button"
+                      disabled={eliminandoPersonal}
+                      onClick={() => setPersonalAEliminar(null)}
+                    />
+                    <Button
+                      text={eliminandoPersonal ? "Eliminando..." : "Eliminar"}
+                      variant="danger"
+                      type="button"
+                      disabled={eliminandoPersonal}
+                      onClick={() => void handleEliminarPersonalLogistica()}
                     />
                   </div>
-                ) : (
-                  <p className="text-gray-600">
-                    No hay personal de logística registrado para este evento.
-                  </p>
-                )}
-                <Button
-                  text="Agregar personal de logística"
-                  variant="primary"
-                  type="button"
-                />
-              </div>
-            </section>
+                </div>
+              </Modal>
+            )}
+
+            <div id="contenedorLogistica" className="space-y-5 pt-2">
+              <h3 className="text-xl font-bold sm:text-2xl">
+                Personal de logística del evento
+              </h3>
+              {(evento?.personalLogistica ?? []).length > 0 ? (
+                <div className="shadow-md w-fit overflow-x-auto rounded-md">
+                  <Table
+                    columnas={columnasLogistica}
+                    filas={evento?.personalLogistica ?? []}
+                    obtenerClave={(personal) => personal.idUsuario}
+                    className="bg-white text-left text-sm [&_tbody_tr]:h-12 [&_thead_tr]:h-10 [&_th]:py-2 [&_td]:py-2"
+                  />
+                </div>
+              ) : (
+                <p className="text-gray-600">
+                  No hay personal de logística registrado para este evento.
+                </p>
+              )}
+              <Button
+                text="Agregar personal de logística"
+                variant="primary"
+                type="button"
+                onClick={() => {
+                  navigate(
+                    `/organizador/administrar-evento/${idEvento}/agregar-logistica`,
+                  );
+                }}
+              />
+            </div>
 
             <section className="space-y-5">
               <h2 className="text-xl font-bold sm:text-2xl">Actividades</h2>
@@ -1024,7 +1134,8 @@ export function EditarEventoConSubeventos() {
                 return (
                   <div
                     key={actividad.llave}
-                    className="grid min-w-0 grid-cols-1 gap-4 rounded-md bg-eventos-primary-light p-4 sm:grid-cols-2 sm:p-6 lg:grid-cols-3 lg:px-10 lg:py-8">
+                    className="grid min-w-0 grid-cols-1 gap-4 rounded-md bg-eventos-primary-light p-4 sm:grid-cols-2 sm:p-6 lg:grid-cols-3 lg:px-10 lg:py-8"
+                  >
                     <FormField
                       label="Fecha"
                       htmlFor={`selectFecha-${indice}`}
@@ -1034,8 +1145,14 @@ export function EditarEventoConSubeventos() {
                           ? "Máximo 15 días a partir de la fecha de inicio"
                           : undefined
                       }
+<<<<<<< HEAD
+                      errorMessage={errorAct?.fecha}
+                    >
+                      <Input
+=======
                       errorMessage={errorAct?.fecha}>
                       <DateInput
+>>>>>>> origin/develop
                         id={`selectFecha-${indice}`}
                         min={minFecha}
                         max={maxFecha}
@@ -1058,14 +1175,17 @@ export function EditarEventoConSubeventos() {
                       mensajeAyuda={
                         recintoSeleccionado && recintoSeleccionado.aforo > 0
                           ? `Capacidad: ${recintoSeleccionado.aforo} ${
-                              recintoSeleccionado.idRecinto !== RecintoId.AUDITORIO &&
-                              recintoSeleccionado.idRecinto !== RecintoId.SALA_14
+                              recintoSeleccionado.idRecinto !==
+                                RecintoId.AUDITORIO &&
+                              recintoSeleccionado.idRecinto !==
+                                RecintoId.SALA_14
                                 ? "equipos / personas"
                                 : "personas / asientos"
                             }`
                           : undefined
                       }
-                      errorMessage={errorAct?.idRecinto}>
+                      errorMessage={errorAct?.idRecinto}
+                    >
                       <Select
                         id={`selectRecinto-${indice}`}
                         placeholder="Selecciona un espacio"
@@ -1103,7 +1223,8 @@ export function EditarEventoConSubeventos() {
                       label="Hora inicio"
                       htmlFor={`selectHoraInicio-${indice}`}
                       required
-                      errorMessage={errorAct?.horaInicio}>
+                      errorMessage={errorAct?.horaInicio}
+                    >
                       <Select
                         id={`selectHoraInicio-${indice}`}
                         placeholder="Selecciona la hora de inicio"
@@ -1125,7 +1246,8 @@ export function EditarEventoConSubeventos() {
                       label="Hora Fin"
                       htmlFor={`selectHoraFinal-${indice}`}
                       required
-                      errorMessage={errorAct?.horaFin}>
+                      errorMessage={errorAct?.horaFin}
+                    >
                       <Select
                         id={`selectHoraFinal-${indice}`}
                         placeholder="Selecciona la hora final"
@@ -1156,16 +1278,19 @@ export function EditarEventoConSubeventos() {
                     <FormField
                       label="Acceso con boleto"
                       htmlFor={`selectBoleto-${indice}`}
-                      required={Number(actividad.idRecinto) !== RecintoId.SALA_14}
+                      required={
+                        Number(actividad.idRecinto) !== RecintoId.SALA_14
+                      }
                       mensajeAyuda={
                         Number(actividad.idRecinto) === RecintoId.SALA_14
                           ? "Al elegir la sala 14 el acceso es libre"
                           : Number(actividad.idRecinto) !==
-                              RecintoId.AUDITORIO &&
-                            Boolean(actividad.idRecinto)
+                                RecintoId.AUDITORIO &&
+                              Boolean(actividad.idRecinto)
                             ? "Al elegir un laboratorio el cupo pasa a ser limitado"
                             : ""
-                      }>
+                      }
+                    >
                       <Select
                         id={`selectBoleto-${indice}`}
                         placeholder="Selecciona una opción"
@@ -1176,7 +1301,9 @@ export function EditarEventoConSubeventos() {
                             ? String(actividad.accesoQR)
                             : ""
                         }
-                        disabled={Number(actividad.idRecinto) !== RecintoId.AUDITORIO}
+                        disabled={
+                          Number(actividad.idRecinto) !== RecintoId.AUDITORIO
+                        }
                         onChange={(e) =>
                           actualizarActividad(
                             actividad.llave,
@@ -1189,7 +1316,8 @@ export function EditarEventoConSubeventos() {
 
                     <FormField
                       label={undefined}
-                      htmlFor={`botonEspacio-${indice}`}>
+                      htmlFor={`botonEspacio-${indice}`}
+                    >
                       <Button
                         id={`botonEspacio-${indice}`}
                         text="Ver detalles del laboratorio"
@@ -1205,7 +1333,8 @@ export function EditarEventoConSubeventos() {
                             id: Number(actividad.idRecinto),
                             nombre:
                               recintos.find(
-                                (r) => String(r.idRecinto) === actividad.idRecinto,
+                                (r) =>
+                                  String(r.idRecinto) === actividad.idRecinto,
                               )?.nombre ?? "Espacio seleccionado",
                           })
                         }

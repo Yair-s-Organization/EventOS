@@ -195,7 +195,7 @@ export function ModalPonentes({
                                 onClick={handleSolicitarCerrar}
                             />
                             <Button
-                                text="Guardar cambios"
+                                text="Guardar"
                                 variant="success"
                                 type="button"
                                 className="cursor-pointer"

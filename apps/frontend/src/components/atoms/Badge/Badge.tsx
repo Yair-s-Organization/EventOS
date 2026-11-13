@@ -7,12 +7,12 @@ export interface BadgeProps
   extends HTMLAttributes<HTMLSpanElement> {
   children: ReactNode;
   variant?:
-    | "primary"
-    | "secondary"
-    | "success"
-    | "error"
-    | "warning"
-    | "neutral";
+  | "primary"
+  | "secondary"
+  | "success"
+  | "error"
+  | "warning"
+  | "neutral";
   size?: "sm" | "md";
 }
 
@@ -53,7 +53,7 @@ export function Badge({
       {...restOfProps}
       className={`
         inline-flex items-center justify-center
-        rounded-full font-merriweather font-semibold
+        rounded-sm  font-merriweather font-semibold
         whitespace-nowrap
         ${variantStyles[variant]}
         ${sizeStyles[size]}

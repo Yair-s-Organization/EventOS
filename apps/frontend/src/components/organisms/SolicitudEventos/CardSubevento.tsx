@@ -224,7 +224,6 @@ export function CardSubevento(props: CardSubeventoProps) {
           setEspacios(respuesta);
         }
       } catch {
-        // Se conservan los datos de RECINTOS_BASE
       }
     };
     void cargarEspacios();
@@ -405,12 +404,11 @@ export function CardSubevento(props: CardSubeventoProps) {
         required
         mensajeAyuda={
           recintoSeleccionado
-            ? `Capacidad: ${recintoSeleccionado.aforo} ${
-                recintoSeleccionado.idRecinto !== RecintoId.AUDITORIO &&
-                recintoSeleccionado.idRecinto !== RecintoId.SALA_14
-                  ? "equipos / personas"
-                  : "personas / asientos"
-              }`
+            ? `Capacidad: ${recintoSeleccionado.aforo} ${recintoSeleccionado.idRecinto !== RecintoId.AUDITORIO &&
+              recintoSeleccionado.idRecinto !== RecintoId.SALA_14
+              ? "equipos / personas"
+              : "personas / asientos"
+            }`
             : undefined
         }
         errorMessage={touched.idRecinto ? errors.idRecinto : undefined}>
@@ -522,7 +520,7 @@ export function CardSubevento(props: CardSubeventoProps) {
           subevento.idRecinto === RecintoId.SALA_14
             ? "Al elegir la sala 14 el acceso es libre"
             : subevento.idRecinto &&
-                subevento.idRecinto !== RecintoId.AUDITORIO
+              subevento.idRecinto !== RecintoId.AUDITORIO
               ? "Al elegir un laboratorio el cupo pasa a ser limitado"
               : ""
         }>

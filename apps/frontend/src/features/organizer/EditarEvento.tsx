@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import { useNavigate, useParams } from "react-router";
 import {
@@ -27,10 +27,7 @@ import { EventBanner } from "../event-details/components/molecules/EventBanner";
 import Badge from "../../components/atoms/Badge/Badge";
 import { FormField } from "../../components/molecules/FormField";
 import { Modal } from "../../components/molecules/Modal";
-import {
-  MARCADOR_MOTIVO_URGENCIA,
-  ModalMotivo,
-} from "./organism/ModalMotivo";
+import { MARCADOR_MOTIVO_URGENCIA, ModalMotivo } from "./organism/ModalMotivo";
 import { ModalMotivoUrgente } from "../../components/organisms/ModalMotivoUrgente/ModalMotivoUrgente";
 import { ModalPonentes } from "./organism/ModalPonentes";
 import type { TablaPonente } from "./organism/ModalPonentes";
@@ -66,24 +63,33 @@ function diasHastaFecha(fecha: string): number | null {
   return (fechaUTC - hoyUTC) / 86_400_000;
 }
 
-
-
-const columnasLogistica: Columna<PersonalLogisticaItem>[] = [
-  {
-    id: "correo",
-    encabezado: "Correo",
-    render: (personal) => personal.correo,
-    className: "min-w-[12rem] break-all px-3",
-  },
-  {
-    id: "acciones",
-    encabezado: "Acción",
-    render: () => {
-      return <Button text="Eliminar" variant="primary" type="button" />;
+function crearColumnasLogistica(
+  onEliminar: (personal: PersonalLogisticaItem) => void,
+): Columna<PersonalLogisticaItem>[] {
+  return [
+    {
+      id: "correo",
+      encabezado: "Correo",
+      render: (personal) => personal.correo,
+      className: "min-w-[12rem] break-all px-3",
     },
-    className: "min-w-[8rem] max-w-[8rem] break-all px-3",
-  },
-];
+    {
+      id: "acciones",
+      encabezado: "Acción",
+      render: (personal) => {
+        return (
+          <Button
+            text="Eliminar"
+            variant="danger"
+            type="button"
+            onClick={() => onEliminar(personal)}
+          />
+        );
+      },
+      className: "min-w-[8rem] max-w-[8rem] break-all px-3",
+    },
+  ];
+}
 
 function obtenerMensajeError(error: unknown): string {
   return error instanceof Error
@@ -169,8 +175,50 @@ export function EditarEvento() {
   const usuarioGuardado = JSON.parse(localStorage.getItem("usuario") || "{}");
   const esSubdireccion = usuarioGuardado?.tipoCuenta === "Subdirección";
   const [ponentes, setPonentes] = useState<TablaPonente[]>([]);
-  const [ponentesIniciales, setPonentesIniciales] = useState<TablaPonente[]>([]);
-  const [ponenteAEliminar, setPonenteAEliminar] = useState<TablaPonente | null>(null);
+  const [ponentesIniciales, setPonentesIniciales] = useState<TablaPonente[]>(
+    [],
+  );
+  const [ponenteAEliminar, setPonenteAEliminar] = useState<TablaPonente | null>(
+    null,
+  );
+  const [personalAEliminar, setPersonalAEliminar] =
+    useState<PersonalLogisticaItem | null>(null);
+  const [eliminandoPersonal, setEliminandoPersonal] = useState(false);
+
+  const columnasLogistica = useMemo(
+    () => crearColumnasLogistica(setPersonalAEliminar),
+    [],
+  );
+
+  const handleEliminarPersonalLogistica = async () => {
+    if (!personalAEliminar || !idEvento) return;
+    try {
+      setEliminandoPersonal(true);
+      await apiRequest(
+        `eventos/${idEvento}/personal-logistica/${personalAEliminar.idUsuario}`,
+        { method: "DELETE" },
+      );
+      setEvento((prev) =>
+        prev
+          ? {
+              ...prev,
+              personalLogistica: (prev.personalLogistica ?? []).filter(
+                (p) => p.idUsuario !== personalAEliminar.idUsuario,
+              ),
+            }
+          : prev,
+      );
+      setPersonalAEliminar(null);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "No se pudo eliminar al personal de logística.",
+      );
+    } finally {
+      setEliminandoPersonal(false);
+    }
+  };
 
   useEffect(() => {
     const controller = new AbortController();
@@ -232,8 +280,8 @@ export function EditarEvento() {
         const subeventoSeleccionado =
           idSubEventoSeleccionado !== undefined
             ? detalle.subEventos.find(
-              (item) => item.idSubEvento === idSubEventoSeleccionado,
-            )
+                (item) => item.idSubEvento === idSubEventoSeleccionado,
+              )
             : undefined;
         const propuestaSubevento =
           subeventoSeleccionado &&
@@ -242,13 +290,13 @@ export function EditarEvento() {
           );
         setNombre(
           propuestaSubevento?.nombre ??
-          subeventoSeleccionado?.nombre ??
-          detalle.nombre,
+            subeventoSeleccionado?.nombre ??
+            detalle.nombre,
         );
         setDescripcion(
           propuestaSubevento?.descripcion ??
-          subeventoSeleccionado?.descripcion ??
-          detalle.descripcion,
+            subeventoSeleccionado?.descripcion ??
+            detalle.descripcion,
         );
         setJustificacion(detalle.justificacion ?? "");
         setAlcance(detalle.idAlcance ?? "");
@@ -271,8 +319,8 @@ export function EditarEvento() {
         const subeventoActual =
           idSubEventoSeleccionado !== undefined
             ? detalle.subEventos.find(
-              (item) => item.idSubEvento === idSubEventoSeleccionado,
-            )
+                (item) => item.idSubEvento === idSubEventoSeleccionado,
+              )
             : detalle.subEventos[0];
 
         const ponentesIniciales: TablaPonente[] =
@@ -344,17 +392,15 @@ export function EditarEvento() {
   }, [idEvento, logistica.fecha, logistica.idRecinto]);
 
   const subevento = idSubEventoSeleccionado
-    ? evento?.subEventos.find(
-      (item) => item.idSubEvento === idSubEventoSeleccionado,
-    ) ?? null
-    : evento?.subEventos[0] ?? null;
+    ? (evento?.subEventos.find(
+        (item) => item.idSubEvento === idSubEventoSeleccionado,
+      ) ?? null)
+    : (evento?.subEventos[0] ?? null);
   const subeventoPropuesto = idSubEventoSeleccionado
     ? evento?.solicitudModificacionPendiente?.subeventosPropuestos.find(
-      (item) => item.idSubEvento === idSubEventoSeleccionado,
-    )
+        (item) => item.idSubEvento === idSubEventoSeleccionado,
+      )
     : undefined;
-
-
 
   const ponentesModificados = Boolean(
     ponentes.length !== ponentesIniciales.length ||
@@ -406,16 +452,16 @@ export function EditarEvento() {
     evento &&
     (idSubEventoSeleccionado === undefined
       ? nombre !== evento.nombre ||
-      descripcion !== evento.descripcion ||
-      justificacion !== (evento.justificacion ?? "") ||
-      alcance !== (evento.idAlcance ?? "") ||
-      archivoPoster ||
-      ponentesModificados
+        descripcion !== evento.descripcion ||
+        justificacion !== (evento.justificacion ?? "") ||
+        alcance !== (evento.idAlcance ?? "") ||
+        archivoPoster ||
+        ponentesModificados
       : subevento &&
-      (nombre !== (subeventoPropuesto?.nombre ?? subevento.nombre) ||
-        descripcion !==
-        (subeventoPropuesto?.descripcion ?? subevento.descripcion) ||
-        ponentesModificados)),
+        (nombre !== (subeventoPropuesto?.nombre ?? subevento.nombre) ||
+          descripcion !==
+            (subeventoPropuesto?.descripcion ?? subevento.descripcion) ||
+          ponentesModificados)),
   );
   const camposLogisticosModificados = Boolean(
     subevento &&
@@ -503,8 +549,8 @@ export function EditarEvento() {
     horaFin: !logistica.horaFin
       ? "Selecciona la hora final"
       : logistica.horaInicio &&
-        logistica.horaFin &&
-        logistica.horaInicio >= logistica.horaFin
+          logistica.horaFin &&
+          logistica.horaInicio >= logistica.horaFin
         ? "La hora de finalización debe ser posterior a la de inicio"
         : undefined,
   };
@@ -613,7 +659,8 @@ export function EditarEvento() {
 
         if (idSubEventoSeleccionado === undefined) {
           if (nombre !== evento.nombre) payload.nombre = nombre.trim();
-          if (descripcion !== evento.descripcion) payload.descripcion = descripcion.trim();
+          if (descripcion !== evento.descripcion)
+            payload.descripcion = descripcion.trim();
           if (justificacion !== (evento.justificacion ?? "")) {
             payload.justificacion = justificacion.trim();
           }
@@ -632,8 +679,6 @@ export function EditarEvento() {
             payload.descripcion = descripcion.trim();
           }
         }
-
-
 
         if (ponentesModificados) {
           payload.ponentes = ponentes.map((p) => {
@@ -710,8 +755,7 @@ export function EditarEvento() {
             descripcion: propuesta?.descripcion ?? otroSub.descripcion,
             idRecinto: propuesta?.idRecinto ?? otroSub.recinto?.idRecinto ?? 0,
             accesoQR: propuesta?.accesoQR ?? otroSub.accesoQR,
-            fecha:
-              propuesta?.fecha ?? otroSub.fecha?.fecha.slice(0, 10) ?? "",
+            fecha: propuesta?.fecha ?? otroSub.fecha?.fecha.slice(0, 10) ?? "",
             horaInicio:
               propuesta?.horaInicio.slice(0, 5) ??
               otroSub.fecha?.horaInicio.slice(0, 5) ??
@@ -735,8 +779,10 @@ export function EditarEvento() {
       }
 
       const detalleActualizado = await obtenerDetalleActualizado();
-      const valoresLogisticaActualizados =
-        obtenerValoresLogistica(detalleActualizado, idSubEventoSeleccionado);
+      const valoresLogisticaActualizados = obtenerValoresLogistica(
+        detalleActualizado,
+        idSubEventoSeleccionado,
+      );
       const motivosActualizados = separarMotivoUrgencia(
         valoresLogisticaActualizados.motivoModificacion,
       );
@@ -746,8 +792,8 @@ export function EditarEvento() {
       };
       const subeventoActualizado = idSubEventoSeleccionado
         ? detalleActualizado.subEventos.find(
-          (item) => item.idSubEvento === idSubEventoSeleccionado,
-        )
+            (item) => item.idSubEvento === idSubEventoSeleccionado,
+          )
         : undefined;
       const propuestaActualizada =
         subeventoActualizado &&
@@ -757,13 +803,13 @@ export function EditarEvento() {
       setEvento(detalleActualizado);
       setNombre(
         propuestaActualizada?.nombre ??
-        subeventoActualizado?.nombre ??
-        detalleActualizado.nombre,
+          subeventoActualizado?.nombre ??
+          detalleActualizado.nombre,
       );
       setDescripcion(
         propuestaActualizada?.descripcion ??
-        subeventoActualizado?.descripcion ??
-        detalleActualizado.descripcion,
+          subeventoActualizado?.descripcion ??
+          detalleActualizado.descripcion,
       );
       setJustificacion(detalleActualizado.justificacion ?? "");
       setAlcance(detalleActualizado.idAlcance ?? "");
@@ -834,7 +880,8 @@ export function EditarEvento() {
           logisticaModificada || informacionGeneralModificada
             ? () => setMostrarModalRegreso(true)
             : () => navigate(rutaAdministracion)
-        }>
+        }
+      >
         <ArrowLeft size={20} aria-hidden="true" />
         <span>Volver</span>
       </button>
@@ -844,7 +891,8 @@ export function EditarEvento() {
           mostrarModal={mostrarModalRegreso}
           titulo="Advertencia"
           contenido="¿Estás seguro que deseas regresar? Los cambios realizados se perderán"
-          cerrarModal={() => setMostrarModal(false)}>
+          cerrarModal={() => setMostrarModal(false)}
+        >
           <div className="flex justify-end gap-3">
             <Button
               text="Cancelar"
@@ -878,7 +926,8 @@ export function EditarEvento() {
           titulo="Error"
           contenido={error}
           mostrarModal={Boolean(error)}
-          cerrarModal={() => setError(null)}>
+          cerrarModal={() => setError(null)}
+        >
           <Button
             text="Cerrar"
             variant="primary"
@@ -899,7 +948,8 @@ export function EditarEvento() {
           (camposLogisticosModificados && hayErroresLogistica)) && (
           <div
             role="alert"
-            className="rounded-md border border-red-300 bg-red-50 p-4 text-sm font-semibold text-red-800">
+            className="rounded-md border border-red-300 bg-red-50 p-4 text-sm font-semibold text-red-800"
+          >
             Por favor, completa todos los campos obligatorios resaltados para
             continuar
           </div>
@@ -910,11 +960,13 @@ export function EditarEvento() {
           {evento.solicitudModificacionPendiente && (
             <div
               role="status"
-              className="space-y-2 rounded-lg border border-amber-300 bg-amber-50 p-5 text-amber-950 shadow-md">
+              className="space-y-2 rounded-lg border border-amber-300 bg-amber-50 p-5 text-amber-950 shadow-md"
+            >
               <div className="flex flex-wrap items-center gap-2">
                 <Badge variant="warning">Solicitud en revisión</Badge>
                 <h2 className="text-base font-bold text-amber-950">
-                  Modificación logística pendiente de evaluación por Subdirección
+                  Modificación logística pendiente de evaluación por
+                  Subdirección
                 </h2>
               </div>
               <p className="text-sm text-amber-900">
@@ -934,7 +986,8 @@ export function EditarEvento() {
             <fieldset disabled={guardando} className="space-y-8 border-0 p-0">
               <div
                 id="contenedorDatosIniciales"
-                className="space-y-2 border border-gray-200 bg-white p-5 shadow-md">
+                className="space-y-2 border border-gray-200 bg-white p-5 shadow-md"
+              >
                 <div className="relative">
                   <label htmlFor="campoNombre" className="sr-only">
                     Nombre del evento
@@ -951,7 +1004,8 @@ export function EditarEvento() {
                         !nombre.trim()
                           ? "El nombre del evento es obligatorio"
                           : ""
-                      }>
+                      }
+                    >
                       <Input
                         id="campoNombre"
                         className="pr-10 font-merriweather text-xl font-bold text-secondary sm:text-2xl"
@@ -982,7 +1036,8 @@ export function EditarEvento() {
                         !descripcion.trim()
                           ? "La descripción es obligatoria"
                           : ""
-                      }>
+                      }
+                    >
                       <TextArea
                         id="campoDescripcion"
                         value={descripcion}
@@ -1073,6 +1128,46 @@ export function EditarEvento() {
                     </Modal>
                   )}
 
+                  {personalAEliminar && (
+                    <Modal
+                      mostrarModal={Boolean(personalAEliminar)}
+                      titulo="Confirmar eliminación"
+                      cerrarModal={() => {
+                        if (!eliminandoPersonal) setPersonalAEliminar(null);
+                      }}
+                    >
+                      <div className="space-y-4">
+                        <p className="text-gray-700">
+                          ¿Estás seguro que deseas eliminar al personal
+                          <strong className="text-gray-900">
+                            {personalAEliminar.correo}
+                          </strong>
+                          ?
+                        </p>
+                        <div className="flex justify-end gap-3 pt-2">
+                          <Button
+                            text="Cancelar"
+                            variant="secondary"
+                            type="button"
+                            disabled={eliminandoPersonal}
+                            onClick={() => setPersonalAEliminar(null)}
+                          />
+                          <Button
+                            text={
+                              eliminandoPersonal ? "Eliminando..." : "Eliminar"
+                            }
+                            variant="danger"
+                            type="button"
+                            disabled={eliminandoPersonal}
+                            onClick={() =>
+                              void handleEliminarPersonalLogistica()
+                            }
+                          />
+                        </div>
+                      </div>
+                    </Modal>
+                  )}
+
                   {idSubEventoSeleccionado === undefined && (
                     <div id="contenedorLogistica" className="space-y-5">
                       <h2 className="text-xl font-bold sm:text-2xl">
@@ -1097,6 +1192,11 @@ export function EditarEvento() {
                         text="Agregar personal de logística"
                         variant="primary"
                         type="button"
+                        onClick={() => {
+                          navigate(
+                            `/organizador/administrar-evento/${idEvento}/agregar-logistica`,
+                          );
+                        }}
                       />
                     </div>
                   )}

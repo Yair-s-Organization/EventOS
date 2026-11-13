@@ -39,16 +39,10 @@ interface EventoSubeventosVista {
 
 const columnasLogistica: Columna<PersonalLogisticaItem>[] = [
   {
-    id: "nombreCompleto",
-    encabezado: "Nombre",
-    render: (personal) => personal.nombreCompleto,
-    className: "min-w-[10rem] break-all px-3",
-  },
-  {
     id: "correo",
     encabezado: "Correo",
     render: (personal) => personal.correo,
-    className: "min-w-[12rem] break-all px-3",
+    className: "min-w-[32rem] max-w-[32rem] break-all px-3",
   },
 ];
 
@@ -330,22 +324,29 @@ export function AdministracionEventoConSubeventos() {
         </p>
       )}
 
+
       {datosEvento && (
         <>
           {datosEvento.idEstadoEvento === EstadoEvento.RECHAZADO && (
-            <div
-              role="alert"
-              className="space-y-2 border border-red-200 bg-red-50 p-5 shadow-md">
-              <div className="flex items-center gap-2">
-                <Badge variant="error">Solicitud rechazada</Badge>
-                <h2 className="font-bold text-gray-900">
-                  Motivo de rechazo
-                </h2>
+            <div className="flex flex-col space-y-2 border border-red-500 rounded-md bg-red-50 p-5 shadow-md">
+              <div
+                role="alert"
+                className="flex flex-row justify-between">
+                <div className="flex items-center gap-2">
+                  <h2 className="font-bold text-gray-900">
+                    Motivo de rechazo
+                  </h2>
+                </div>
+                <div>
+                  <Badge variant="error">Solicitud rechazada</Badge>
+                </div>
               </div>
-              <p className="break-words text-sm text-gray-700">
-                {datosEvento.motivoRechazo ||
-                  "No se especificó un motivo para el rechazo de la solicitud."}
-              </p>
+              <div>
+                <p className="break-words text-base text-red-900  ">
+                  {datosEvento.motivoRechazo ||
+                    "No se especificó un motivo para el rechazo de la solicitud."}
+                </p>
+              </div>
             </div>
           )}
 
@@ -398,12 +399,12 @@ export function AdministracionEventoConSubeventos() {
               Personal de logística del evento
             </h2>
             {datosEvento.personalLogistica.length > 0 ? (
-              <div className="w-full min-w-0 overflow-x-auto rounded-md border border-gray-200 shadow-md">
+              <div id="contenedorLogistica" className="shadow-md w-fit overflow-x-auto rounded-md">
                 <Table
                   columnas={columnasLogistica}
                   filas={datosEvento.personalLogistica}
                   obtenerClave={(personal) => personal.idUsuario}
-                  className="table-auto min-w-full bg-white text-left text-sm [&_tbody_tr]:h-12 [&_thead_tr]:h-10 [&_th]:py-2 [&_td]:py-2"
+                  className="bg-white text-left text-sm [&_tbody_tr]:h-12 [&_thead_tr]:h-10 [&_th]:py-2 [&_td]:py-2"
                 />
               </div>
             ) : (
