@@ -34,6 +34,11 @@ import { StorageService } from '../../../common/storage/storage.service';
 import { JwtService } from '@nestjs/jwt';
 import { MailService } from '../../reservas/services/mail.service';
 import { AgregarPersonalLogisticaDto } from '../dto/agregarPersonalLogistica.dto';
+import {
+  calcularClaveOrdenProximo,
+  compararClavesOrdenProximo,
+  obtenerAhoraCdmx,
+} from '../../../common/utils/fecha-cdmx.util';
 
 @Injectable()
 export class OrganizadorService {
@@ -113,18 +118,20 @@ export class OrganizadorService {
     const boletosPorSubevento =
       await this.contarBoletosValidosPorSubevento(subEventoIds);
 
-    return eventos.map((evento) => {
+    const ahoraCdmx = obtenerAhoraCdmx();
+
+    const elementos = eventos.map((evento) => {
       const subeventos = (evento.subEventos || [])
         .filter((s) => s.estado !== EstadoSubEvento.CANCELADO)
         .sort((a, b) => {
-        const fechaA = a.fecha?.fecha
-          ? `${a.fecha.fecha}T${a.fecha.horaInicio || '00:00'}`
-          : '';
-        const fechaB = b.fecha?.fecha
-          ? `${b.fecha.fecha}T${b.fecha.horaInicio || '00:00'}`
-          : '';
-        return fechaA.localeCompare(fechaB);
-      });
+          const fechaA = a.fecha?.fecha
+            ? `${a.fecha.fecha}T${a.fecha.horaInicio || '00:00'}`
+            : '';
+          const fechaB = b.fecha?.fecha
+            ? `${b.fecha.fecha}T${b.fecha.horaInicio || '00:00'}`
+            : '';
+          return fechaA.localeCompare(fechaB);
+        });
 
       const subeventosMapeados: SubEventoResumen[] = subeventos.map((sub) => ({
         idSubEvento: sub.idSubEvento,
@@ -143,19 +150,32 @@ export class OrganizadorService {
       );
 
       return {
-        idEvento: evento.idEvento,
-        nombre: evento.nombre,
-        descripcion: evento.descripcion,
-        justificacion: evento.justificacion,
-        poster: evento.poster,
-        posterUrl: this.obtenerPosterUrl(evento.poster),
-        idAlcance: evento.idAlcance,
-        idEstadoEvento: evento.idEstadoEvento,
-        cupoMaximo,
-        boletosEmitidos,
-        subeventos: subeventosMapeados,
+        claveOrden: calcularClaveOrdenProximo(subeventosMapeados, ahoraCdmx),
+        item: {
+          idEvento: evento.idEvento,
+          nombre: evento.nombre,
+          descripcion: evento.descripcion,
+          justificacion: evento.justificacion,
+          poster: evento.poster,
+          posterUrl: this.obtenerPosterUrl(evento.poster),
+          idAlcance: evento.idAlcance,
+          idEstadoEvento: evento.idEstadoEvento,
+          cupoMaximo,
+          boletosEmitidos,
+          subeventos: subeventosMapeados,
+        },
       };
     });
+
+    elementos.sort((a, b) => {
+      const cmp = compararClavesOrdenProximo(a.claveOrden, b.claveOrden);
+      if (cmp !== 0) {
+        return cmp;
+      }
+      return b.item.idEvento - a.item.idEvento;
+    });
+
+    return elementos.map(({ item }) => item);
   }
 
   async obtenerDetalleOrganizador(

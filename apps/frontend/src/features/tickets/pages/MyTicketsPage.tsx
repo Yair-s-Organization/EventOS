@@ -12,6 +12,11 @@ import { DateRangeFields } from "../../../components/molecules/DateRangeFields";
 import { ClearFiltersButton } from "../../../components/molecules/ClearFiltersButton";
 import { FeedbackNotice } from "../../../components/molecules/FeedbackNotice";
 import { PageState } from "../../../components/organisms/PageState/PageState";
+import {
+  calcularClaveOrdenProximo,
+  compararClavesOrdenProximo,
+  obtenerAhoraCdmx,
+} from "../../../utils/fechaHorario";
 
 export interface TicketItem extends Omit<TicketCardProps, "onViewQr" | "onViewDetails" | "onCancel"> {
   id: string;
@@ -56,27 +61,52 @@ export function MyTicketsPage({ tickets, onCancelTicket, onViewQr }: MyTicketsPa
 
   const filteredTickets = useMemo(() => {
     const normalizedSearch = normalize(search.trim());
-    const now = new Date();
-    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-    const currentTime = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+    const ahoraCdmx = obtenerAhoraCdmx();
+    const today = ahoraCdmx.fechaHoy;
+    const currentTime = ahoraCdmx.horaActual.slice(0, 5);
+    const currentYear = Number(today.slice(0, 4));
+    const currentMonthNum = Number(today.slice(5, 7));
     const currentMonth = today.slice(0, 7);
-    const nextMonthDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-    const nextMonth = `${nextMonthDate.getFullYear()}-${String(nextMonthDate.getMonth() + 1).padStart(2, "0")}`;
+    const nextMonthDate = new Date(Date.UTC(currentYear, currentMonthNum, 1));
+    const nextMonth = nextMonthDate.toISOString().slice(0, 7);
+    const statusPriority: Record<TicketStatus, number> = {
+      active: 0,
+      "checked-in": 1,
+      cancelled: 2,
+    };
 
-    return tickets.filter((ticket) => {
-      const searchable = normalize([ticket.eventName, ticket.subEventName ?? ""].join(" "));
-      const dateIso = ticket.dateIso ?? "";
-      const matchesPeriod = period === ""
-        || (period === "upcoming" && (dateIso > today || (dateIso === today && ticket.startTime >= currentTime)))
-        || (period === "current-month" && dateIso.slice(0, 7) === currentMonth)
-        || (period === "next-month" && dateIso.slice(0, 7) === nextMonth)
-        || (period === "custom" && Boolean(dateIso) && (!rangeStart || dateIso >= rangeStart) && (!rangeEnd || dateIso <= rangeEnd));
+    return tickets
+      .filter((ticket) => {
+        const searchable = normalize([ticket.eventName, ticket.subEventName ?? ""].join(" "));
+        const dateIso = ticket.dateIso ?? "";
+        const matchesPeriod = period === ""
+          || (period === "upcoming" && (dateIso > today || (dateIso === today && ticket.startTime >= currentTime)))
+          || (period === "current-month" && dateIso.slice(0, 7) === currentMonth)
+          || (period === "next-month" && dateIso.slice(0, 7) === nextMonth)
+          || (period === "custom" && Boolean(dateIso) && (!rangeStart || dateIso >= rangeStart) && (!rangeEnd || dateIso <= rangeEnd));
 
-      return (!normalizedSearch || searchable.includes(normalizedSearch))
-        && matchesPeriod
-        && (!venue || ticket.venue === venue)
-        && (!status || ticket.status === status);
-    });
+        return (!normalizedSearch || searchable.includes(normalizedSearch))
+          && matchesPeriod
+          && (!venue || ticket.venue === venue)
+          && (!status || ticket.status === status);
+      })
+      .sort((a, b) => {
+        const cmp = compararClavesOrdenProximo(
+          calcularClaveOrdenProximo(
+            [{ fecha: a.dateIso, horaInicio: a.startTime, horaFin: a.endTime }],
+            ahoraCdmx,
+          ),
+          calcularClaveOrdenProximo(
+            [{ fecha: b.dateIso, horaInicio: b.startTime, horaFin: b.endTime }],
+            ahoraCdmx,
+          ),
+        );
+        if (cmp !== 0) {
+          return cmp;
+        }
+        const prioCmp = statusPriority[a.status] - statusPriority[b.status];
+        return prioCmp !== 0 ? prioCmp : Number(b.id) - Number(a.id);
+      });
   }, [tickets, search, period, rangeStart, rangeEnd, venue, status]);
 
   const selectedTicket = tickets.find((ticket) => ticket.id === selectedTicketId);

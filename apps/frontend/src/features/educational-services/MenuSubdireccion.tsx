@@ -1,9 +1,34 @@
-import Button from "../../components/atoms/Button/Button";
+import { useEffect, useState } from "react";
 import { SeccionSolicitudesPendientes } from "../../components/organisms/MenuSubdireccion/SeccionSolicitudesPendientes";
 import { AgendaRecinto } from "../../components/organisms/AgendaRecinto/AgendaRecinto";
 import { CardMetricas } from "../../components/molecules/CardMetricas";
+import { API_BASE_URL } from "../../lib/apiClient";
 
 export function MenuSubdireccion() {
+
+  useEffect(() => {
+    const fetchCuentasPendientes = async () => {
+      try {
+        const usuario = JSON.parse(localStorage.getItem("usuario") || "{}");
+        const token = usuario.token || localStorage.getItem("token") || "";
+        const res = await fetch(`${API_BASE_URL}/usuarios/verificaciones/pendientes`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data)) {
+            //Cuentas por verificar
+          }
+        }
+      } catch {
+        // En caso de fallo de red, se mantiene en 0
+      }
+    };
+    fetchCuentasPendientes();
+  }, []);
+
   return (
     <section className="space-y-5 ">
       <h1 className="font-merriweather font-bold text-[36px]">
@@ -31,12 +56,12 @@ export function MenuSubdireccion() {
       <br />
       <div
         id="contenedorAgendaRecintos"
-        className="grid grid-cols-1 items-start justify-items-center gap-[60px] md:grid-cols-2">
-        <div className="flex flex-col gap-[60px]">
+        className="grid grid-cols-1 items-start justify-items-center gap-15 md:grid-cols-2">
+        <div className="flex flex-col gap-15">
           <AgendaRecinto titulo="Auditorio" />
           <AgendaRecinto titulo="Laboratorio 2104" />
         </div>
-        <div className="flex flex-col gap-[60px]">
+        <div className="flex flex-col gap-15">
           <AgendaRecinto titulo="Sala 14" />
           <AgendaRecinto titulo="Laboratorio 2105" />
         </div>

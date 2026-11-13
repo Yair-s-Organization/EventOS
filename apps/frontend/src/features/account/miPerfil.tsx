@@ -8,6 +8,7 @@ export function Perfil() {
     loading,
     error,
     esVerificado,
+    solicitudPendiente,
     datosDinamicos,
     esPersonalDirectivoOAdmin,
     handleCerrarSesion,
@@ -26,16 +27,30 @@ export function Perfil() {
   return (
     <div className="space-y-6 font-merriweather text-gray-800">
       {!esVerificado && !esPersonalDirectivoOAdmin && (
-        <div className="bg-[#fff7d6] border-y border-[#fce5a8] px-7 py-3.5 flex items-center justify-between shadow-sm -mx-7 -mt-8 mb-8">
-          <p className="text-sm font-medium text-gray-900">
-            Verifica tu cuenta para realizar una solicitud
-          </p>
-          <Button text="Verificar Cuenta" type="button" onClick={handleIrAVerificacion} className="text-xs px-4 py-2 rounded-md transition-colors shadow"/>
-        </div>
+        solicitudPendiente ? (
+          <div className="bg-[#fff7d6] border-y border-[#fce5a8] px-7 py-3.5 flex items-center justify-between shadow-sm -mx-7 -mt-8 mb-8">
+            <div className="flex items-center gap-2.5">
+              <span className="inline-block h-2.5 w-2.5 rounded-full bg-amber-500 animate-pulse" />
+              <p className="text-sm font-medium text-amber-900">
+                Tu solicitud de verificación se encuentra en revisión por parte de Subdirección
+              </p>
+            </div>
+            <span className="text-xs px-3 py-1 rounded-full font-semibold bg-amber-100 text-amber-900 border border-amber-300">
+              En revisión
+            </span>
+          </div>
+        ) : (
+          <div className="bg-[#fff7d6] border-y border-[#fce5a8] px-7 py-3.5 flex items-center justify-between shadow-sm -mx-7 -mt-8 mb-8">
+            <p className="text-sm font-medium text-gray-900">
+              Verifica tu cuenta para realizar una solicitud
+            </p>
+            <Button text="Verificar Cuenta" type="button" onClick={handleIrAVerificacion} className="text-xs px-4 py-2 rounded-md transition-colors shadow"/>
+          </div>
+        )
       )}
 
       <div className="mb-2">
-        <button onClick={handleVolverAlMenu} className="flex items-center text-sm font-semibold text-gray-700 hover:text-gray-900 transition-colors">
+        <button onClick={handleVolverAlMenu} className="flex items-center text-sm font-semibold text-gray-700 hover:text-gray-900 transition-colors cursor-pointer">
           <span className="font-merriweather text-[16px] mr-3">← Volver al menú</span>
         </button>
       </div>
@@ -51,9 +66,15 @@ export function Perfil() {
               <span className={`px-3 py-1 text-[14px] font-semibold rounded-full border ${
                 esVerificado 
                   ? "bg-green-50 text-green-700 border-green-200" 
-                  : "bg-[#fff7d6] text-amber-800 border-[#fce5a8]"
+                  : solicitudPendiente
+                  ? "bg-[#fff7d6] text-amber-800 border-[#fce5a8]"
+                  : "bg-gray-100 text-gray-700 border-gray-300"
               }`}>
-                {esVerificado ? "Verificado" : "Sin verificar"}
+                {esVerificado
+                  ? "Verificado"
+                  : solicitudPendiente
+                  ? "En revisión"
+                  : "Sin verificar"}
               </span>
             </div>
           )}

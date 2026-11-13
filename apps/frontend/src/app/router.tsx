@@ -13,6 +13,8 @@ import { MenuAsistente } from "../features/assistant/menu-asistente";
 import { GestionEspacios } from "../features/admin/Gestion-Espacios";
 import { GestionEquipos } from "../features/admin/Gestion-Equipos";
 import { MenuSubdireccion } from "../features/educational-services/MenuSubdireccion";
+import { ListaVerificaciones } from "../features/educational-services/ListaVerificaciones";
+import { DetalleVerificacion } from "../features/educational-services/DetalleVerificacion";
 import { Perfil } from "../features/account/miPerfil";
 import { Verificacion } from "../features/account/verificacion";
 import { JefeDepartamento } from "../features/admin/JefeDepartamento";
@@ -180,6 +182,8 @@ export function AppRouter() {
               path="/subdireccion/solicitudes-aprobadas"
               element={<SolicitudesAprobadas />}
             />
+            <Route path="/subdireccion/verificaciones" element={<ListaVerificaciones />}/>
+            <Route path="/subdireccion/verificaciones/:id" element={<DetalleVerificacion />}/>
           </Route>
         </Route>
 

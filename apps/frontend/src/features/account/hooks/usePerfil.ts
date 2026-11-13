@@ -11,6 +11,8 @@ export interface PerfilData {
   tipoUsuario: string;
   fechaUltimaVerificacion: string | null;
   verificacionVigente: boolean;
+  solicitudPendiente?: boolean;
+  estadoSolicitud?: "Sin solicitud" | "Pendiente" | "Verificado";
 }
 
 export function usePerfil() {
@@ -58,6 +60,7 @@ export function usePerfil() {
   };
 
   const esVerificado = perfil?.cuenta === "Verificado" || perfil?.verificacionVigente === true;
+  const solicitudPendiente = perfil?.solicitudPendiente === true || perfil?.estadoSolicitud === "Pendiente";
 
   const obtenerRolYDinamicas = () => {
     const tipoCuenta = (perfil?.tipoCuenta || "").toLowerCase().trim();
@@ -108,6 +111,7 @@ export function usePerfil() {
     loading,
     error,
     esVerificado,
+    solicitudPendiente,
     datosDinamicos,
     esPersonalDirectivoOAdmin,
     handleCerrarSesion,

@@ -18,6 +18,11 @@ import { EventoPersonalLogisticaEntity } from '../../eventos/entities/eventoPers
 import { PonenteEntity } from '../../eventos/entities/ponente.entity';
 import { UsuarioEntity } from '../../auth/entities/usuario.entity';
 import { StorageService } from '../../../common/storage/storage.service';
+import {
+    calcularClaveOrdenProximo,
+    compararClavesOrdenProximo,
+    obtenerAhoraCdmx,
+} from '../../../common/utils/fecha-cdmx.util';
 
 @Injectable()
 export class ReservationsService {
@@ -466,12 +471,26 @@ export class ReservationsService {
             });
         }
 
-        // Ordenar el historial por fechaGeneracion
+        // Ordenar por fecha de evento más próxima de hoy en adelante (pasados al final)
+        const ahoraCdmx = obtenerAhoraCdmx();
+        const prioridadEstado: Record<number, number> = {
+            [EstadoBoleto.VALIDO]: 0,
+            [EstadoBoleto.UTILIZADO]: 1,
+            [EstadoBoleto.CANCELADO]: 2,
+        };
+
         misBoletos.sort((a, b) => {
-            const tiempoA = new Date(a.fechaGeneracion).getTime();
-            const tiempoB = new Date(b.fechaGeneracion).getTime();
-            if (tiempoB !== tiempoA) {
-                return tiempoB - tiempoA;
+            const cmp = compararClavesOrdenProximo(
+                calcularClaveOrdenProximo([a], ahoraCdmx),
+                calcularClaveOrdenProximo([b], ahoraCdmx),
+            );
+            if (cmp !== 0) {
+                return cmp;
+            }
+            const prioA = prioridadEstado[a.estadoBoleto] ?? 3;
+            const prioB = prioridadEstado[b.estadoBoleto] ?? 3;
+            if (prioA !== prioB) {
+                return prioA - prioB;
             }
             return b.idBoleto - a.idBoleto;
         });

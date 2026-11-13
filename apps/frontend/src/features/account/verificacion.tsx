@@ -10,6 +10,7 @@ export function Verificacion() {
     formData,
     loading,
     error,
+    solicitudPendiente,
     handleTipoPerfilChange,
     handleFileChange,
     handleInfoAdicionalChange,
@@ -39,12 +40,37 @@ export function Verificacion() {
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-600 p-3 rounded text-sm w-full">
+        <div className="bg-red-50 border border-red-200 text-red-600 p-3 rounded text-sm w-full font-merriweather">
           {error}
         </div>
       )}
 
-      <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-8 max-w-4xl mx-auto">
+      {solicitudPendiente ? (
+        <div className="bg-white rounded-lg border border-amber-200 shadow-sm p-8 max-w-4xl mx-auto space-y-4">
+          <div className="bg-[#fff7d6] border border-[#fce5a8] p-5 rounded-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="space-y-1">
+              <p className="font-semibold text-amber-900 text-base">
+                Solicitud en proceso de revisión
+              </p>
+              <p className="text-sm text-amber-800">
+                Tu solicitud de verificación fue enviada exitosamente y actualmente se encuentra en revisión por parte de Subdirección. Te notificaremos por correo electrónico una vez que sea evaluada.
+              </p>
+            </div>
+            <span className="text-xs px-3 py-1.5 rounded-full font-semibold bg-amber-200 text-amber-900 shrink-0">
+              En revisión
+            </span>
+          </div>
+          <div className="pt-2">
+            <Button
+              text="Volver al perfil"
+              type="button"
+              onClick={handleVolverAlPerfil}
+              className="px-6 py-2.5 rounded-md text-sm shadow transition-colors"
+            />
+          </div>
+        </div>
+      ) : (
+        <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-8 max-w-4xl mx-auto">
         <form onSubmit={handleSubmit} className="space-y-6">
           
           <FormField label="Tipo de perfil" htmlFor="tipoPerfil">
@@ -111,6 +137,7 @@ export function Verificacion() {
           </div>
         </form>
       </div>
+      )}
     </div>
   );
 }

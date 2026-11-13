@@ -6,6 +6,11 @@ import Button from "../../components/atoms/Button/Button";
 import { useNavigate } from "react-router";
 import { API_BASE_URL } from "../../lib/apiClient";
 import Select from "../../components/atoms/Select/Select";
+import {
+  calcularClaveOrdenProximo,
+  compararClavesOrdenProximo,
+  obtenerAhoraCdmx,
+} from "../../utils/fechaHorario";
 
 function normalizarTexto(texto: string): string {
   return texto
@@ -82,26 +87,35 @@ export function MisEventos() {
   const [filtroFecha, setFiltroFecha] = useState("");
   const [filtroRecinto, setFiltroRecinto] = useState("");
   const busquedaNormalizada = normalizarTexto(busqueda.trim());
-  const solicitudesFiltradas = eventos.filter((evento) => {
-    const listaSubeventos = evento.subeventos || [];
-    const nombreFiltrado =
-      !busquedaNormalizada ||
-      normalizarTexto(evento.nombre).includes(busquedaNormalizada);
-    const recintoFiltrado =
-      !filtroRecinto ||
-      listaSubeventos.some(
-        (sub) =>
-          normalizarTexto(sub.nombreRecinto ?? "") ===
-          normalizarTexto(filtroRecinto),
-      );
-    const fechaFiltrada =
-      !filtroFecha ||
-      listaSubeventos.some((sub) =>
-        coincideFiltroFecha(sub.fecha, filtroFecha),
-      );
+  const ahoraCdmx = obtenerAhoraCdmx();
+  const solicitudesFiltradas = eventos
+    .filter((evento) => {
+      const listaSubeventos = evento.subeventos || [];
+      const nombreFiltrado =
+        !busquedaNormalizada ||
+        normalizarTexto(evento.nombre).includes(busquedaNormalizada);
+      const recintoFiltrado =
+        !filtroRecinto ||
+        listaSubeventos.some(
+          (sub) =>
+            normalizarTexto(sub.nombreRecinto ?? "") ===
+            normalizarTexto(filtroRecinto),
+        );
+      const fechaFiltrada =
+        !filtroFecha ||
+        listaSubeventos.some((sub) =>
+          coincideFiltroFecha(sub.fecha, filtroFecha),
+        );
 
-    return nombreFiltrado && recintoFiltrado && fechaFiltrada;
-  });
+      return nombreFiltrado && recintoFiltrado && fechaFiltrada;
+    })
+    .sort((a, b) => {
+      const cmp = compararClavesOrdenProximo(
+        calcularClaveOrdenProximo(a.subeventos ?? [], ahoraCdmx),
+        calcularClaveOrdenProximo(b.subeventos ?? [], ahoraCdmx),
+      );
+      return cmp !== 0 ? cmp : b.idEvento - a.idEvento;
+    });
 
   useEffect(() => {
     const controller = new AbortController();

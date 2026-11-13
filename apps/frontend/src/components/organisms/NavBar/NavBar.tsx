@@ -26,6 +26,7 @@ const linksByRole = {
     { label: "Mis eventos", to: "/organizador/mis-eventos" },
     { label: "Solicitudes Aprobadas", to: "/subdireccion/solicitudes-aprobadas" },
     { label: "Solicitudes Pendientes", to: "/subdireccion/lista-solicitudes" },
+    { label: "Verificación de cuentas", to: "/subdireccion/verificaciones" },
     { label: "Solicitar evento", to: "/solicitud-evento" },
   ],
 } satisfies Record<NavbarProps["userRole"], { label: string; to: string }[]>;

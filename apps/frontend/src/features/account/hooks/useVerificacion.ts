@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { API_BASE_URL } from "../../../lib/apiClient";
 
@@ -11,11 +11,36 @@ export function useVerificacion() {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [solicitudPendiente, setSolicitudPendiente] = useState(false);
+  const [comprobandoEstado, setComprobandoEstado] = useState(true);
 
   const getToken = () => {
     const usuario = JSON.parse(localStorage.getItem("usuario") || "{}");
     return usuario.token || localStorage.getItem("token") || "";
   };
+
+  useEffect(() => {
+    const checkEstado = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/usuarios/perfil`, {
+          headers: {
+            Authorization: `Bearer ${getToken()}`,
+          },
+        });
+        if (response.ok) {
+          const data = await response.json();
+          if (data.solicitudPendiente === true || data.estadoSolicitud === "Pendiente") {
+            setSolicitudPendiente(true);
+          }
+        }
+      } catch {
+
+      } finally {
+        setComprobandoEstado(false);
+      }
+    };
+    checkEstado();
+  }, []);
 
   const handleTipoPerfilChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setTipoPerfil(e.target.value);
@@ -79,6 +104,8 @@ export function useVerificacion() {
     formData,
     loading,
     error,
+    solicitudPendiente,
+    comprobandoEstado,
     handleTipoPerfilChange,
     handleFileChange,
     handleInfoAdicionalChange,
