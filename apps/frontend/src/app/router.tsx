@@ -42,6 +42,8 @@ import { PanelEventosAsignados } from "../features/logistics/PanelEventosAsignad
 import { ControlAcceso } from "../features/logistics/ControlAcceso";
 import { EscanearBoleto } from "../features/logistics/EscanearBoleto";
 
+import { AgregarLogistica } from "../features/organizer/components/AgregarLogistica";
+
 export function AppRouter() {
   return (
     <BrowserRouter>
@@ -69,7 +71,7 @@ export function AppRouter() {
         </Route>
 
         {/*Solicitud evento para subdirección y asistentes (Organizador)*/}
-        <Route element={<ProtectedRoute allowedRoles={["Subdirección","Asistente","Usuario Externo","Usuario Interno",]}/>}>
+        <Route element={<ProtectedRoute allowedRoles={["Subdirección", "Asistente", "Usuario Externo", "Usuario Interno",]} />}>
           <Route element={<DashboardLayout />}>
             <Route path="/solicitud-evento" element={<SolicitudEvento />} />
             <Route path="/organizador/mis-eventos" element={<MisEventos />} />
@@ -97,6 +99,11 @@ export function AppRouter() {
               path="/organizador/editar-evento-subeventos/:idEvento"
               element={<EditarEventoConSubeventos />}
             />
+
+            <Route
+              path="/organizador/administrar-evento/:idEvento/agregar-logistica"
+              element={<AgregarLogistica />}
+            />
           </Route>
         </Route>
 
@@ -120,7 +127,7 @@ export function AppRouter() {
 
         {/* Rutas para asistente*/}
         <Route
-          element={<ProtectedRoute allowedRoles={["Asistente", "Usuario Externo", "Usuario Interno"]}/>}>
+          element={<ProtectedRoute allowedRoles={["Asistente", "Usuario Externo", "Usuario Interno"]} />}>
           <Route element={<DashboardLayout />}>
             <Route path="/menu-asistente" element={<MenuAsistente />} />
             <Route path="/asistente/cartelera" element={<EventCatalogPage />} />
