@@ -7,6 +7,8 @@ export interface UsuarioSistema {
   nombre: string;
   correo: string;
   rol: string;
+  estatus: boolean;
+  estado?: "Activo" | "Inactivo";
 }
 
 export function useGestionUsuarios() {
@@ -30,10 +32,17 @@ export function useGestionUsuarios() {
     setLoading(true);
     try {
       const params = new URLSearchParams();
+      
       if (busqueda.trim()) {
         params.append("buscar", busqueda.trim());
       }
-      if (filtroRol !== "Todos") {
+
+      // Si el filtro seleccionado es Activo o Inactivo, lo mandamos como 'estado'
+      if (filtroRol === "Activo" || filtroRol === "Inactivo") {
+        params.append("estado", filtroRol);
+      } 
+      // Si es un rol específico diferente de Todos, lo mandamos como 'rol'
+      else if (filtroRol !== "Todos") {
         params.append("rol", filtroRol);
       }
 
@@ -66,7 +75,7 @@ export function useGestionUsuarios() {
     return () => clearTimeout(delayDebounceFn);
   }, [busqueda, filtroRol, cargarUsuarios]);
 
-  const abrirModalEliminar = (usuario: UsuarioSistema) => {
+  const abrirModalCambioEstatus = (usuario: UsuarioSistema) => {
     setUsuarioSeleccionado(usuario);
     setModalConfirmacion(true);
   };
@@ -79,30 +88,50 @@ export function useGestionUsuarios() {
     setModalExito(false);
   };
 
-  const confirmarEliminacion = async () => {
+  const confirmarCambioEstatus = async () => {
     if (!usuarioSeleccionado) return;
 
     try {
-      const response = await fetch(`${API_BASE_URL}/usuarios/admin/cuentas/${usuarioSeleccionado.idUsuario}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${getToken()}`,
-        },
-      });
+      const nuevoEstatus = !usuarioSeleccionado.estatus;
+      const response = await fetch(`${API_BASE_URL}/usuarios/admin/cuentas/${usuarioSeleccionado.idUsuario}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${getToken()}`,
+          },
+          body: JSON.stringify({ estatus: nuevoEstatus }),
+        }
+      );
 
       const data = await response.json().catch(() => ({}));
 
       if (!response.ok) {
-        throw new Error(data.message || "No se pudo realizar la operación.");
+        throw new Error(data.message || "No se pudo actualizar el estado de la cuenta.");
       }
 
-      setUsuarios((prev) => prev.filter((u) => u.idUsuario !== usuarioSeleccionado.idUsuario));
+      setUsuarios((prev) =>
+        prev.map((u) =>
+          u.idUsuario === usuarioSeleccionado.idUsuario
+            ? {
+                ...u,
+                estatus: nuevoEstatus,
+                estado: nuevoEstatus ? "Activo" : "Inactivo",
+              }
+            : u
+        )
+      );
       setModalConfirmacion(false);
-      setMensajeExito(`Se ha eliminado el usuario ${usuarioSeleccionado.nombre} exitosamente.`);
+      setMensajeExito(
+        data.mensaje ||
+          (nuevoEstatus
+            ? `Se ha habilitado la cuenta de ${usuarioSeleccionado.nombre} exitosamente.`
+            : `Se ha inhabilitado la cuenta de ${usuarioSeleccionado.nombre} exitosamente.`)
+      );
       setModalExito(true);
     } catch (err: any) {
       setModalConfirmacion(false);
-      alert(err.message || "Ocurrió un error al intentar eliminar el usuario.");
+      alert(err.message || "Ocurrió un error al actualizar el estado de la cuenta.");
     }
   };
 
@@ -121,10 +150,10 @@ export function useGestionUsuarios() {
     modalExito,
     usuarioSeleccionado,
     mensajeExito,
-    abrirModalEliminar,
+    abrirModalCambioEstatus,
     cerrarModalConfirmacion,
     cerrarModalExito,
-    confirmarEliminacion,
+    confirmarCambioEstatus,
     handleVolverAlMenu,
   };
 }

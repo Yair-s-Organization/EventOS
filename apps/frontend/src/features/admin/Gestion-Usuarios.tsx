@@ -15,10 +15,10 @@ export function GestionUsuarios() {
     modalExito,
     usuarioSeleccionado,
     mensajeExito,
-    abrirModalEliminar,
+    abrirModalCambioEstatus,
     cerrarModalConfirmacion,
     cerrarModalExito,
-    confirmarEliminacion,
+    confirmarCambioEstatus,
     handleVolverAlMenu,
   } = useGestionUsuarios();
 
@@ -56,6 +56,8 @@ export function GestionUsuarios() {
               <option value="Externo">Externo</option>
               <option value="Empresa">Empresa</option>
               <option value="No verificado">No verificado</option>
+              <option value="Activo">Activo</option>
+              <option value="Inactivo">Inactivo</option>
             </select>
           </div>
         </div>
@@ -68,17 +70,18 @@ export function GestionUsuarios() {
               <th className="py-3 px-4">Nombre</th>
               <th className="py-3 px-4">Correo</th>
               <th className="py-3 px-4">Rol</th>
-              <th className="py-3 px-4 text-right">Acción</th>
+              <th className="py-3 px-4 text-center">Estado</th>
+              <th className="py-3 px-4 text-center">Acción</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={4} className="text-center py-6 text-gray-500">Cargando cuentas...</td>
+                <td colSpan={5} className="text-center py-6 text-gray-500">Cargando cuentas...</td>
               </tr>
             ) : usuarios.length === 0 ? (
               <tr>
-                <td colSpan={4} className="text-center py-6 text-gray-500">No se encontraron registros con este criterio.</td>
+                <td colSpan={5} className="text-center py-6 text-gray-500">No se encontraron registros con este criterio.</td>
               </tr>
             ) : (
               usuarios.map((usuario) => (
@@ -86,8 +89,25 @@ export function GestionUsuarios() {
                   <td className="py-3 px-4">{usuario.nombre}</td>
                   <td className="py-3 px-4">{usuario.correo}</td>
                   <td className="py-3 px-4">{usuario.rol}</td>
-                  <td className="py-3 px-4 text-right">
-                    <Button text="Eliminar" type="button" variant="primary" onClick={() => abrirModalEliminar(usuario)} className="text-xs px-4 py-1.5 rounded-md shadow"/>
+                  <td className="py-3 px-4 text-center">
+                    <span
+                      className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-semibold ${
+                        usuario.estatus
+                          ? "bg-green-100 text-green-800 border border-green-200"
+                          : "bg-red-100 text-red-800 border border-red-200"
+                      }`}
+                    >
+                      {usuario.estatus ? "Activo" : "Inactivo"}
+                    </span>
+                  </td>
+                  <td className="py-3 px-4 text-center">
+                    <Button
+                      text={usuario.estatus ? "Inhabilitar" : "Habilitar"}
+                      type="button"
+                      variant={usuario.estatus ? "outline" : "primary"}
+                      onClick={() => abrirModalCambioEstatus(usuario)}
+                      className="text-xs px-4 py-1.5 rounded-md shadow-sm"
+                    />
                   </td>
                 </tr>
               ))
@@ -100,14 +120,29 @@ export function GestionUsuarios() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6 space-y-6 font-merriweather animate-fadeIn">
             <h2 className="text-xl font-bold text-gray-900">
-              ¿Eliminar cuenta de usuario?
+              {usuarioSeleccionado.estatus
+                ? "¿Inhabilitar cuenta de usuario?"
+                : "¿Habilitar cuenta de usuario?"}
             </h2>
             <p className="text-sm text-gray-700">
-              ¿Desea eliminar al usuario <span className="font-semibold">{usuarioSeleccionado.nombre}</span>?
+              ¿Desea {usuarioSeleccionado.estatus ? "inhabilitar" : "habilitar"} al usuario{" "}
+              <span className="font-semibold">{usuarioSeleccionado.nombre}</span>?
             </p>
             <div className="flex justify-end space-x-3 pt-2">
-              <Button text="Cancelar" type="button" variant="outline" onClick={cerrarModalConfirmacion} className="px-4 py-2 text-xs rounded-md"/>
-              <Button text="Aceptar" type="button" variant="primary" onClick={confirmarEliminacion} className="px-4 py-2 text-xs rounded-md"/>
+              <Button
+                text="Cancelar"
+                type="button"
+                variant="outline"
+                onClick={cerrarModalConfirmacion}
+                className="px-4 py-2 text-xs rounded-md"
+              />
+              <Button
+                text="Aceptar"
+                type="button"
+                variant="primary"
+                onClick={confirmarCambioEstatus}
+                className="px-4 py-2 text-xs rounded-md"
+              />
             </div>
           </div>
         </div>
@@ -117,11 +152,17 @@ export function GestionUsuarios() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6 space-y-6 font-merriweather animate-fadeIn">
             <h2 className="text-xl font-bold text-gray-900">
-              Usuario eliminado
+              Estado de cuenta actualizado
             </h2>
             <p className="text-sm text-gray-700">{mensajeExito}</p>
             <div className="flex justify-end pt-2">
-              <Button text="Aceptar" type="button" variant="primary" onClick={cerrarModalExito} className="px-5 py-2 text-xs rounded-md"/>
+              <Button
+                text="Aceptar"
+                type="button"
+                variant="primary"
+                onClick={cerrarModalExito}
+                className="px-5 py-2 text-xs rounded-md"
+              />
             </div>
           </div>
         </div>
