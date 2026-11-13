@@ -1145,25 +1145,16 @@ export function EditarEventoConSubeventos() {
                           ? "Máximo 15 días a partir de la fecha de inicio"
                           : undefined
                       }
-<<<<<<< HEAD
                       errorMessage={errorAct?.fecha}
                     >
-                      <Input
-=======
-                      errorMessage={errorAct?.fecha}>
                       <DateInput
->>>>>>> origin/develop
                         id={`selectFecha-${indice}`}
                         min={minFecha}
                         max={maxFecha}
                         value={actividad.fecha}
                         hasError={Boolean(errorAct?.fecha)}
                         onValueChange={(fecha) =>
-                          actualizarActividad(
-                            actividad.llave,
-                            "fecha",
-                            fecha,
-                          )
+                          actualizarActividad(actividad.llave, "fecha", fecha)
                         }
                       />
                     </FormField>
