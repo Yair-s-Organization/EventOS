@@ -53,6 +53,7 @@ export function AppRouter() {
         <Route element={<MainLayout />}>
           <Route path="/login" element={<LoginForm />} />
           <Route path="/registro" element={<Registro />} />
+          <Route path="/activar-logistica" element={<Registro />} />
           <Route path="/confirmar-registro" element={<ConfirmarRegistro />} />
           <Route path="/detalles-solicitud/" element={<DetallesSolicitud />} />
           <Route path="/cartelera" element={<EventCatalogPage />} />

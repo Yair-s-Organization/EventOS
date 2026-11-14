@@ -142,7 +142,7 @@ export function AgregarLogistica() {
 
   const enviarCorreoLogistica = async (
     card: PersonalLogisticaCard,
-  ): Promise<boolean> => {
+  ): Promise<"registrado" | "no_registrado" | "error"> => {
     const correoLimpio = card.correo.trim().toLowerCase();
 
     if (!correoLimpio) {
@@ -153,18 +153,18 @@ export function AgregarLogistica() {
             : item,
         ),
       );
-      return false;
+      return "error";
     }
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correoLimpio)) {
       setPersonalList((prev) =>
         prev.map((item) =>
           item.id === card.id
-            ? { ...item, error: "El formato del correo eléctronico es válido." }
+            ? { ...item, error: "Advertencia: Ingrese un correo válido." }
             : item,
         ),
       );
-      return false;
+      return "error";
     }
 
     if (
@@ -183,7 +183,7 @@ export function AgregarLogistica() {
             : item,
         ),
       );
-      return false;
+      return "error";
     }
 
     setPersonalList((prev) =>
@@ -219,9 +219,10 @@ export function AgregarLogistica() {
 
       if (respuesta.asignadoDirecto) {
         setModalYaRegistrado(true);
+        return "registrado";
       }
 
-      return true;
+      return "no_registrado";
     } catch (err) {
       const mensajeError =
         err instanceof Error
@@ -234,7 +235,7 @@ export function AgregarLogistica() {
             : item,
         ),
       );
-      return false;
+      return "error";
     }
   };
 
@@ -299,17 +300,23 @@ export function AgregarLogistica() {
 
     setGuardandoTodo(true);
     let todosExitosos = true;
+    let huboRegistrados = agregadosEnTarjetas > 0;
+    let huboNoRegistrados = false;
 
     for (const card of pendientes) {
-      const exito = await enviarCorreoLogistica(card);
-      if (!exito) {
+      const resultado = await enviarCorreoLogistica(card);
+      if (resultado === "error") {
         todosExitosos = false;
+      } else if (resultado === "registrado") {
+        huboRegistrados = true;
+      } else {
+        huboNoRegistrados = true;
       }
     }
 
     setGuardandoTodo(false);
 
-    if (todosExitosos) {
+    if (todosExitosos && huboRegistrados && !huboNoRegistrados) {
       setModalExito(true);
     }
   };
@@ -489,14 +496,16 @@ export function AgregarLogistica() {
           {modalAdvertencia && (
             <Modal
               mostrarModal={modalAdvertencia}
-              titulo="Advertencia"
+              titulo="Enviar invitación de registro"
               contenido=""
               cerrarModal={() => setModalAdvertencia(false)}
             >
               <p>
-                El correo <strong>{cardParaRegistro?.correo}</strong> tendrá un
-                permiso de acceso temporal a Event-OS hasta que su evento
-                finalice, después de eso su acceso a la plataforma caducara.
+                El correo <strong>{cardParaRegistro?.correo}</strong> aún no
+                tiene una cuenta en EventOS. Se le enviará una invitación por
+                correo (vigente por 48 horas) para que complete su registro y
+                quede asignado como Personal de Logística de este evento. Sus
+                permisos de logística aplicarán únicamente durante este evento.
               </p>
               <div
                 id="contenedorBotonesRegistro"
@@ -523,14 +532,15 @@ export function AgregarLogistica() {
           {modalResgistro && (
             <Modal
               mostrarModal={modalResgistro}
-              titulo="Activación de acceso"
-              contenido="El usuario ha sido registrado exitosamente de forma temporal"
+              titulo="Invitación enviada"
+              contenido=""
               cerrarModal={() => setModalRegistro(false)}
             >
               <p>
-                Se envió un correo electrónico a{" "}
-                <strong>{cardParaRegistro?.correo}</strong>, con un token de
-                acceso a la plataforma.
+                Se envió un enlace de registro a{" "}
+                <strong>{cardParaRegistro?.correo}</strong> válido por 48 horas.
+                En cuanto complete su registro, quedará asignado automáticamente
+                al equipo de logística de tu evento.
               </p>
               <div
                 id="contenedorBotonesRegistro"

@@ -215,10 +215,12 @@ export class OrganizadorController {
     @Req() req: any,
   ) {
     const idUsuario = this.obtenerIdUsuarioAutenticado(req);
+    const rolActor = this.obtenerRolUsuarioAutenticado(req);
     return await this.organizadorService.agregarPersonalLogistica(
       idEvento,
       idUsuario,
       dto,
+      rolActor,
     );
   }
 

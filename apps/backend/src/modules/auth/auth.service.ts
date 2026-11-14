@@ -9,7 +9,6 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
-import { resolveMx } from 'dns/promises';
 import { UsuarioEntity } from './entities/usuario.entity';
 import {
   TipoCuentaUsuario,
@@ -22,11 +21,16 @@ import { ActivarCuentaLogisticaDto } from './dto/activarCuentaLogistica.dto';
 import { SolicitarRecuperacionDto } from './dto/solicitarRecuperacion.dto';
 import { RestablecerContrasenaDto } from './dto/restablecerContrasena.dto';
 import { MailService } from '../reservas/services/mail.service';
+import {
+  EMAIL_REGEX,
+  verificarDominioCorreoValido,
+  consumirInvitacionesPendientes,
+  TipoInvitacionCorreo,
+} from '../../common/utils/correo.util';
 
 @Injectable()
 export class AuthService {
   private readonly SOLO_LETRAS_REGEX = /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/;
-  private readonly EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
   private readonly PASSWORD_COMPLEJIDAD_REGEX =
     /^(?=.*[a-zA-Z])(?=.*\d).{8,}$/;
 
@@ -38,21 +42,268 @@ export class AuthService {
     private readonly mailService: MailService,
   ) {}
 
-  // Verifica que el correo tenga formato válido y que su dominio exista y tenga servidores de correo (MX)
-  private async verificarDominioCorreoValido(correo: string): Promise<void> {
-    if (!this.EMAIL_REGEX.test(correo)) {
-      throw new BadRequestException('Advertencia: Ingrese un correo válido.');
+  private async decodificarTokenInvitacion(tokenRaw?: string): Promise<{
+    token: string;
+    correo: string;
+    idEvento: number;
+    nombreEvento: string;
+    descripcionEvento: string;
+    tipo: TipoInvitacionCorreo;
+  }> {
+    const token = tokenRaw?.trim() ?? '';
+    if (!token || TOKEN_BLACKLIST.has(token)) {
+      throw new BadRequestException(
+        'El enlace de invitación es inválido, ya fue utilizado o ha expirado.',
+      );
     }
 
-    const dominio = correo.split('@')[1];
+    let payload: any;
     try {
-      const registrosMx = await resolveMx(dominio);
-      if (!registrosMx || registrosMx.length === 0) {
-        throw new Error('Sin registros MX');
-      }
+      payload = this.jwtService.verify(token, {
+        secret: process.env.JWT_PASS || 'clave_secreta',
+      });
     } catch {
       throw new BadRequestException(
-        `El dominio del correo (@${dominio}) no existe o no cuenta con un servidor de correo válido. Verifica tu dirección.`,
+        'El enlace de invitación es inválido, ya fue utilizado o ha expirado.',
+      );
+    }
+
+    if (
+      !payload ||
+      (payload.tipo !== 'INVITACION_LOGISTICA' &&
+        payload.tipo !== 'INVITACION_EVENTO_PRIVADO') ||
+      !payload.correo ||
+      !payload.idEvento
+    ) {
+      throw new BadRequestException(
+        'El enlace proporcionado no corresponde a una invitación válida.',
+      );
+    }
+
+    const correo = String(payload.correo).trim().toLowerCase();
+    const idEvento = Number(payload.idEvento);
+    const evento = await this.dataSource.query(
+      `SELECT "idEvento", nombre, descripcion, "idEstadoEvento" FROM evento WHERE "idEvento" = $1 LIMIT 1`,
+      [idEvento],
+    );
+
+    if (!evento.length || evento[0].idEstadoEvento === EstadoEvento.CANCELADO) {
+      throw new ConflictException('Evento no encontrado o cancelado.');
+    }
+
+    return {
+      token,
+      correo,
+      idEvento,
+      nombreEvento: String(evento[0].nombre),
+      descripcionEvento: String(evento[0].descripcion ?? ''),
+      tipo: payload.tipo as TipoInvitacionCorreo,
+    };
+  }
+
+  async validarTokenInvitacion(tokenRaw?: string) {
+    const invitacion = await this.decodificarTokenInvitacion(tokenRaw);
+
+    const existe = await this.usuarioRepository.findOne({
+      where: { correo: invitacion.correo },
+    });
+    if (existe) {
+      throw new ConflictException(
+        'El correo electrónico de esta invitación ya se encuentra registrado. Inicia sesión para continuar.',
+      );
+    }
+
+    return {
+      valido: true,
+      correo: invitacion.correo,
+      idEvento: invitacion.idEvento,
+      nombreEvento: invitacion.nombreEvento,
+      tipo: invitacion.tipo,
+    };
+  }
+
+  private async validarCapacidadInvitacion(
+    idEvento: number,
+    tipo: TipoInvitacionCorreo,
+    estricto: boolean,
+  ): Promise<boolean> {
+    if (tipo === 'INVITACION_LOGISTICA') {
+      const conteo = await this.dataSource.query(
+        `SELECT COUNT(*)::int AS total FROM "eventoPersonalLogistica" WHERE "idEvento" = $1`,
+        [idEvento],
+      );
+      if ((conteo[0]?.total ?? 0) >= 10) {
+        if (estricto) {
+          throw new BadRequestException(
+            'No es posible registrar más personal de logística. El evento ha alcanzado el límite máximo de 10 integrantes.',
+          );
+        }
+        return false;
+      }
+      return true;
+    }
+
+    const recintoRaw = await this.dataSource.query(
+      `SELECT COALESCE(r.aforo, 0)::int AS aforo
+       FROM "subEvento" s
+       INNER JOIN recinto r ON r."idRecinto" = s."idRecinto"
+       WHERE s."idEvento" = $1
+       ORDER BY s."idSubEvento" ASC
+       LIMIT 1`,
+      [idEvento],
+    );
+    const cupoMaximo = recintoRaw[0]?.aforo ?? 0;
+    if (cupoMaximo > 0) {
+      const conteoInvitados = await this.dataSource.query(
+        `SELECT COUNT(*)::int AS total FROM "invitacionEvento" WHERE "idEvento" = $1`,
+        [idEvento],
+      );
+      if ((conteoInvitados[0]?.total ?? 0) >= cupoMaximo) {
+        if (estricto) {
+          throw new ConflictException(
+            'La cantidad solicitada excede el límite disponible.',
+          );
+        }
+        return false;
+      }
+    }
+    return true;
+  }
+
+  private async vincularUsuarioAInvitacion(
+    usuario: UsuarioEntity,
+    idEvento: number,
+    tipo: TipoInvitacionCorreo,
+    estricto: boolean,
+  ): Promise<void> {
+    const eventoRaw = await this.dataSource.query(
+      `SELECT e."idEvento", e.nombre, e.descripcion, e."idEstadoEvento",
+              u.correo AS "correoOrg", u.nombre AS "nombreOrg", u."apellidoPa" AS "apellidoPaOrg"
+       FROM evento e
+       INNER JOIN usuario u ON e."idOrganizador" = u."idUsuario"
+       WHERE e."idEvento" = $1
+       LIMIT 1`,
+      [idEvento],
+    );
+
+    if (
+      !eventoRaw.length ||
+      eventoRaw[0].idEstadoEvento === EstadoEvento.CANCELADO
+    ) {
+      if (estricto) {
+        throw new ConflictException('Evento no encontrado o cancelado.');
+      }
+      return;
+    }
+
+    const evento = eventoRaw[0];
+
+    if (tipo === 'INVITACION_LOGISTICA') {
+      const yaAsignado = await this.dataSource.query(
+        `SELECT 1 FROM "eventoPersonalLogistica" WHERE "idEvento" = $1 AND "idUsuario" = $2 LIMIT 1`,
+        [idEvento, usuario.idUsuario],
+      );
+      if (yaAsignado.length > 0) return;
+
+      const tieneCupo = await this.validarCapacidadInvitacion(
+        idEvento,
+        tipo,
+        estricto,
+      );
+      if (!tieneCupo) return;
+
+      await this.dataSource.query(
+        `INSERT INTO "eventoPersonalLogistica" ("idEvento", "idUsuario") VALUES ($1, $2)`,
+        [idEvento, usuario.idUsuario],
+      );
+
+      const nombreColaborador = `${usuario.nombre} ${usuario.apellidoPa}`.trim();
+      try {
+        await this.mailService.enviarNotificacionOrganizadorLogisticaAceptada({
+          destinatario: evento.correoOrg,
+          nombreOrganizador: `${evento.nombreOrg} ${evento.apellidoPaOrg}`.trim(),
+          nombreColaborador,
+          correoColaborador: usuario.correo,
+          nombreEvento: evento.nombre,
+        });
+      } catch {
+        // Notificación secundaria al organizador no bloquea el registro
+      }
+
+      try {
+        await this.mailService.enviarConfirmacionAsignacionLogistica({
+          destinatario: usuario.correo,
+          nombreUsuario: nombreColaborador,
+          nombreEvento: evento.nombre,
+        });
+      } catch {
+        // Confirmación por correo no bloquea la vinculación persistida
+      }
+      return;
+    }
+
+    const yaInvitado = await this.dataSource.query(
+      `SELECT 1 FROM "invitacionEvento" WHERE "idEvento" = $1 AND "idUsuario" = $2 LIMIT 1`,
+      [idEvento, usuario.idUsuario],
+    );
+    if (yaInvitado.length > 0) return;
+
+    const tieneCupo = await this.validarCapacidadInvitacion(
+      idEvento,
+      tipo,
+      estricto,
+    );
+    if (!tieneCupo) return;
+
+    await this.dataSource.query(
+      `INSERT INTO "invitacionEvento" ("idEvento", "idUsuario", "fechaUltimoEnvio") VALUES ($1, $2, NOW())`,
+      [idEvento, usuario.idUsuario],
+    );
+
+    const frontendUrl = (
+      process.env.FRONTEND_URL ?? 'http://localhost:5173'
+    ).replace(/\/+$/, '');
+    try {
+      await this.mailService.enviarInvitacionEventoPrivado({
+        destinatario: usuario.correo,
+        nombreUsuario: `${usuario.nombre} ${usuario.apellidoPa}`.trim(),
+        nombreEvento: evento.nombre,
+        descripcionEvento: evento.descripcion ?? '',
+        organizador: `${evento.nombreOrg} ${evento.apellidoPaOrg}`.trim(),
+        enlaceEvento: `${frontendUrl}/eventos/${idEvento}`,
+      });
+    } catch {
+      // Confirmación secundaria no bloquea la vinculación persistida
+    }
+  }
+
+  private async aplicarInvitacionesPendientesUsuario(
+    usuario: UsuarioEntity,
+    invitacionToken?: { idEvento: number; tipo: TipoInvitacionCorreo },
+  ): Promise<void> {
+    const pendientes = consumirInvitacionesPendientes(usuario.correo);
+    const procesadas = new Set<string>();
+
+    if (invitacionToken) {
+      const clave = `${invitacionToken.tipo}:${invitacionToken.idEvento}`;
+      procesadas.add(clave);
+      await this.vincularUsuarioAInvitacion(
+        usuario,
+        invitacionToken.idEvento,
+        invitacionToken.tipo,
+        true,
+      );
+    }
+
+    for (const pendiente of pendientes) {
+      const clave = `${pendiente.tipo}:${pendiente.idEvento}`;
+      if (procesadas.has(clave)) continue;
+      procesadas.add(clave);
+      await this.vincularUsuarioAInvitacion(
+        usuario,
+        pendiente.idEvento,
+        pendiente.tipo,
+        false,
       );
     }
   }
@@ -63,6 +314,7 @@ export class AuthService {
     apellidoMa?: string;
     correo?: string;
     contrasena?: string;
+    tokenInvitacion?: string;
   }) {
     const nombre = typeof dto?.nombre === 'string' ? dto.nombre.trim() : '';
     const apellidoPa = typeof dto?.apellidoPa === 'string' ? dto.apellidoPa.trim() : '';
@@ -113,7 +365,21 @@ export class AuthService {
     }
 
     // Validar que el formato y el dominio del correo realmente existan
-    await this.verificarDominioCorreoValido(correo);
+    await verificarDominioCorreoValido(correo);
+
+    const tokenInvitacionRaw =
+      typeof dto?.tokenInvitacion === 'string'
+        ? dto.tokenInvitacion.trim()
+        : '';
+    const invitacion = tokenInvitacionRaw
+      ? await this.decodificarTokenInvitacion(tokenInvitacionRaw)
+      : null;
+
+    if (invitacion && invitacion.correo !== correo) {
+      throw new BadRequestException(
+        'El correo electrónico debe coincidir con el correo de la invitación.',
+      );
+    }
 
     const existe = await this.usuarioRepository.findOne({
       where: { correo },
@@ -132,6 +398,43 @@ export class AuthService {
       tipoAsignado = TipoCuentaUsuario.INTERNO;
     } else {
       tipoAsignado = TipoCuentaUsuario.EXTERNO;
+    }
+
+    if (invitacion) {
+      await this.validarCapacidadInvitacion(
+        invitacion.idEvento,
+        invitacion.tipo,
+        true,
+      );
+
+      const nuevoUsuario = this.usuarioRepository.create({
+        nombre,
+        apellidoPa,
+        apellidoMa,
+        correo,
+        contrasena: hashedPassword,
+        estatus: true,
+        esVerificado: EstadoVerificacion.NO_VERIFICADO,
+        tipoCuenta: tipoAsignado,
+        esJefeAcademia: false,
+      });
+
+      const guardado = await this.usuarioRepository.save(nuevoUsuario);
+      await this.aplicarInvitacionesPendientesUsuario(guardado, {
+        idEvento: invitacion.idEvento,
+        tipo: invitacion.tipo,
+      });
+      TOKEN_BLACKLIST.add(invitacion.token);
+
+      const { contrasena: _contrasena, ...resultado } = guardado;
+
+      return {
+        mensaje:
+          'Registro exitoso. Tu cuenta ha sido creada y vinculada al evento. Ya puedes iniciar sesión en el sistema.',
+        requiereVerificacionCorreo: false,
+        correo,
+        usuario: resultado,
+      };
     }
 
     const payload = {
@@ -235,6 +538,7 @@ export class AuthService {
 
     const guardado = await this.usuarioRepository.save(nuevoUsuario);
     TOKEN_BLACKLIST.add(token);
+    await this.aplicarInvitacionesPendientesUsuario(guardado);
 
     const { contrasena: _contrasena, ...resultado } = guardado;
 
@@ -394,7 +698,7 @@ export class AuthService {
       );
     }
 
-    if (!this.EMAIL_REGEX.test(correo)) {
+    if (!EMAIL_REGEX.test(correo)) {
       throw new BadRequestException('Advertencia: Ingrese un correo válido.');
     }
 

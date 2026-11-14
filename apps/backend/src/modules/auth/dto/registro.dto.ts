@@ -1,8 +1,9 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import {
   IsEmail,
   IsNotEmpty,
+  IsOptional,
   IsString,
   Matches,
   MaxLength,
@@ -115,4 +116,12 @@ export class RegistroDto {
       'Por favor, completa todos los campos obligatorios resaltados para continuar.',
   })
   contrasena: string;
+
+  @ApiPropertyOptional({
+    description:
+      'Token JWT de invitación recibido por correo para vincular la cuenta al evento en 1 paso',
+  })
+  @IsOptional()
+  @IsString({ message: 'El token de invitación debe ser una cadena válida.' })
+  tokenInvitacion?: string;
 }
