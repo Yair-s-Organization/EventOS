@@ -4,6 +4,7 @@ import { useNavigate, useParams } from "react-router";
 import {
   AlcanceEvento,
   EstadoSubEvento,
+  InvitadoEventoItem,
   RecintoId,
   type ActualizarInfoGeneralPayload,
   type EventoOrganizadorDetalle,
@@ -34,6 +35,10 @@ import Badge from "../../components/atoms/Badge/Badge";
 import { MARCADOR_MOTIVO_URGENCIA, ModalMotivo } from "./organism/ModalMotivo";
 import { ModalMotivoUrgente } from "../../components/organisms/ModalMotivoUrgente/ModalMotivoUrgente";
 import { AgregarLogistica } from "./components/AgregarLogistica";
+import {
+  ModalInvitados,
+  type TablaInvitados as TablaInvitadosModal,
+} from "./organism/ModalInvitados";
 
 interface ActividadEditable {
   llave: string;
@@ -337,6 +342,14 @@ export function EditarEventoConSubeventos() {
   const [personalAEliminar, setPersonalAEliminar] =
     useState<PersonalLogisticaItem | null>(null);
   const [eliminandoPersonal, setEliminandoPersonal] = useState(false);
+  const [modalInvitados, setModalInvitados] = useState(false);
+  const [invitados, setInvitados] = useState<InvitadoEventoItem[]>([]);
+  const [invitadosIniciales, setInvitadosIniciales] = useState<
+    InvitadoEventoItem[]
+  >([]);
+  const [invitadoAEliminar, setInvitadoAEliminar] =
+    useState<InvitadoEventoItem | null>(null);
+  const [eliminandoInvitado, setEliminandoInvitado] = useState(false);
 
   const columnasLogistica = useMemo(
     () => crearColumnasLogistica(setPersonalAEliminar),
@@ -373,6 +386,158 @@ export function EditarEventoConSubeventos() {
     }
   };
 
+  const handleGuardarInvitados = async (
+    nuevosInvitados: TablaInvitadosModal[],
+  ) => {
+    if (!idEvento) return;
+    const nuevosFormateados: InvitadoEventoItem[] = [];
+    const errores: string[] = [];
+    setError(null);
+
+    for (const inv of nuevosInvitados) {
+      try {
+        const res = await apiRequest<{
+          mensaje: string;
+          invitado: InvitadoEventoItem;
+        }>(`eventos/${idEvento}/invitados`, {
+          method: "POST",
+          body: JSON.stringify({ correo: inv.correo }),
+        });
+        if (res?.invitado) {
+          nuevosFormateados.push(res.invitado);
+        }
+      } catch (err) {
+        errores.push(`${inv.correo}: ${obtenerMensajeError(err)}`);
+      }
+    }
+
+    if (errores.length > 0) {
+      setError(errores.join(". "));
+    }
+
+    if (nuevosFormateados.length > 0) {
+      setInvitados((prev) => [...prev, ...nuevosFormateados]);
+      setEvento((prev) =>
+        prev
+          ? {
+              ...prev,
+              invitados: [...(prev.invitados ?? []), ...nuevosFormateados],
+            }
+          : prev,
+      );
+      setMensaje("Invitación enviada y registrada correctamente.");
+    }
+  };
+
+  const handleReenviarInvitado = async (invitado: InvitadoEventoItem) => {
+    if (!idEvento) return;
+    setError(null);
+    try {
+      if (invitado.idInvitacionEvento) {
+        await apiRequest(
+          `eventos/${idEvento}/invitados/${invitado.idInvitacionEvento}/reenviar`,
+          { method: "POST" },
+        );
+        setMensaje(`Invitación reenviada correctamente a ${invitado.correo}.`);
+        setInvitados((prev) =>
+          prev.map((i) =>
+            i.idInvitacionEvento === invitado.idInvitacionEvento
+              ? { ...i, puedeReenviar: false, horasRestantesCooldown: 8 }
+              : i,
+          ),
+        );
+      }
+    } catch (err) {
+      setError(obtenerMensajeError(err));
+    }
+  };
+
+  const confirmarEliminarInvitado = async () => {
+    if (!invitadoAEliminar || !idEvento) return;
+    try {
+      setEliminandoInvitado(true);
+      if (invitadoAEliminar.idInvitacionEvento) {
+        await apiRequest(
+          `eventos/${idEvento}/invitados/${invitadoAEliminar.idInvitacionEvento}`,
+          { method: "DELETE" },
+        );
+      }
+      setInvitados((prev) =>
+        prev.filter(
+          (i) =>
+            (i.idInvitacionEvento ?? i.idUsuario) !==
+              (invitadoAEliminar.idInvitacionEvento ??
+                invitadoAEliminar.idUsuario) &&
+            i.correo !== invitadoAEliminar.correo,
+        ),
+      );
+      setEvento((prev) =>
+        prev
+          ? {
+              ...prev,
+              invitados: (prev.invitados ?? []).filter(
+                (i) =>
+                  (i.idInvitacionEvento ?? i.idUsuario) !==
+                    (invitadoAEliminar.idInvitacionEvento ??
+                      invitadoAEliminar.idUsuario) &&
+                  i.correo !== invitadoAEliminar.correo,
+              ),
+            }
+          : prev,
+      );
+      setMensaje(
+        `Se eliminó la invitación de ${invitadoAEliminar.correo} correctamente.`,
+      );
+      setInvitadoAEliminar(null);
+    } catch (err) {
+      setError(obtenerMensajeError(err));
+    } finally {
+      setEliminandoInvitado(false);
+    }
+  };
+
+  const columnasInvitados: Columna<InvitadoEventoItem>[] = useMemo(
+    () => [
+      {
+        id: "correo",
+        encabezado: "Correo",
+        render: (invitado) => (
+          <span className="font-medium text-gray-800">{invitado.correo}</span>
+        ),
+        className: "min-w-[16rem] max-w-[16rem] break-all px-3",
+      },
+      {
+        id: "acciones",
+        encabezado: "Acciones",
+        render: (invitado) => (
+          <div className="flex items-center justify-center gap-2">
+            <Button
+              text={
+                invitado.puedeReenviar
+                  ? "Reenviar"
+                  : `Reenviar (${invitado.horasRestantesCooldown ?? 8}h)`
+              }
+              variant={invitado.puedeReenviar ? "primary" : "secondary"}
+              size="sm"
+              disabled={!invitado.puedeReenviar}
+              type="button"
+              onClick={() => handleReenviarInvitado(invitado)}
+            />
+            <Button
+              text="Eliminar"
+              variant="danger"
+              size="sm"
+              type="button"
+              onClick={() => setInvitadoAEliminar(invitado)}
+            />
+          </div>
+        ),
+        className: "min-w-[16rem] max-w-[16rem] break-all px-3 text-center whitespace-nowrap",
+      },
+    ],
+    [idEvento],
+  );
+
   const usuarioGuardado = JSON.parse(localStorage.getItem("usuario") || "{}");
   const esSubdireccion = usuarioGuardado?.tipoCuenta === "Subdirección";
 
@@ -406,6 +571,8 @@ export function EditarEventoConSubeventos() {
         setDatosGeneralesIniciales(generales);
         setActividades(listaActividades);
         setActividadesIniciales(listaActividades);
+        setInvitados(detalle.invitados ?? []);
+        setInvitadosIniciales(detalle.invitados ?? []);
         setRecintos(listaRecintos);
         const motivos = separarMotivoUrgencia(
           detalle.solicitudModificacionPendiente?.motivoModificacion ?? "",
@@ -443,6 +610,11 @@ export function EditarEventoConSubeventos() {
   const maxFecha =
     maxFecha15 < FECHA_FIN_SEMESTRE ? maxFecha15 : FECHA_FIN_SEMESTRE;
 
+  const invitadosModificados = Boolean(
+    invitados.length !== invitadosIniciales.length ||
+    invitados.some((inv, i) => inv.correo !== invitadosIniciales[i]?.correo),
+  );
+
   const cambiosGenerales = Boolean(
     datosGenerales &&
     datosGeneralesIniciales &&
@@ -450,7 +622,8 @@ export function EditarEventoConSubeventos() {
       datosGenerales.descripcion !== datosGeneralesIniciales.descripcion ||
       datosGenerales.justificacion !== datosGeneralesIniciales.justificacion ||
       datosGenerales.idAlcance !== datosGeneralesIniciales.idAlcance ||
-      archivoPoster),
+      archivoPoster ||
+      invitadosModificados),
   );
   const payloadActividades = obtenerPayloadActividades(
     actividades,
@@ -644,6 +817,45 @@ export function EditarEventoConSubeventos() {
         setArchivoPoster(null);
       }
 
+      if (invitadosModificados && idEvento) {
+        const invitadosNuevos = invitados.filter(
+          (inv) => !invitadosIniciales.some((ini) => ini.correo === inv.correo),
+        );
+        for (const inv of invitadosNuevos) {
+          try {
+            await apiRequest(`eventos/${idEvento}/invitados`, {
+              method: "POST",
+              body: JSON.stringify({ correo: inv.correo }),
+            });
+          } catch (err) {
+            console.warn(
+              "Error al registrar invitado en el guardado general:",
+              err,
+            );
+          }
+        }
+
+        const invitadosEliminados = invitadosIniciales.filter(
+          (ini) => !invitados.some((inv) => inv.correo === ini.correo),
+        );
+        for (const inv of invitadosEliminados) {
+          if (inv.idInvitacionEvento) {
+            try {
+              await apiRequest(
+                `eventos/${idEvento}/invitados/${inv.idInvitacionEvento}`,
+                { method: "DELETE" },
+              );
+            } catch (err) {
+              console.warn(
+                "Error al revocar invitado en el guardado general:",
+                err,
+              );
+            }
+          }
+        }
+        generalesGuardados = true;
+      }
+
       if (enviarLogistica && cambiosActividades) {
         const motivoCompleto = esSubdireccion
           ? undefined
@@ -667,6 +879,8 @@ export function EditarEventoConSubeventos() {
         `eventos/${idEvento}/detalle-organizador`,
       );
       setEvento(detalleActualizado);
+      setInvitados(detalleActualizado.invitados ?? []);
+      setInvitadosIniciales(detalleActualizado.invitados ?? []);
       const listaActividades = obtenerActividades(detalleActualizado);
       setActividades(listaActividades);
       setActividadesIniciales(listaActividades);
@@ -688,6 +902,7 @@ export function EditarEventoConSubeventos() {
               : "La modificación de actividades fue enviada a revisión de Subdirección."
           : "Los cambios se guardaron correctamente.",
       );
+      window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (errorGuardado) {
       const detalle = obtenerMensajeError(errorGuardado);
       setError(
@@ -1081,6 +1296,81 @@ export function EditarEventoConSubeventos() {
                 }}
               />
             </div>
+
+            {(datosGenerales?.idAlcance === AlcanceEvento.PRIVADO ||
+              evento?.idAlcance === AlcanceEvento.PRIVADO) && (
+              <div id="contenedorInvitados" className="space-y-5 pt-2">
+                <h3 className="text-xl font-bold sm:text-2xl">
+                  Tus invitados
+                </h3>
+                {invitados.length > 0 ? (
+                  <div className="shadow-md w-fit overflow-x-auto rounded-md border border-gray-200">
+                    <Table
+                      columnas={columnasInvitados}
+                      filas={invitados}
+                      obtenerClave={(invitado) =>
+                        invitado.idUsuario ??
+                        invitado.idInvitacionEvento ??
+                        invitado.correo
+                      }
+                      className="bg-white text-left text-sm [&_tbody_tr]:h-12 [&_thead_tr]:h-10 [&_th]:py-2 [&_td]:py-2"
+                    />
+                  </div>
+                ) : (
+                  <p className="text-gray-600">
+                    No hay invitados registrados para este evento.
+                  </p>
+                )}
+                <Button
+                  text="Agregar invitados"
+                  variant="primary"
+                  type="button"
+                  onClick={() => setModalInvitados(true)}
+                />
+              </div>
+            )}
+
+            {modalInvitados && (
+              <ModalInvitados
+                mostrarModal={modalInvitados}
+                cerrarModal={() => setModalInvitados(false)}
+                guardar={handleGuardarInvitados}
+              />
+            )}
+
+            {invitadoAEliminar && (
+              <Modal
+                mostrarModal={Boolean(invitadoAEliminar)}
+                titulo="Confirmar eliminación"
+                cerrarModal={() => setInvitadoAEliminar(null)}
+              >
+                <div className="space-y-4">
+                  <p className="text-gray-700">
+                    ¿Estás seguro de que deseas eliminar al invitado{" "}
+                    <strong className="text-gray-900">
+                      {invitadoAEliminar.correo}
+                    </strong>
+                    ? Se revocará su acceso a este evento privado.
+                  </p>
+                  <div className="flex justify-end gap-3 pt-2">
+                    <Button
+                      text="Cancelar"
+                      variant="secondary"
+                      type="button"
+                      disabled={eliminandoInvitado}
+                      onClick={() => setInvitadoAEliminar(null)}
+                    />
+                    <Button
+                      text={eliminandoInvitado ? "Eliminando..." : "Eliminar"}
+                      variant="danger"
+                      type="button"
+                      disabled={eliminandoInvitado}
+                      onClick={() => void confirmarEliminarInvitado()}
+                    />
+                  </div>
+                </div>
+              </Modal>
+            )}
 
             <section className="space-y-5">
               <h2 className="text-xl font-bold sm:text-2xl">Actividades</h2>

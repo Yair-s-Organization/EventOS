@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import {
   AlcanceEvento,
   EstadoEvento,
+  InvitadoEventoItem,
   type PersonalLogisticaItem,
 } from "@eventos/shared";
 import { EventBanner } from "../event-details/components/molecules/EventBanner";
@@ -34,8 +35,22 @@ interface EventoSubeventosVista {
     estado: string;
   } | null;
   personalLogistica: PersonalLogisticaItem[];
+  invitados?: InvitadoEventoItem[];
   subEventos: OrganizerSubeventCardData[];
 }
+
+type TablaInvitados = InvitadoEventoItem;
+
+const columnasInvitados: Columna<TablaInvitados>[] = [
+  {
+    id: "correo",
+    encabezado: "Correo",
+    render: (invitado) => (
+      <span className="font-medium text-gray-800">{invitado.correo}</span>
+    ),
+    className: "min-w-[32rem] max-w-[32rem] break-all px-3",
+  },
+];
 
 const columnasLogistica: Columna<PersonalLogisticaItem>[] = [
   {
@@ -146,9 +161,9 @@ function convertirEvento(valor: unknown): EventoSubeventosVista {
   if (
     esRegistro(valor.solicitudModificacionPendiente) &&
     typeof valor.solicitudModificacionPendiente.idSolicitudModificacion ===
-    "number" &&
+      "number" &&
     typeof valor.solicitudModificacionPendiente.motivoModificacion ===
-    "string" &&
+      "string" &&
     typeof valor.solicitudModificacionPendiente.estado === "string"
   ) {
     solicitudModificacionPendiente = {
@@ -164,20 +179,20 @@ function convertirEvento(valor: unknown): EventoSubeventosVista {
     valor.personalLogistica,
   )
     ? valor.personalLogistica
-      .filter(
-        (item): item is Record<string, unknown> =>
-          esRegistro(item) &&
-          typeof item.idUsuario === "number" &&
-          typeof item.nombreCompleto === "string" &&
-          typeof item.correo === "string" &&
-          typeof item.tipoCuenta === "string",
-      )
-      .map((item) => ({
-        idUsuario: item.idUsuario as number,
-        nombreCompleto: item.nombreCompleto as string,
-        correo: item.correo as string,
-        tipoCuenta: item.tipoCuenta as string,
-      }))
+        .filter(
+          (item): item is Record<string, unknown> =>
+            esRegistro(item) &&
+            typeof item.idUsuario === "number" &&
+            typeof item.nombreCompleto === "string" &&
+            typeof item.correo === "string" &&
+            typeof item.tipoCuenta === "string",
+        )
+        .map((item) => ({
+          idUsuario: item.idUsuario as number,
+          nombreCompleto: item.nombreCompleto as string,
+          correo: item.correo as string,
+          tipoCuenta: item.tipoCuenta as string,
+        }))
     : [];
 
   return {
@@ -188,11 +203,16 @@ function convertirEvento(valor: unknown): EventoSubeventosVista {
     posterUrl: valor.posterUrl,
     idAlcance,
     idEstadoEvento:
-      typeof valor.idEstadoEvento === "number" ? valor.idEstadoEvento : undefined,
+      typeof valor.idEstadoEvento === "number"
+        ? valor.idEstadoEvento
+        : undefined,
     motivoRechazo:
       typeof valor.motivoRechazo === "string" ? valor.motivoRechazo : null,
     solicitudModificacionPendiente,
     personalLogistica,
+    invitados: Array.isArray(valor.invitados)
+      ? (valor.invitados as InvitadoEventoItem[])
+      : [],
     subEventos: valor.subEventos.map(convertirSubevento),
   };
 }
@@ -288,13 +308,15 @@ export function AdministracionEventoConSubeventos() {
         subevento.nombre.trim().length > 0 &&
         subevento.descripcion.trim().length > 0,
     ) ?? [];
+  const invitados = datosEvento?.invitados ?? [];
 
   return (
     <section className="mx-auto w-full max-w-7xl space-y-8 px-4 sm:px-6 lg:space-y-10 lg:px-8">
       <button
         type="button"
         className="flex cursor-pointer items-center gap-2"
-        onClick={() => navigate("/organizador/mis-eventos")}>
+        onClick={() => navigate("/organizador/mis-eventos")}
+      >
         <ArrowLeft size={20} aria-hidden="true" />
         <span>Volver</span>
       </button>
@@ -314,7 +336,8 @@ export function AdministracionEventoConSubeventos() {
       {cargando && (
         <p
           role="status"
-          className="rounded-lg bg-gray-50 px-4 py-6 text-gray-600">
+          className="rounded-lg bg-gray-50 px-4 py-6 text-gray-600"
+        >
           Cargando detalles del evento...
         </p>
       )}
@@ -324,18 +347,13 @@ export function AdministracionEventoConSubeventos() {
         </p>
       )}
 
-
       {datosEvento && (
         <>
           {datosEvento.idEstadoEvento === EstadoEvento.RECHAZADO && (
             <div className="flex flex-col space-y-2 border border-red-500 rounded-md bg-red-50 p-5 shadow-md">
-              <div
-                role="alert"
-                className="flex flex-row justify-between">
+              <div role="alert" className="flex flex-row justify-between">
                 <div className="flex items-center gap-2">
-                  <h2 className="font-bold text-gray-900">
-                    Motivo de rechazo
-                  </h2>
+                  <h2 className="font-bold text-gray-900">Motivo de rechazo</h2>
                 </div>
                 <div>
                   <Badge variant="error">Solicitud rechazada</Badge>
@@ -353,13 +371,15 @@ export function AdministracionEventoConSubeventos() {
           {datosEvento.solicitudModificacionPendiente && (
             <div
               role="status"
-              className="space-y-2 rounded-lg border border-amber-300 bg-amber-50 p-5 text-amber-950 shadow-sm">
+              className="space-y-2 rounded-lg border border-amber-300 bg-amber-50 p-5 text-amber-950 shadow-sm"
+            >
               <div className="flex flex-wrap items-center gap-2">
                 <span className="inline-flex items-center rounded-md bg-amber-200 px-2.5 py-0.5 text-xs font-semibold text-amber-900">
                   Solicitud en Revisión
                 </span>
                 <h2 className="text-base font-bold text-amber-950">
-                  Modificación logística pendiente de evaluación por Subdirección
+                  Modificación logística pendiente de evaluación por
+                  Subdirección
                 </h2>
               </div>
               <p className="text-sm text-amber-900">
@@ -367,7 +387,10 @@ export function AdministracionEventoConSubeventos() {
                 {datosEvento.solicitudModificacionPendiente.motivoModificacion}
               </p>
               <p className="text-xs text-amber-800">
-                Mientras Subdirección dictamina esta solicitud, el evento conserva vigentes sus fechas y espacios originales. Si realizas otro cambio logístico, se actualizará esta misma solicitud sin generar duplicados.
+                Mientras Subdirección dictamina esta solicitud, el evento
+                conserva vigentes sus fechas y espacios originales. Si realizas
+                otro cambio logístico, se actualizará esta misma solicitud sin
+                generar duplicados.
               </p>
             </div>
           )}
@@ -399,7 +422,10 @@ export function AdministracionEventoConSubeventos() {
               Personal de logística del evento
             </h2>
             {datosEvento.personalLogistica.length > 0 ? (
-              <div id="contenedorLogistica" className="shadow-md w-fit overflow-x-auto rounded-md">
+              <div
+                id="contenedorLogistica"
+                className="shadow-md w-fit overflow-x-auto rounded-md"
+              >
                 <Table
                   columnas={columnasLogistica}
                   filas={datosEvento.personalLogistica}
@@ -413,6 +439,30 @@ export function AdministracionEventoConSubeventos() {
               </p>
             )}
           </div>
+
+          {datosEvento.idAlcance === AlcanceEvento.PRIVADO && (
+            <div id="contenedorInvitados" className="space-y-4">
+              <h2 className="text-xl font-bold sm:text-2xl">Tus invitados</h2>
+              {invitados.length > 0 ? (
+                <div className="shadow-md w-fit overflow-x-auto rounded-md">
+                  <Table
+                    columnas={columnasInvitados}
+                    filas={invitados}
+                    obtenerClave={(invitado) =>
+                      invitado.idUsuario ??
+                      invitado.idInvitacionEvento ??
+                      invitado.correo
+                    }
+                    className="bg-white text-left text-sm [&_tbody_tr]:h-12 [&_thead_tr]:h-10 [&_th]:py-2 [&_td]:py-2"
+                  />
+                </div>
+              ) : (
+                <p className="rounded-lg bg-gray-50 px-4 py-6 text-gray-600">
+                  No hay invitados registrados para este evento.
+                </p>
+              )}
+            </div>
+          )}
 
           <div className="space-y-4">
             <h2 className="text-xl font-bold sm:text-2xl">Actividades</h2>
@@ -438,7 +488,8 @@ export function AdministracionEventoConSubeventos() {
           {mensajeExito && (
             <p
               role="status"
-              className="rounded-lg bg-green-50 px-4 py-3 text-green-800">
+              className="rounded-lg bg-green-50 px-4 py-3 text-green-800"
+            >
               {mensajeExito}
             </p>
           )}
@@ -474,7 +525,8 @@ export function AdministracionEventoConSubeventos() {
               titulo="Motivo de cancelación"
               contenido="Por favor, ingresa el motivo por el cual cancelas este evento. Esta justificación será notificada a los asistentes."
               mostrarModal={mostrarModalCancelar}
-              cerrarModal={() => setMostrarModalCancelar(false)}>
+              cerrarModal={() => setMostrarModalCancelar(false)}
+            >
               <span className="text-xs text-gray-500">
                 Máximo 500 caracteres
               </span>
@@ -529,7 +581,8 @@ export function AdministracionEventoConSubeventos() {
               titulo="Confirmar cancelación"
               contenido="¿Desea confirmar la cancelación del evento seleccionado? Esta acción es irreversible y cancelará todos los subeventos asociados."
               mostrarModal={mostrarConfirmacionCancelar}
-              cerrarModal={() => setMostrarConfirmacionCancelar(false)}>
+              cerrarModal={() => setMostrarConfirmacionCancelar(false)}
+            >
               <div className="flex justify-end gap-3 pt-2">
                 <Button
                   text="Volver"

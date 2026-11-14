@@ -8,6 +8,7 @@ import {
   type EventoOrganizadorDetalle,
   type ModificarLogisticaPayload,
   type PersonalLogisticaItem,
+  type InvitadoEventoItem,
   type Recinto,
 } from "@eventos/shared";
 import { ArrowLeft, Pencil } from "lucide-react";
@@ -30,6 +31,10 @@ import { Modal } from "../../components/molecules/Modal";
 import { MARCADOR_MOTIVO_URGENCIA, ModalMotivo } from "./organism/ModalMotivo";
 import { ModalMotivoUrgente } from "../../components/organisms/ModalMotivoUrgente/ModalMotivoUrgente";
 import { ModalPonentes } from "./organism/ModalPonentes";
+import {
+  ModalInvitados,
+  type TablaInvitados as TablaInvitadosModal,
+} from "./organism/ModalInvitados";
 import type { TablaPonente } from "./organism/ModalPonentes";
 
 function separarMotivoUrgencia(motivo: string) {
@@ -86,10 +91,12 @@ function crearColumnasLogistica(
           />
         );
       },
-      className: "min-w-[8rem] max-w-[8rem] break-all px-3",
+      className: "text-center min-w-[8rem] max-w-[8rem] break-all px-3",
     },
   ];
 }
+
+type TablaInvitados = InvitadoEventoItem;
 
 function obtenerMensajeError(error: unknown): string {
   return error instanceof Error
@@ -160,6 +167,7 @@ export function EditarEvento() {
   const [intentoMotivo, setIntentoMotivo] = useState(false);
   const [motivoUrgente, setMotivoUrgente] = useState("");
   const [modalPontente, setModalPonente] = useState(false);
+  const [modalInvitados, setModalinvitados] = useState(false);
   const [logistica, setLogistica] = useState<EditLogisticsValues>({
     idRecinto: "",
     fecha: "",
@@ -170,7 +178,10 @@ export function EditarEvento() {
   });
   const [logisticaInicial, setLogisticaInicial] =
     useState<EditLogisticsValues | null>(null);
-
+  const [invitados, setInvitados] = useState<InvitadoEventoItem[]>([]);
+  const [invitadosIniciales, setInvitadosIniciales] = useState<
+    InvitadoEventoItem[]
+  >([]);
   const [archivoPoster, setArchivoPoster] = useState<File | null>(null);
   const usuarioGuardado = JSON.parse(localStorage.getItem("usuario") || "{}");
   const esSubdireccion = usuarioGuardado?.tipoCuenta === "Subdirección";
@@ -219,6 +230,147 @@ export function EditarEvento() {
       setEliminandoPersonal(false);
     }
   };
+
+  const handleGuardarInvitados = async (
+    nuevosInvitados: TablaInvitadosModal[],
+  ) => {
+    const nuevosFormateados: InvitadoEventoItem[] = [];
+    const errores: string[] = [];
+    setError(null);
+
+    if (idEvento) {
+      for (const inv of nuevosInvitados) {
+        try {
+          const res = await apiRequest<{
+            mensaje: string;
+            invitado: InvitadoEventoItem;
+          }>(`eventos/${idEvento}/invitados`, {
+            method: "POST",
+            body: JSON.stringify({ correo: inv.correo }),
+          });
+          if (res?.invitado) {
+            nuevosFormateados.push(res.invitado);
+          }
+        } catch (err) {
+          errores.push(`${inv.correo}: ${obtenerMensajeError(err)}`);
+        }
+      }
+    }
+
+    if (errores.length > 0) {
+      setError(errores.join(". "));
+    }
+
+    if (nuevosFormateados.length > 0) {
+      setInvitados((prev) => [...prev, ...nuevosFormateados]);
+      setEvento((prev) =>
+        prev
+          ? {
+              ...prev,
+              invitados: [...(prev.invitados ?? []), ...nuevosFormateados],
+            }
+          : prev,
+      );
+      setMensaje("Invitación enviada y registrada correctamente.");
+    }
+  };
+
+  const handleEliminarInvitado = async (invitado: InvitadoEventoItem) => {
+    if (idEvento && invitado.idInvitacionEvento) {
+      try {
+        await apiRequest(
+          `eventos/${idEvento}/invitados/${invitado.idInvitacionEvento}`,
+          { method: "DELETE" },
+        );
+      } catch (err) {
+        console.warn("No se pudo eliminar el invitado en el servidor:", err);
+      }
+    }
+    setInvitados((prev) =>
+      prev.filter(
+        (i) =>
+          (i.idInvitacionEvento ?? i.idUsuario) !==
+            (invitado.idInvitacionEvento ?? invitado.idUsuario) &&
+          i.correo !== invitado.correo,
+      ),
+    );
+    setEvento((prev) =>
+      prev
+        ? {
+            ...prev,
+            invitados: (prev.invitados ?? []).filter(
+              (i) =>
+                (i.idInvitacionEvento ?? i.idUsuario) !==
+                  (invitado.idInvitacionEvento ?? invitado.idUsuario) &&
+                i.correo !== invitado.correo,
+            ),
+          }
+        : prev,
+    );
+  };
+
+  const handleReenviarInvitado = async (invitado: InvitadoEventoItem) => {
+    if (!idEvento) return;
+    setError(null);
+    try {
+      if (invitado.idInvitacionEvento) {
+        await apiRequest(
+          `eventos/${idEvento}/invitados/${invitado.idInvitacionEvento}/reenviar`,
+          { method: "POST" },
+        );
+        setMensaje(`Invitación reenviada correctamente a ${invitado.correo}.`);
+        setInvitados((prev) =>
+          prev.map((i) =>
+            i.idInvitacionEvento === invitado.idInvitacionEvento
+              ? { ...i, puedeReenviar: false, horasRestantesCooldown: 8 }
+              : i,
+          ),
+        );
+      }
+    } catch (err) {
+      setError(obtenerMensajeError(err));
+    }
+  };
+
+  const columnasInvitados: Columna<InvitadoEventoItem>[] = useMemo(
+    () => [
+      {
+        id: "correo",
+        encabezado: "Correo",
+        render: (invitado) => (
+          <span className="font-medium text-gray-800">{invitado.correo}</span>
+        ),
+        className: "min-w-[12rem] px-4 py-3",
+      },
+      {
+        id: "acciones",
+        encabezado: "Acciones",
+        render: (invitado) => (
+          <div className="flex items-center justify-center gap-2">
+            <Button
+              text={
+                invitado.puedeReenviar
+                  ? "Reenviar invitación"
+                  : `Reenviar (${invitado.horasRestantesCooldown ?? 8}h)`
+              }
+              variant={invitado.puedeReenviar ? "primary" : "secondary"}
+              disabled={!invitado.puedeReenviar}
+              type="button"
+              onClick={() => handleReenviarInvitado(invitado)}
+            />
+            <Button
+              text="Eliminar"
+              variant="danger"
+              type="button"
+              onClick={() => handleEliminarInvitado(invitado)}
+            />
+          </div>
+        ),
+        className: "w-fit px-4 py-3 text-center whitespace-nowrap",
+      },
+    ],
+    [idEvento],
+  );
 
   useEffect(() => {
     const controller = new AbortController();
@@ -300,6 +452,8 @@ export function EditarEvento() {
         );
         setJustificacion(detalle.justificacion ?? "");
         setAlcance(detalle.idAlcance ?? "");
+        setInvitados(detalle.invitados ?? []);
+        setInvitadosIniciales(detalle.invitados ?? []);
         const valoresLogistica = obtenerValoresLogistica(
           detalle,
           idSubEventoSeleccionado,
@@ -411,18 +565,23 @@ export function EditarEvento() {
     ),
   );
 
+  const invitadosModificados = Boolean(
+    invitados.length !== invitadosIniciales.length ||
+    invitados.some((inv, i) => inv.correo !== invitadosIniciales[i]?.correo),
+  );
+
   const columnasPonente: Columna<TablaPonente>[] = [
     {
       id: "nombre",
       encabezado: "Nombre",
       render: (ponente) => ponente.nombre,
-      className: "min-w-[12rem] break-all px-3",
+      className: "min-w-[5rem] break-all px-3",
     },
     {
       id: "correo",
       encabezado: "Correo",
       render: (ponente) => ponente.correo,
-      className: "min-w-[12rem] break-all px-3",
+      className: "min-w-[5rem] break-all px-3",
     },
     {
       id: "acciones",
@@ -456,12 +615,14 @@ export function EditarEvento() {
         justificacion !== (evento.justificacion ?? "") ||
         alcance !== (evento.idAlcance ?? "") ||
         archivoPoster ||
-        ponentesModificados
+        ponentesModificados ||
+        invitadosModificados
       : subevento &&
         (nombre !== (subeventoPropuesto?.nombre ?? subevento.nombre) ||
           descripcion !==
             (subeventoPropuesto?.descripcion ?? subevento.descripcion) ||
-          ponentesModificados)),
+          ponentesModificados ||
+          invitadosModificados)),
   );
   const camposLogisticosModificados = Boolean(
     subevento &&
@@ -723,6 +884,45 @@ export function EditarEvento() {
         informacionGuardada = true;
       }
 
+      if (invitadosModificados && idEvento) {
+        const invitadosNuevos = invitados.filter(
+          (inv) => !invitadosIniciales.some((ini) => ini.correo === inv.correo),
+        );
+        for (const inv of invitadosNuevos) {
+          try {
+            await apiRequest(`eventos/${idEvento}/invitados`, {
+              method: "POST",
+              body: JSON.stringify({ correo: inv.correo }),
+            });
+          } catch (err) {
+            console.warn(
+              "Error al registrar invitado en el guardado general:",
+              err,
+            );
+          }
+        }
+
+        const invitadosEliminados = invitadosIniciales.filter(
+          (ini) => !invitados.some((inv) => inv.correo === ini.correo),
+        );
+        for (const inv of invitadosEliminados) {
+          if (inv.idInvitacionEvento) {
+            try {
+              await apiRequest(
+                `eventos/${idEvento}/invitados/${inv.idInvitacionEvento}`,
+                { method: "DELETE" },
+              );
+            } catch (err) {
+              console.warn(
+                "Error al revocar invitado en el guardado general:",
+                err,
+              );
+            }
+          }
+        }
+        informacionGuardada = true;
+      }
+
       if (logisticaModificada) {
         const subeventosAEnviar = evento.subEventos.map((otroSub) => {
           if (otroSub.idSubEvento === subevento.idSubEvento) {
@@ -801,6 +1001,8 @@ export function EditarEvento() {
           (item) => item.idSubEvento === subeventoActualizado.idSubEvento,
         );
       setEvento(detalleActualizado);
+      setInvitados(detalleActualizado.invitados ?? []);
+      setInvitadosIniciales(detalleActualizado.invitados ?? []);
       setNombre(
         propuestaActualizada?.nombre ??
           subeventoActualizado?.nombre ??
@@ -962,18 +1164,20 @@ export function EditarEvento() {
               role="status"
               className="space-y-2 rounded-lg border border-amber-300 bg-amber-50 p-5 text-amber-950 shadow-md"
             >
-              <div className="flex flex-wrap items-center gap-2">
-                <Badge variant="warning">Solicitud en revisión</Badge>
-                <h2 className="text-base font-bold text-amber-950">
-                  Modificación logística pendiente de evaluación por
-                  Subdirección
-                </h2>
+              <div className="flex flex-row justify-between">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge variant="warning">Solicitud en revisión</Badge>
+                  <h2 className="text-base font-bold text-amber-950">
+                    Modificación logística pendiente de evaluación por
+                    Subdirección
+                  </h2>
+                </div>
               </div>
-              <p className="text-sm text-amber-900">
+              <p className="text-base text-amber-900">
                 <span className="font-semibold">Motivo registrado:</span>{" "}
                 {evento.solicitudModificacionPendiente.motivoModificacion}
               </p>
-              <p className="text-xs text-amber-800">
+              <p className="text-sm text-amber-800">
                 Mientras Subdirección dictamina esta solicitud, se conservan
                 vigentes las fechas y espacios originales. Cualquier nuevo
                 cambio logístico actualizará esta misma solicitud sin generar
@@ -1199,6 +1403,44 @@ export function EditarEvento() {
                         }}
                       />
                     </div>
+                  )}
+                  {alcance === AlcanceEvento.PRIVADO && (
+                    <div id="contenedorInvitados" className="space-y-5">
+                      <h2 className="text-xl font-bold sm:text-2xl">
+                        Tus invitados
+                      </h2>
+                      {invitados.length > 0 ? (
+                        <div className="mt-4 w-full min-w-0 overflow-x-auto rounded-md border border-gray-200 shadow-md">
+                          <Table
+                            columnas={columnasInvitados}
+                            filas={invitados}
+                            obtenerClave={(invitado) =>
+                              invitado.idUsuario ??
+                              invitado.idInvitacionEvento ??
+                              invitado.correo
+                            }
+                            className="table-auto min-w-full bg-white text-left text-sm [&_tbody_tr]:h-12 [&_thead_tr]:h-10 [&_th]:py-2 [&_td]:py-2"
+                          />
+                        </div>
+                      ) : (
+                        <p className="mt-3 text-gray-600">
+                          No hay invitados registrados para este evento.
+                        </p>
+                      )}
+                      <Button
+                        text="Agregar invitados"
+                        variant="primary"
+                        type="button"
+                        onClick={() => setModalinvitados(true)}
+                      />
+                    </div>
+                  )}
+                  {modalInvitados && (
+                    <ModalInvitados
+                      mostrarModal={modalInvitados}
+                      cerrarModal={() => setModalinvitados(false)}
+                      guardar={handleGuardarInvitados}
+                    />
                   )}
                 </div>
 
