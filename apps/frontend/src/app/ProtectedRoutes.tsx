@@ -4,6 +4,14 @@ interface ProtectedRouteProps {
   allowedRoles: string[];
 }
 
+function normalizarRol(rol: string): string {
+  return rol
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+}
+
 export function ProtectedRoute({ allowedRoles }: ProtectedRouteProps) {
   const usuarioGuardado = JSON.parse(localStorage.getItem("usuario") || "{}");
   const rolUsuario = usuarioGuardado.tipoCuenta;
@@ -12,7 +20,10 @@ export function ProtectedRoute({ allowedRoles }: ProtectedRouteProps) {
     return <Navigate to="/login" replace />;
   }
 
-  if (!allowedRoles.includes(rolUsuario)) {
+  const rolNorm = normalizarRol(rolUsuario);
+  const permitidosNorm = allowedRoles.map(normalizarRol);
+
+  if (!permitidosNorm.includes(rolNorm)) {
     return <Navigate to="/login" replace />;
   }
 

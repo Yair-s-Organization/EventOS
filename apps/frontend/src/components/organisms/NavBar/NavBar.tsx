@@ -38,7 +38,7 @@ export function Navbar({ userRole }: NavbarProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const mobileMenuId = useId();
   const menuButtonRef = useRef<HTMLButtonElement>(null);
-  const navLinks = linksByRole[userRole];
+  const navLinks = linksByRole[userRole] ?? [];
 
   return (
     <nav
