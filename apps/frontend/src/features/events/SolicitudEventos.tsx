@@ -8,7 +8,7 @@ import { RecintoId, type SubeventoPayload } from "@eventos/shared";
 import { ModalMotivoUrgente } from "../../components/organisms/ModalMotivoUrgente/ModalMotivoUrgente";
 import { API_BASE_URL, apiRequest } from "../../lib/apiClient";
 
-import { ArrowLeft } from "lucide-react";
+import { PageHeader } from "../../components/organisms/PageHeader/PageHeader";
 
 export type SubeventoFormData = SubeventoPayload & { id: number };
 
@@ -296,6 +296,23 @@ export function SolicitudEvento() {
         return;
       }
 
+      const usuarioRaw = localStorage.getItem("usuario");
+      const usuario = usuarioRaw ? JSON.parse(usuarioRaw) : {};
+      const tipoCuenta = String(usuario.tipoCuenta ?? "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .trim();
+
+      if (
+        tipoCuenta.includes("subdireccion") ||
+        tipoCuenta.includes("administrador") ||
+        tipoCuenta.includes("admin")
+      ) {
+        setEstadoVerificacion("verificado");
+        return;
+      }
+
       try {
         const perfil = await apiRequest<EstadoPerfilVerificacion>(
           "usuarios/perfil",
@@ -574,26 +591,37 @@ export function SolicitudEvento() {
     setModal("exito");
   };
 
-  if (estadoVerificacion === "cargando") {
-    return (
-      <p role="status" className="mx-auto w-full max-w-8xl px-4 py-8">
-        Verificando el estado de tu cuenta...
-      </p>
-    );
-  }
+  const usuarioRaw = localStorage.getItem("usuario");
+  const usuario = usuarioRaw ? JSON.parse(usuarioRaw) : {};
+  const tipoCuenta = String(usuario.tipoCuenta ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+  const isSubdireccion = tipoCuenta.includes("subdireccion");
 
   return (
     <section className="mx-auto w-full max-w-8xl space-y-6 px-4 sm:px-6 lg:px-8">
-      <div
-        id="contenedorReturn"
-        className="flex gap-2 cursor-pointer"
-        onClick={volverAlMenu}>
-        <ArrowLeft size={20}></ArrowLeft>
-        <span>Volver</span>
-      </div>
-      <h1 className="font-merriweather text-2xl font-bold sm:text-[36px]">
-        Solicitud de evento
-      </h1>
+      <PageHeader
+        title="Solicitud de evento"
+        description="Llena el siguiente formulario para hacer una solicitud"
+        back={
+          isSubdireccion
+            ? {
+                to: "/subdireccion/menu-principal",
+                label: "Volver a menú principal",
+              }
+            : {
+                to: "/organizador/mis-eventos",
+                label: "Volver a mis eventos",
+              }
+        }
+      />
+      {estadoVerificacion === "cargando" && (
+        <p role="status" className="rounded-lg bg-gray-50 px-4 py-6 text-gray-600">
+          Cargando formulario...
+        </p>
+      )}
       {estadoVerificacion === "verificado" && (
         <form onSubmit={handleSubmit} className="space-y-7">
           <SeccionDatosEvento
@@ -632,13 +660,14 @@ export function SolicitudEvento() {
             contenido={
               modal === "error"
                 ? mensajeError ||
-                "Por favor, completa todos los campos obligatorios resaltados para continuar"
+                  "Por favor, completa todos los campos obligatorios resaltados para continuar"
                 : modal === "exito"
                   ? "La solicitud se ha procesado éxitosamente y será evaluada por Subdirección de Servicios Académicos"
                   : "¿Desea enviar la solicitud de este evento?"
             }
             mostrarModal={modal !== null}
-            cerrarModal={() => setModal(null)}>
+            cerrarModal={() => setModal(null)}
+          >
             <div className="flex flex-col-reverse justify-end gap-3 sm:flex-row">
               {modal === "error" || modal === "exito" ? (
                 <Button
@@ -693,7 +722,8 @@ export function SolicitudEvento() {
         mostrarModal={
           estadoVerificacion === "requerida" || estadoVerificacion === "error"
         }
-        cerrarModal={() => navigate("/perfil")}>
+        cerrarModal={() => navigate("/perfil")}
+      >
         <div className="flex justify-end gap-3">
           <Button
             text="Ir a mi perfil"

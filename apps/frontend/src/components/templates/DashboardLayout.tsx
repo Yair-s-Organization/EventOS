@@ -6,9 +6,7 @@ interface DashboardLayoutProps {
   perfilValidado?: PerfilAutenticado;
 }
 
-export function DashboardLayout({
-                                  perfilValidado,
-                                }: DashboardLayoutProps) {
+export function DashboardLayout({ perfilValidado }: DashboardLayoutProps) {
   const perfilRuta = useOutletContext<PerfilAutenticado | undefined>();
   const perfil = perfilValidado ?? perfilRuta;
 
@@ -25,14 +23,17 @@ export function DashboardLayout({
 
   const rolBackend = perfil.tipoCuenta;
 
+  const tipoNorm = String(rolBackend ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+
   let rolNavbar: "asistente" | "subdireccion" | "admin";
 
   if (rolBackend === "Administrador" || rolBackend === "admin") {
     rolNavbar = "admin";
-  } else if (
-    rolBackend === "Subdirección" ||
-    rolBackend === "subdireccion"
-  ) {
+  } else if (rolBackend === "Subdirección" || rolBackend === "subdireccion") {
     rolNavbar = "subdireccion";
   } else {
     rolNavbar = "asistente";

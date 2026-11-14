@@ -1,6 +1,10 @@
 import { useEffect, useState } from "react";
 import { Navigate, Outlet } from "react-router";
-import { ApiError, apiRequest, SESSION_REVALIDATION_EVENT } from "../lib/apiClient";
+import {
+  ApiError,
+  apiRequest,
+  SESSION_REVALIDATION_EVENT,
+} from "../lib/apiClient";
 
 interface ProtectedRouteProps {
   allowedRoles: string[];
@@ -64,10 +68,7 @@ export function ProtectedRoute({ allowedRoles }: ProtectedRouteProps) {
       setRevalidacion((valor) => valor + 1);
     };
 
-    window.addEventListener(
-      SESSION_REVALIDATION_EVENT,
-      solicitarRevalidacion,
-    );
+    window.addEventListener(SESSION_REVALIDATION_EVENT, solicitarRevalidacion);
 
     return () => {
       window.removeEventListener(
@@ -154,7 +155,10 @@ export function ProtectedRoute({ allowedRoles }: ProtectedRouteProps) {
     (estado.tipo === "autenticado" && estado.token !== token)
   ) {
     return (
-      <div role="status" className="flex min-h-screen items-center justify-center p-6">
+      <div
+        role="status"
+        className="flex min-h-screen items-center justify-center p-6"
+      >
         Verificando sesión...
       </div>
     );
@@ -166,7 +170,10 @@ export function ProtectedRoute({ allowedRoles }: ProtectedRouteProps) {
         role="alert"
         className="flex min-h-screen flex-col items-center justify-center gap-4 p-6 text-center"
       >
-        <p>No fue posible verificar tu sesión. Revisa tu conexión e inténtalo nuevamente.</p>
+        <p>
+          No fue posible verificar tu sesión. Revisa tu conexión e inténtalo
+          nuevamente.
+        </p>
         <button
           type="button"
           onClick={() => setIntento((anterior) => anterior + 1)}
@@ -180,10 +187,7 @@ export function ProtectedRoute({ allowedRoles }: ProtectedRouteProps) {
 
   if (!allowedRoles.includes(estado.perfil.tipoCuenta)) {
     return (
-      <Navigate
-        to={obtenerRutaPorRol(estado.perfil.tipoCuenta)}
-        replace
-      />
+      <Navigate to={obtenerRutaPorRol(estado.perfil.tipoCuenta)} replace />
     );
   }
 
