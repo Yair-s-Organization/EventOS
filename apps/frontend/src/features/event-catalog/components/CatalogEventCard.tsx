@@ -22,11 +22,10 @@ export function CatalogEventCard({
   const [failedPoster, setFailedPoster] = useState<string | null>(null);
 
   const posterCandidate = event.poster?.trim() ?? "";
+
   const poster = /^https?:\/\//i.test(posterCandidate)
     ? posterCandidate
-    : posterCandidate
-      ? `http://localhost:9000/eventos-public/${posterCandidate.replace(/^\/+/, "")}`
-      : null;
+    : null;
 
   const imageAvailable = poster !== null && failedPoster !== poster;
 

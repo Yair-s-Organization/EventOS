@@ -1,12 +1,18 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import { API_BASE_URL } from "../../../lib/apiClient";
 import { getAuthPathWithReturnUrl, getEventReturnPath } from "../../event-details/utils/eventReturnUrl";
+
+interface DatosInvitacionRegistro {
+  nombreEvento: string;
+  tipo: "INVITACION_LOGISTICA" | "INVITACION_EVENTO_PRIVADO";
+}
 
 export function useRegistro() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const returnPath = getEventReturnPath(searchParams.get("returnUrl"));
+  const tokenInvitacion = searchParams.get("token")?.trim() ?? "";
   const loginPath = getAuthPathWithReturnUrl("/login", returnPath);
 
   const [formData, setFormData] = useState({
@@ -29,9 +35,71 @@ export function useRegistro() {
   });
 
   const [loading, setLoading] = useState(false);
+  const [validandoInvitacion, setValidandoInvitacion] = useState(Boolean(tokenInvitacion));
+  const [datosInvitacion, setDatosInvitacion] = useState<DatosInvitacionRegistro | null>(null);
+  const [invitacionInvalida, setInvitacionInvalida] = useState(false);
+  const [registroDirectoCompletado, setRegistroDirectoCompletado] = useState(false);
   const [modalExitoAbierto, setModalExitoAbierto] = useState(false);
   const [modalIncompletosAbierto, setModalIncompletosAbierto] = useState(false);
   const [correoRegistrado, setCorreoRegistrado] = useState("");
+
+  useEffect(() => {
+    if (!tokenInvitacion) {
+      setValidandoInvitacion(false);
+      setDatosInvitacion(null);
+      setInvitacionInvalida(false);
+      return;
+    }
+
+    let activo = true;
+    setValidandoInvitacion(true);
+
+    (async () => {
+      try {
+        const res = await fetch(
+          `${API_BASE_URL}/auth/invitacion/validar?token=${encodeURIComponent(tokenInvitacion)}`,
+        );
+        const data = await res.json();
+
+        if (!activo) return;
+
+        if (!res.ok || !data?.valido || !data?.correo) {
+          const msg = Array.isArray(data?.message)
+            ? data.message.join(". ")
+            : data?.message ||
+              "El enlace de invitación es inválido, ya fue utilizado o ha expirado.";
+          setInvitacionInvalida(true);
+          setDatosInvitacion(null);
+          setErrors((prev) => ({ ...prev, general: msg }));
+          return;
+        }
+
+        setInvitacionInvalida(false);
+        setDatosInvitacion({
+          nombreEvento: data.nombreEvento,
+          tipo: data.tipo,
+        });
+        setFormData((prev) => ({ ...prev, correo: data.correo }));
+        setErrors((prev) => ({ ...prev, correo: "", general: "" }));
+      } catch {
+        if (!activo) return;
+        setInvitacionInvalida(true);
+        setDatosInvitacion(null);
+        setErrors((prev) => ({
+          ...prev,
+          general: "No se pudo validar el enlace de invitación con el servidor.",
+        }));
+      } finally {
+        if (activo) {
+          setValidandoInvitacion(false);
+        }
+      }
+    })();
+
+    return () => {
+      activo = false;
+    };
+  }, [tokenInvitacion]);
 
   const ValidacionContra = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,64}$/;
   const soloLetrasRegex = /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/;
@@ -232,6 +300,8 @@ export function useRegistro() {
         apellidoMa: formData.apellidoMaterno.trim() || undefined,
         correo: formData.correo.trim(),
         contrasena: formData.contrasena,
+        tokenInvitacion:
+          tokenInvitacion && !invitacionInvalida ? tokenInvitacion : undefined,
       };
 
       const response = await fetch(`${API_BASE_URL}/auth/registro`, {
@@ -257,6 +327,7 @@ export function useRegistro() {
       }
 
       setCorreoRegistrado(data.correo || formData.correo.trim());
+      setRegistroDirectoCompletado(data.requiereVerificacionCorreo === false);
 
       if (!import.meta.env.PROD && typeof window !== "undefined" && data.token) {
         (window as any).__lastRegistrationToken = data.token;
@@ -284,6 +355,10 @@ export function useRegistro() {
     formData,
     errors,
     loading,
+    validandoInvitacion,
+    datosInvitacion,
+    correoBloqueadoPorInvitacion: Boolean(datosInvitacion),
+    registroDirectoCompletado,
     loginPath,
     modalExitoAbierto,
     modalIncompletosAbierto,

@@ -42,6 +42,20 @@ export class AuthController {
   }
 
   @ApiOperation({
+    summary: 'Validar token de invitación recibido por correo para prellenar el registro',
+  })
+  @ApiQuery({
+    name: 'token',
+    required: true,
+    description: 'Token JWT de invitación de logística o evento privado',
+  })
+  @Get('invitacion/validar')
+  @HttpCode(HttpStatus.OK)
+  async validarTokenInvitacion(@Query('token') token: string) {
+    return await this.authService.validarTokenInvitacion(token);
+  }
+
+  @ApiOperation({
     summary:
       'Confirmar correo electrónico mediante token y crear la cuenta en la base de datos',
   })
