@@ -34,23 +34,35 @@ function esPerfilAutenticado(valor: unknown): valor is PerfilAutenticado {
 }
 
 function obtenerRutaPorRol(rol: string): string {
-  if (rol === "Administrador") {
+  if (!rol) return "/cartelera";
+
+  const rolNormalizado = rol
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim();
+
+  if (rolNormalizado.includes("administrador")) {
     return "/menu-admin";
   }
 
-  if (rol === "Subdirección") {
+  if (rolNormalizado.includes("subdireccion")) {
     return "/subdireccion/menu-principal";
   }
 
   if (
-    rol === "Asistente" ||
-    rol === "Usuario Externo" ||
-    rol === "Usuario Interno"
+    rolNormalizado.includes("asistente") ||
+    rolNormalizado.includes("externo") ||
+    rolNormalizado.includes("interno") ||
+    rolNormalizado.includes("estudiante") ||
+    rolNormalizado.includes("docente") ||
+    rolNormalizado.includes("profesor") ||
+    rolNormalizado.includes("empresa")
   ) {
     return "/menu-asistente";
   }
-
-  return "/login";
+  
+  return "/cartelera";
 }
 
 export function ProtectedRoute({ allowedRoles }: ProtectedRouteProps) {

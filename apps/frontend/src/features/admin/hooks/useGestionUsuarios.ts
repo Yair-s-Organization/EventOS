@@ -37,11 +37,9 @@ export function useGestionUsuarios() {
         params.append("buscar", busqueda.trim());
       }
 
-      // Si el filtro seleccionado es Activo o Inactivo, lo mandamos como 'estado'
       if (filtroRol === "Activo" || filtroRol === "Inactivo") {
         params.append("estado", filtroRol);
       } 
-      // Si es un rol específico diferente de Todos, lo mandamos como 'rol'
       else if (filtroRol !== "Todos") {
         params.append("rol", filtroRol);
       }
