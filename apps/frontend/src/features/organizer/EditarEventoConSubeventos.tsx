@@ -164,7 +164,7 @@ function crearColumnasLogistica(
           />
         );
       },
-      className: "min-w-[16rem] max-w-[16rem] break-all px-3",
+      className: "text-center min-w-[16rem] max-w-[16rem] break-all px-3",
     },
   ];
 }
@@ -518,7 +518,6 @@ export function EditarEventoConSubeventos() {
                   : `Reenviar (${invitado.horasRestantesCooldown ?? 8}h)`
               }
               variant={invitado.puedeReenviar ? "primary" : "secondary"}
-              size="sm"
               disabled={!invitado.puedeReenviar}
               type="button"
               onClick={() => handleReenviarInvitado(invitado)}
@@ -526,13 +525,13 @@ export function EditarEventoConSubeventos() {
             <Button
               text="Eliminar"
               variant="danger"
-              size="sm"
               type="button"
               onClick={() => setInvitadoAEliminar(invitado)}
             />
           </div>
         ),
-        className: "min-w-[16rem] max-w-[16rem] break-all px-3 text-center whitespace-nowrap",
+        className:
+          "min-w-[16rem] max-w-[16rem] break-all px-3 text-center whitespace-nowrap",
       },
     ],
     [idEvento],
@@ -1300,9 +1299,7 @@ export function EditarEventoConSubeventos() {
             {(datosGenerales?.idAlcance === AlcanceEvento.PRIVADO ||
               evento?.idAlcance === AlcanceEvento.PRIVADO) && (
               <div id="contenedorInvitados" className="space-y-5 pt-2">
-                <h3 className="text-xl font-bold sm:text-2xl">
-                  Tus invitados
-                </h3>
+                <h3 className="text-xl font-bold sm:text-2xl">Tus invitados</h3>
                 {invitados.length > 0 ? (
                   <div className="shadow-md w-fit overflow-x-auto rounded-md border border-gray-200">
                     <Table
