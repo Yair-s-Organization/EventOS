@@ -22,6 +22,10 @@
 
   /* Fuente */
   --font-merriweather: "Poppins", serif;
+  
+  /* Alerta Verificación */
+  --color-alerta-verificacion: #FEF3C7;
+  --color-alerta-margen: #F7D397;
 
   --color-eventos-surface: #FFFFFF;
   --color-eventos-panel-surface: #F5F5F5;

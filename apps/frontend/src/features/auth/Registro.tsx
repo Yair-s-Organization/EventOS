@@ -34,10 +34,9 @@ export function Registro() {
       : "Invitado a Evento Privado";
 
   return (
-    <div className="flex min-h-[calc(100vh-160px)] items-center justify-center p-4">
-      <div className="w-full max-w-2xl rounded-lg bg-white p-8 shadow-sm border border-gray-100">
-        
-        <h1 className="mb-8 text-center text-3xl font-merriweather font-bold text-[36px] text-gray-900">
+    <div className="flex min-h-[calc(100vh-160px)] items-center justify-center py-4 sm:py-8 px-2 sm:px-4">
+      <div className="w-full max-w-2xl rounded-2xl bg-white p-4 sm:p-6 md:p-8 shadow-sm border border-gray-100">
+        <h1 className="mb-6 sm:mb-8 text-center text-2xl sm:text-3xl md:text-[36px] font-merriweather font-bold text-gray-900">
           Registro
         </h1>
 
@@ -61,24 +60,25 @@ export function Registro() {
         )}
 
         {errors.general && (
-          <div className="mb-4 rounded bg-red-50 p-3 text-center text-sm text-eventos-error border border-red-200">
+          <div className="mb-4 rounded-lg bg-red-50 p-3 text-center text-sm text-eventos-error border border-red-200 font-merriweather">
             {errors.general}
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="space-y-4 font-merriweather font-regular text-[16px]">
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 items-start">
-              <h2 className="mb-4 text-3xl font-merriweather font-medium text-[20px] text-gray-900">
+          <div className="grid grid-cols-1 md:grid-cols-2 md:grid-rows-[auto_auto_auto_auto] gap-y-4 md:gap-y-6 md:gap-x-8 items-start font-merriweather">
+            <div className="md:col-start-1 md:row-start-1">
+              <h2 className="text-lg sm:text-[20px] font-merriweather font-semibold text-gray-900 pb-1 border-b border-gray-100 md:border-b-0">
                 Datos de la Cuenta
-              </h2>
-              <h2 className="mb-1 text-3xl font-merriweather font-medium text-[20px] text-gray-900">
-                Datos Personales
               </h2>
             </div>
 
-            <div className="-mb-6 grid grid-cols-1 gap-6 md:grid-cols-2 items-start">
-              <FormField label="Correo Electrónico" htmlFor="correo">
+            <div className="md:col-start-1 md:row-start-2">
+              <FormField
+                label="Correo Electrónico"
+                htmlFor="correo"
+                errorMessage={errors.correo}
+              >
                 <Input
                   id="correo"
                   name="correo"
@@ -102,48 +102,106 @@ export function Registro() {
                   )}
                 </div>
               </FormField>
-
-              <FormField label="Nombre(s)" htmlFor="nombre">
-                <Input id="nombre" name="nombre" type="text" placeholder="Ingresa tu nombre" value={formData.nombre} onChange={handleChange} hasError={!!errors.nombre} maxLength={50}/>
-                <div className="min-h-10.5 mt-1">
-                  {errors.nombre && (
-                    <p className="text-eventos-error text-xs font-merriweather">{errors.nombre}</p>
-                  )}
+              {!errors.correo && (
+                <div className="-mt-4">
+                  <FieldMessage variant="helper">
+                    Usa tu correo institucional (@ipn.mx, @alumno.ipn.mx) o tu cuenta personal.
+                  </FieldMessage>
                 </div>
+              )}
+            </div>
+
+            <div className="md:col-start-1 md:row-start-3">
+              <PasswordField
+                id="contrasena"
+                name="contrasena"
+                label="Contraseña"
+                placeholder="Ejemplo01!"
+                value={formData.contrasena}
+                onChange={handleChange}
+                error={errors.contrasena}
+              />
+              {!errors.contrasena && (
+                <div className="mt-1.5">
+                  <FieldMessage variant="helper">
+                    Tu contraseña debe tener entre 8 y 64 caracteres, y contener al menos: una mayúscula, una minúscula, un número y un carácter especial (ej. @, $, !, %, *, ?, &, _, -).
+                  </FieldMessage>
+                </div>
+              )}
+            </div>
+
+            <div className="md:col-start-1 md:row-start-4">
+              <PasswordField
+                id="confirmarContrasena"
+                name="confirmarContrasena"
+                label="Confirmar contraseña"
+                placeholder="Ejemplo01!"
+                value={formData.confirmarContrasena}
+                onChange={handleChange}
+                error={errors.confirmarContrasena}
+              />
+            </div>
+
+            <div className="md:col-start-2 md:row-start-1 mt-6 pt-4 border-t border-gray-100 md:mt-0 md:pt-0 md:border-t-0">
+              <h2 className="text-lg sm:text-[20px] font-merriweather font-semibold text-gray-900 pb-1 border-b border-gray-100 md:border-b-0">
+                Datos Personales
+              </h2>
+            </div>
+
+            <div className="md:col-start-2 md:row-start-2">
+              <FormField
+                label="Nombre(s)"
+                htmlFor="nombre"
+                errorMessage={errors.nombre}
+              >
+                <Input
+                  id="nombre"
+                  name="nombre"
+                  type="text"
+                  placeholder="Ingresa tu nombre"
+                  value={formData.nombre}
+                  onChange={handleChange}
+                  hasError={!!errors.nombre}
+                  maxLength={50}
+                />
               </FormField>
             </div>
 
-            <div className="mb-2 grid grid-cols-1 gap-6 md:grid-cols-2 items-start">
-              <div>
-                <PasswordField id="contrasena" name="contrasena" label="Contraseña" placeholder="Ejemplo01!" value={formData.contrasena} onChange={handleChange} error={errors.contrasena}/>
-                <div className="mt-2">
-                  {!errors.contrasena && (
-                    <FieldMessage variant="helper">
-                      Tu contraseña debe tener entre 8 y 64 caracteres, y contener al menos: una mayúscula, una minúscula, un número y un carácter especial (ej. @, $, !, %, *, ?, &, _, -).
-                    </FieldMessage>
-                  )}
-                </div>
-              </div>
-
-              <FormField label="Apellido Paterno" htmlFor="apellidoPa">
-                <Input id="apellidoPa" name="apellidoPa" type="text" placeholder="Ingresa tu apellido paterno" value={formData.apellidoPa} onChange={handleChange} hasError={!!errors.apellidoPa} maxLength={50}/>
-                <div className="min-h-10.5 mt-1">
-                  {errors.apellidoPa && (
-                    <p className="text-eventos-error text-xs font-merriweather">{errors.apellidoPa}</p>
-                  )}
-                </div>
+            <div className="md:col-start-2 md:row-start-3">
+              <FormField
+                label="Apellido Paterno"
+                htmlFor="apellidoPa"
+                errorMessage={errors.apellidoPa}
+              >
+                <Input
+                  id="apellidoPa"
+                  name="apellidoPa"
+                  type="text"
+                  placeholder="Ingresa tu apellido paterno"
+                  value={formData.apellidoPa}
+                  onChange={handleChange}
+                  hasError={!!errors.apellidoPa}
+                  maxLength={50}
+                />
               </FormField>
             </div>
 
-            <div className="-mb-4 grid grid-cols-1 gap-6 md:grid-cols-2 items-start">
-              <PasswordField id="confirmarContrasena" name="confirmarContrasena" label="Confirmar contraseña" placeholder="Ejemplo01!" value={formData.confirmarContrasena} onChange={handleChange} error={errors.confirmarContrasena}/>
-              <FormField label="Apellido Materno" htmlFor="apellidoMaterno">
-                <Input id="apellidoMaterno" name="apellidoMaterno" placeholder="Ingresa tu apellido materno" type="text" value={formData.apellidoMaterno} onChange={handleChange} hasError={!!errors.apellidoMaterno} maxLength={50}/>
-                <div className="min-h-10.5 mt-1">
-                  {errors.apellidoMaterno && (
-                    <p className="text-eventos-error text-xs font-merriweather">{errors.apellidoMaterno}</p>
-                  )}
-                </div>
+            <div className="md:col-start-2 md:row-start-4">
+              <FormField
+                label="Apellido Materno"
+                htmlFor="apellidoMaterno"
+                errorMessage={errors.apellidoMaterno}
+              >
+                <Input
+                  id="apellidoMaterno"
+                  name="apellidoMaterno"
+                  placeholder="Ingresa tu apellido materno"
+                  type="text"
+                  value={formData.apellidoMaterno}
+                  onChange={handleChange}
+                  hasError={!!errors.apellidoMaterno}
+                  maxLength={50}
+                />
               </FormField>
             </div>
           </div>
@@ -154,16 +212,18 @@ export function Registro() {
               text="Registrar"
               loadingText="Registrando..."
               loading={loading}
-              disabled={validandoInvitacion}
               fullWidth
               size="md"
               variant="primary"
-              className="max-w-xs"
+              className="w-full sm:w-auto sm:min-w-64"
             />
           </div>
 
           <div className="mt-4 text-center">
-            <TextLink to={loginPath} className="text-sky-500 font-merriweather font-semibold text-[16px] hover:text-sky-600">
+            <TextLink
+              to={loginPath}
+              className="text-sky-500 font-merriweather font-semibold text-sm sm:text-[16px] hover:text-sky-600"
+            >
               ¿Ya tienes cuenta? Inicia sesión
             </TextLink>
           </div>
@@ -250,15 +310,24 @@ export function Registro() {
         )}
       </Modal>
 
-      <Modal titulo="Campos obligatorios incompletos" contenido="" mostrarModal={modalIncompletosAbierto} cerrarModal={handleCerrarModalIncompletos}>
+      <Modal
+        titulo="Campos obligatorios incompletos"
+        contenido=""
+        mostrarModal={modalIncompletosAbierto}
+        cerrarModal={handleCerrarModalIncompletos}
+      >
         <div className="space-y-4 font-merriweather text-sm text-gray-700">
-          <p> Por favor completa todos los campos obligatorios resaltados para continuar.</p>
+          <p>Por favor completa todos los campos obligatorios resaltados para continuar.</p>
           <div className="flex justify-end pt-2">
-            <Button text="Cerrar" type="button" onClick={handleCerrarModalIncompletos} className="px-6 py-2 rounded-md transition-colors shadow"/>
+            <Button
+              text="Cerrar"
+              type="button"
+              onClick={handleCerrarModalIncompletos}
+              className="px-6 py-2 rounded-md transition-colors shadow w-full sm:w-auto"
+            />
           </div>
         </div>
       </Modal>
-
     </div>
   );
 }
