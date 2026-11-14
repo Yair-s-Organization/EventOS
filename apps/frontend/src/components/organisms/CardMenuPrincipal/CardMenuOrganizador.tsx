@@ -17,7 +17,7 @@ export function CardMenuPrincipal({
   idEstadoEvento,
   subeventos,
 }: MisEventosItem) {
-  const estiloTexto = "font-merriweather text-base";
+  const estiloTexto = "font-merriweather text-[14px]";
   const navigate = useNavigate();
   const primerSubevento = subeventos?.[0];
   const ultimoSubevento = subeventos?.[subeventos.length - 1];
@@ -30,11 +30,11 @@ export function CardMenuPrincipal({
     ),
   ];
 
-
   return (
     <article
       id="contenedorTarjeta"
-      className="flex h-full min-h-[30rem] w-full flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-shadow hover:shadow-md">
+      className="flex h-full min-w-0 flex-col overflow-hidden rounded-lg border border-eventos-panel-border bg-eventos-surface shadow-sm transition-shadow hover:shadow-md"
+    >
       <div id="contenedorPoster" className="px-4 pt-4">
         {posterUrl ? (
           <img
@@ -46,13 +46,17 @@ export function CardMenuPrincipal({
           <div
             className="flex aspect-video items-center justify-center rounded-lg bg-gray-100 px-4 text-center text-sm text-gray-500"
             role="img"
-            aria-label={`No hay póster para ${nombre}`}>
+            aria-label={`No hay póster para ${nombre}`}
+          >
             Sin póster disponible
           </div>
         )}
       </div>
       <div id="contenedorDatosCard" className="flex flex-1 flex-col gap-4 p-4">
-        <div id="contenedorBadges" className="flex flex-wrap justify-between gap-2">
+        <div
+          id="contenedorBadges"
+          className="flex flex-wrap justify-between gap-2"
+        >
           <Badge variant="primary">
             {idAlcance !== undefined ? AlcanceEvento[idAlcance] : "Sin alcance"}
           </Badge>
@@ -67,28 +71,41 @@ export function CardMenuPrincipal({
                     : idEstadoEvento === 4
                       ? "primary"
                       : "error"
-            }>
-            {idEstadoEvento == 3 ? "PENDIENTE" : idEstadoEvento !== undefined && EstadoEvento[idEstadoEvento]}
+            }
+          >
+            {idEstadoEvento == 3
+              ? "PENDIENTE"
+              : idEstadoEvento !== undefined && EstadoEvento[idEstadoEvento]}
           </Badge>
         </div>
         <div id="contenedorTexto" className="space-y-2">
-          <h2 className="break-words font-merriweather text-xl font-semibold sm:text-2xl">
+          <h2 className="break-words font-merriweather text-xl font-semibold sm:text-[18px]">
             {nombre}
           </h2>
-          {tieneUnSubevento || primerSubevento?.fecha === ultimoSubevento?.fecha ? (
+          {tieneUnSubevento ||
+          primerSubevento?.fecha === ultimoSubevento?.fecha ? (
             <p className={estiloTexto}>
               <strong>Fecha:</strong>{" "}
-              {formatearFechaDdMmAaaa(primerSubevento?.fecha, "Fecha no disponible")}
+              {formatearFechaDdMmAaaa(
+                primerSubevento?.fecha,
+                "Fecha no disponible",
+              )}
             </p>
           ) : (
             <>
               <p className={estiloTexto}>
                 <strong>Fecha inicio:</strong>{" "}
-                {formatearFechaDdMmAaaa(primerSubevento?.fecha, "Fecha no disponible")}
+                {formatearFechaDdMmAaaa(
+                  primerSubevento?.fecha,
+                  "Fecha no disponible",
+                )}
               </p>
               <p className={estiloTexto}>
                 <strong>Fecha fin:</strong>{" "}
-                {formatearFechaDdMmAaaa(ultimoSubevento?.fecha, "Fecha no disponible")}
+                {formatearFechaDdMmAaaa(
+                  ultimoSubevento?.fecha,
+                  "Fecha no disponible",
+                )}
               </p>
             </>
           )}
@@ -104,7 +121,9 @@ export function CardMenuPrincipal({
           )}
           <p className={estiloTexto}>
             <strong>{espacios.length > 1 ? "Espacios:" : "Espacio:"}</strong>{" "}
-            {espacios.length > 0 ? espacios.join(", ") : "Recinto no disponible"}
+            {espacios.length > 0
+              ? espacios.join(", ")
+              : "Recinto no disponible"}
           </p>
         </div>
       </div>
@@ -116,7 +135,9 @@ export function CardMenuPrincipal({
           onClick={() => {
             tieneUnSubevento
               ? navigate(`/organizador/administrar-evento/${idEvento}`)
-              : navigate(`/organizador/administrar-evento-subeventos/${idEvento}`)
+              : navigate(
+                  `/organizador/administrar-evento-subeventos/${idEvento}`,
+                );
           }}
         />
       </div>
