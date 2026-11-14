@@ -5,11 +5,17 @@ export function DashboardLayout() {
   const usuarioGuardado = JSON.parse(localStorage.getItem("usuario") || "{}");
   const rolBackend = usuarioGuardado.tipoCuenta;
 
+  const tipoNorm = String(rolBackend ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+
   let rolNavbar: "asistente" | "subdireccion" | "admin";
 
-  if (rolBackend === "admin" || rolBackend === "Administrador") {
+  if (tipoNorm.includes("admin")) {
     rolNavbar = "admin";
-  } else if (rolBackend === "subdireccion" || rolBackend === "Subdirección") {
+  } else if (tipoNorm.includes("subdireccion")) {
     rolNavbar = "subdireccion";
   } else {
     rolNavbar = "asistente";
