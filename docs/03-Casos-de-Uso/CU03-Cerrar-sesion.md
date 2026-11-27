@@ -3,7 +3,7 @@ caso_de_uso: "CU-03"
 nombre: "Cerrar sesión"
 actor: "Asistente, subdirección de servicios educativos, organizador, persona de logística o administrador (Cualquier usuario autenticado del sistema)."
 proyecto: "EventOS"
-version: "2.0"
+version: "2.1"
 tags:
   - caso-de-uso
   - ads
@@ -32,7 +32,7 @@ Permitir a cualquier usuario autenticado (asistente, subdirección de servicios 
 | **Entradas** | ID de la sesión del usuario autenticado. |
 | **Salidas** | • Ventana emergente de confirmación con el mensaje **MSG-P-02** "¿Desea cerrar su sesión?" y los botones [Aceptar] y [Cancelar].<br>• Mensaje informativo **MSG-I-04** "Sesión finalizada con éxito".<br>• Pantalla **UI01** "Pantalla de Inicio de Sesión", a la cual se redirige automáticamente al actor una vez finalizado el proceso. |
 | **Precondiciones** | El actor debe de contar con una sesión activa e iniciada dentro del sistema. |
-| **Postcondiciones** | Destrucción / Invalidación de la sesión: El token de autenticación o galleta (*cookie*) activa del usuario se elimina/invalida tanto en el cliente (navegador) como en el servidor/base de datos. |
+| **Postcondiciones** | Destrucción / Invalidación de la sesión: El token JWT activo se invalida en lista negra (`RNF-09`) y se limpia la sesión del cliente (navegador). |
 | **Errores** | Se mostrará el mensaje MSG-E-08 "Error de conexión con la base de datos", cuando una falla de conexión con la base de datos impida completar el cierre de sesión. |
 | **Tipo** | Primario (Para todos los actores) |
 

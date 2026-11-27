@@ -2,7 +2,7 @@ import { defineConfig } from 'vitepress'
 
 export default defineConfig({
   title: 'EventOS Docs',
-  description: 'Documentación Oficial de Análisis y Diseño de Sistemas (v2.0) — Sinergia Ágil (ESCOM - IPN)',
+  description: 'Documentación Oficial de Análisis y Diseño de Sistemas (v2.1) — Sinergia Ágil (ESCOM - IPN)',
   base: process.env.VITEPRESS_BASE || '/',
   lang: 'es-MX',
   cleanUrls: true,
@@ -20,7 +20,7 @@ export default defineConfig({
       { text: 'Hub Proyecto', link: '/00-Proyecto-EventOS' },
       { text: 'Requerimientos y Reglas', link: '/01-Requerimientos-y-Reglas-de-Negocio' },
       { text: 'Actores y Catálogos', link: '/02-Actores-y-Catalogos' },
-      { text: 'Casos de Uso (CU-01–38)', link: '/03-Casos-de-Uso/00-Indice-Casos-de-Uso' },
+      { text: 'Casos de Uso (CU-01–39)', link: '/03-Casos-de-Uso/00-Indice-Casos-de-Uso' },
       { text: 'Diseño UI', link: '/04-Diseno-UI' },
       { text: 'Sprints', link: '/05-Planeacion-y-Sprints' },
     ],
@@ -40,12 +40,13 @@ export default defineConfig({
         text: 'Casos de Uso — Universales',
         collapsed: false,
         items: [
-          { text: 'Índice General (CU-01 – CU-38)', link: '/03-Casos-de-Uso/00-Indice-Casos-de-Uso' },
+          { text: 'Índice General (CU-01 – CU-39)', link: '/03-Casos-de-Uso/00-Indice-Casos-de-Uso' },
           { text: 'CU-01 Iniciar sesión', link: '/03-Casos-de-Uso/CU01-Iniciar-sesion' },
           { text: 'CU-02 Ver perfil', link: '/03-Casos-de-Uso/CU02-Ver-perfil' },
           { text: 'CU-03 Cerrar sesión', link: '/03-Casos-de-Uso/CU03-Cerrar-sesion' },
           { text: 'CU-04 Consultar cartelera de eventos', link: '/03-Casos-de-Uso/CU04-Consultar-cartelera-de-eventos' },
           { text: 'CU-05 Visualizar detalles del evento', link: '/03-Casos-de-Uso/CU05-Visualizar-detalles-del-evento' },
+          { text: 'CU-39 Restablecer contraseña', link: '/03-Casos-de-Uso/CU39-Restablecer-contrasena' },
         ]
       },
       {

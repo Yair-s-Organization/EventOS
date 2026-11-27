@@ -3,7 +3,7 @@ caso_de_uso: "CU-36"
 nombre: "Gestionar inventario de equipos de cómputo"
 actor: "Administrador"
 proyecto: "EventOS"
-version: "2.0"
+version: "2.1"
 tags:
   - caso-de-uso
   - ads
@@ -28,7 +28,7 @@ Permitir al Administrador consultar y modificar el estado de los equipos de cóm
 | **Caso de uso** | **CU-36 Gestionar inventario de equipos de cómputo** |
 | **Autor** | Zempoalteca Salinas Enrique |
 | **Actor** | Administrador |
-| **Propósito** | Permitir al Administrador controlar el estado operativo de los equipos de cómputo existentes en cada laboratorio, manteniendo actualizada la cantidad de equipos funcionales y la capacidad disponible para la realización de eventos. |
+| **Propósito** | Permitir al Administrador controlar el estado operativo de los equipos de cómputo existentes en cada laboratorio (`2104`–`2107`, dotación estándar de **36 equipos de alumno reservables + 1 estación de docente**), manteniendo actualizada la cantidad de equipos funcionales y el techo operativo `min(cupoMaximo, equiposFuncionales)` (`RN-07`, `RN-18`) para la realización de eventos. |
 | **Entradas** | • ID del Administrador autenticado, obtenido de la sesión activa.<br>• ID del laboratorio seleccionado.<br>• ID del equipo de cómputo que se desea modificar.<br>• Nuevo estado del equipo: Activo, Inactivo o Mantenimiento. |
 | **Salidas** | • Pantalla **UI23** "Gestión de Equipos de Laboratorio".<br>• Representación visual de los equipos registrados en el laboratorio, mostrando su estado actual.<br>• Mensaje informativo **MSG-I-08** "Operación realizada con éxito.", cuando se actualice correctamente el estado del equipo.<br>• Actualización visual del estado del equipo seleccionado.<br>• Recálculo automático de la cantidad de equipos funcionales y de la capacidad operativa del laboratorio. |
 | **Precondiciones** | • El actor debe contar con una cuenta registrada y activa dentro de la plataforma.<br>• El actor debe haber iniciado sesión correctamente mediante el CU-01 "Iniciar Sesión".<br>• El actor debe tener asignado el rol de Administrador.<br>• El laboratorio seleccionado debe encontrarse registrado en la base de datos.<br>• El equipo que se desea modificar debe pertenecer al laboratorio seleccionado. |

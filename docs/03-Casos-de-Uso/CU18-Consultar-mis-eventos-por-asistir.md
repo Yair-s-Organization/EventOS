@@ -3,7 +3,7 @@ caso_de_uso: "CU-18"
 nombre: "Consultar mis eventos por asistir"
 actor: "Asistente"
 proyecto: "EventOS"
-version: "2.0"
+version: "2.1"
 tags:
   - caso-de-uso
   - ads
@@ -30,7 +30,7 @@ Permitir al Asistente consultar los eventos en los que tiene o ha tenido una res
 | **Actor** | Asistente |
 | **Propósito** | Permitir al Asistente consultar sus reservas de eventos, visualizar la información correspondiente y conocer su estado, así como acceder a las acciones disponibles para cada reserva. |
 | **Entradas** | • Identificador del Asistente autenticado.<br>• Selección de la opción «Mis Boletos» desde **UI03** Menú Principal del Asistente.<br>• Criterios opcionales de búsqueda: nombre del evento, ponente, fecha, categoría o espacio. |
-| **Salidas** | • Listado de eventos asociados a las reservas del Asistente.<br>• Información del evento: nombre, categoría, alcance, fecha, horario, espacio y modalidad de acceso.<br>• Estado de cada reserva (incluyendo estados resultantes de cambios de recinto/aforo como `Cancelado` o `CANCELADO_POR_SOBRECUPO`).<br>• Opciones «Ver QR» (habilitada únicamente en modalidades con boleto QR y reserva vigente; omitida en *Registro simple sin QR*) y «Cancelar Asistencia», según corresponda.<br>• Mensajes informativos o de error, cuando corresponda. |
+| **Salidas** | • Pantalla **UI08** "Consultar sus Eventos (Reservas del Asistente o Mis Boletos)", incluyendo reservas vigentes e historial de participación (`CU-14`).<br>• Información del evento: nombre, categoría, alcance, fecha, horario, espacio y modalidad de acceso.<br>• Estado de cada reserva (incluyendo estados resultantes de cambios de recinto, modalidad o reducción de `cupoMaximo` como `Cancelado` o `CANCELADO_POR_SOBRECUPO`).<br>• Opciones «Ver QR» (habilitada únicamente en modalidades con boleto QR y reserva vigente; omitida en *Registro simple sin QR*) y «Cancelar Asistencia», según corresponda.<br>• Mensajes informativos o de error, cuando corresponda. |
 | **Precondiciones** | El Asistente debe haber iniciado sesión en el sistema. |
 | **Postcondiciones** | El sistema presenta las reservas asociadas al Asistente y la información de sus respectivos eventos.<br>La consulta y aplicación de filtros no modifican los registros de las reservas. |
 | **Errores** | • **MSG-I-20** «No cuentas con eventos registrados».<br>• **MSG-I-23** «No se encontraron registros que coincidan con los filtros seleccionados».<br>• **MSG-E-28** «No fue posible consultar tus eventos. Intenta nuevamente». |

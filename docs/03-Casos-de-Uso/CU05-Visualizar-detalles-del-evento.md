@@ -3,7 +3,7 @@ caso_de_uso: "CU-05"
 nombre: "Visualizar detalles del evento"
 actor: "Público General / Asistente / Organizador / Subdirección de Servicios Educativos / Personal de Logística / Administrador."
 proyecto: "EventOS"
-version: "2.0"
+version: "2.1"
 tags:
   - caso-de-uso
   - ads
@@ -29,8 +29,8 @@ Permitir al público general y a los usuarios de la plataforma visualizar los de
 | **Autor** | Lorena Zuñiga Gonzalez. |
 | **Actor** | Público General / Asistente / Organizador / Subdirección de Servicios Educativos / Personal de Logística / Administrador. |
 | **Propósito** | Permitir que cualquier persona consulte los detalles de eventos publicados conforme a su alcance, sin exigir autenticación para eventos públicos. Las acciones exclusivas de logística requieren asignación y sesión activa. |
-| **Entradas** | ID del evento seleccionado en UI04 o UI18. Solicitud de visualización de detalles. La sesión es opcional para eventos públicos; se requiere cuando se accede a funciones restringidas. |
-| **Salidas** | Pantalla UI05 "Detalles del Evento", con fecha, horario, ponentes, recinto, descripción y modalidad de acceso. Eventos de acceso libre: informan que no requieren registro ni boleto. Eventos con registro previo (*Registro simple sin QR*, *QR Admisión general* o *QR con mapa*): opción [Reservar lugar]. Opción [Escanear QR] únicamente para el personal de logística autorizado en modalidades con boleto QR. |
+| **Entradas** | ID del evento seleccionado en UI04 o UI18, o enlace compartible privado `/eventos/privado/:tokenSubEvento`. Solicitud de visualización de detalles (`UI05` y subvista de subevento `UI05.1`). La sesión es opcional para eventos públicos; se requiere cuando se accede a funciones restringidas o enlaces privados. |
+| **Salidas** | Pantalla UI05 "Detalles del Evento" (y subvista `UI05.1` por subevento), con fecha, horario, ponentes, recinto, disponibilidad efectiva (`min(cupoMaximo, aforoActualRecinto)`), póster, descripción y modalidad de acceso. Eventos de acceso libre: informan que no requieren registro ni boleto. Eventos con registro previo (*Registro simple sin QR*, *QR Admisión general* o *QR con mapa*): opción [Reservar lugar]. Opción [Control de acceso] (`UI17`) / [Escanear QR] (`UI19`) únicamente para el personal de logística autorizado en el subevento asignado. |
 | **Precondiciones** | Ninguna para consulta pública de un evento publicado. Para consultar datos internos de un evento asignado o usar [Escanear QR], el actor deberá estar autenticado y contar con autorización. |
 | **Postcondiciones** | El actor visualiza los detalles del evento autorizado para su alcance. La consulta no modifica la base de datos. La sesión, si existía, permanece activa. |
 | **Errores** | MSG-E-08 cuando no se recupera información. MSG-E-06 si el evento no existe, está cancelado o no es visible. MSG-E-41 si un usuario de logística intenta acceder a un evento no asignado mediante UI18. |
@@ -44,10 +44,10 @@ Permitir al público general y a los usuarios de la plataforma visualizar los de
 1. El actor selecciona [Ver detalles] de un evento visible desde UI04 "Cartelera de Eventos". El personal de logística también puede abrir un evento asignado desde UI18 "Panel de Eventos Asignados".
 2. El sistema obtiene el identificador y consulta los datos del evento sin exigir inicio de sesión cuando sea público; si proviene de UI18, verifica la asignación al personal de logística. [Trayectoria A] [Trayectoria B]
 3. El sistema verifica que el evento exista, esté publicado y sea visible para el actor de acuerdo con su alcance:
-   - Si es alcance **Privado**, comprueba que el usuario autenticado esté registrado en la lista de invitados del evento, sea su organizador, directivo o personal asignado. Si no ha iniciado sesión o está autenticado con una cuenta sin permiso, muestra un mensaje solicitando iniciar sesión con la cuenta invitada y el botón **[Iniciar sesión]** con retorno automático al evento tras autenticarse.
+   - Si es alcance **Privado**, comprueba que el usuario autenticado esté registrado en la lista de invitados del subevento (`invitacionEvento.idSubEvento`), sea su organizador, directivo o personal asignado. Si accede por enlace privado (`/eventos/privado/:tokenSubEvento`) sin sesión o con una cuenta sin permiso, muestra el aviso correspondiente con botón **[Iniciar sesión]** / **[Aceptar invitación]** y retorno automático tras autenticarse.
    - Si es alcance **Interno**, valida que el usuario pertenezca a la comunidad interna del IPN o que, siendo externo, posea un boleto previo emitido antes del cambio de alcance (`CU-27`). [Trayectoria C]
-4. Muestra UI05 "Detalles del Evento" con nombre, descripción, fecha, horario, ponentes, recinto y modalidad de acceso. Si es de acceso libre, informa que no necesita registro ni boleto; si requiere registro previo (*Registro simple sin QR*, *QR Admisión general* o *QR con mapa*), habilita [Reservar lugar].
-5. El actor consulta los detalles. Puede solicitar una reserva cuando el evento requiera registro previo [Trayectoria E]. Solo el personal de logística autenticado y asignado puede seleccionar [Escanear QR] cuando el subevento utilice boleto QR. [Trayectoria D]
+4. Muestra UI05 "Detalles del Evento" (y su desglose `UI05.1` por subevento) con nombre, descripción, fecha, horario, ponentes, recinto, lugares disponibles sobre el cupo efectivo (`min(cupoMaximo, aforoActualRecinto)`) y modalidad de acceso. Si es de acceso libre, informa que no necesita registro ni boleto; si requiere registro previo (*Registro simple sin QR*, *QR Admisión general* o *QR con mapa*), habilita [Reservar lugar].
+5. El actor consulta los detalles. Puede solicitar una reserva cuando el evento requiera registro previo [Trayectoria E]. Solo el personal de logística autenticado y asignado puede abrir `UI17` "Control de Acceso" o seleccionar [Escanear QR] (`UI19`) en subeventos con boleto QR. [Trayectoria D]
 
 *Fin de la trayectoria.*
 

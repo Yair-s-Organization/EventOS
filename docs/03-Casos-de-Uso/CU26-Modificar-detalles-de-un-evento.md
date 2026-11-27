@@ -3,7 +3,7 @@ caso_de_uso: "CU-26"
 nombre: "Modificar detalles de un evento (extend CU-24)"
 actor: "Organizador"
 proyecto: "EventOS"
-version: "2.0"
+version: "2.1"
 tags:
   - caso-de-uso
   - ads
@@ -28,9 +28,9 @@ tags:
 | **Actor** | Organizador |
 | **Propósito** | Permite al usuario modificar determinada especificación de sus eventos. |
 | **Entradas** | Nombre del evento y descripción del evento. |
-| **Salidas** | Pantalla **UI15** Panel de Administración y Detalles del Evento. |
+| **Salidas** | Pantalla **UI15** Administración y Detalles del Evento (Único y Multi-actividad) y acceso a **UI16** Formulario de Modificación de Evento (Único y Multi-actividad). |
 | **Precondiciones** | El organizador ya ha escogido un evento previamente en UI14 Panel Consultar Mis Eventos. |
-| **Postcondiciones** | Se muestra UI15 Panel de Administración y Detalles del Evento. |
+| **Postcondiciones** | Se muestra UI15 Administración y Detalles del Evento (Único y Multi-actividad) y se habilita la edición desde UI16 Formulario de Modificación de Evento (Único y Multi-actividad). |
 | **Errores** | MSG-E-07 Evento finalizado o inactivo |
 | **Tipo** | Secundario para el organizador, viene del CU-24 “Consultar mis eventos” (`<<extend>>`). |
 
@@ -39,7 +39,7 @@ tags:
 
 1. Muestra la información actual del evento.
 2. Selecciona la opción editar información general del evento. [Trayectoria A] [Trayectoria B]
-3. Muestra UI15 Panel de Administración y Detalles del Evento.
+3. Muestra UI15 Administración y Detalles del Evento (Único y Multi-actividad) y abre **UI16** Formulario de Modificación de Evento (Único y Multi-actividad) al editar detalles, ponentes (`CU-10`) o requerimientos técnicos (`CU-28`).
 
 *Fin de la trayectoria.*
 
