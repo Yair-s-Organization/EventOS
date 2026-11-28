@@ -3,8 +3,12 @@ import type { FormEvent } from "react";
 import { useNavigate, useParams } from "react-router";
 import {
   AlcanceEvento,
+  calcularCapacidadEfectiva,
   calcularImpactoCambioSubevento,
-  type ModalidadAcceso,
+  ModalidadAcceso,
+  normalizarCupoMaximo,
+  permiteCupoConfigurable,
+  validarCupoMaximo,
   type ActualizarInfoGeneralPayload,
   type EventoOrganizadorDetalle,
   type ModificarLogisticaPayload,
@@ -135,6 +139,17 @@ function obtenerValoresLogistica(
       (item) => item.idSubEvento === subevento.idSubEvento,
     );
 
+  const modalidadInicial =
+    propuesta?.idModalidadAcceso ?? subevento.idModalidadAcceso;
+  const cupoInicial = permiteCupoConfigurable(modalidadInicial)
+    ? (propuesta?.cupoMaximo ??
+        subevento.cupoMaximo ??
+        subevento.recinto?.aforo ??
+        null)
+    : modalidadInicial === ModalidadAcceso.QR_MAPA
+      ? (subevento.recinto?.aforo ?? 242)
+      : null;
+
   return {
     idRecinto: String(
       propuesta?.idRecinto ?? subevento.recinto?.idRecinto ?? "",
@@ -148,9 +163,8 @@ function obtenerValoresLogistica(
       propuesta?.horaFin.slice(0, 5) ??
       subevento.fecha?.horaFin.slice(0, 5) ??
       "",
-    idModalidadAcceso: String(
-      propuesta?.idModalidadAcceso ?? subevento.idModalidadAcceso,
-    ),
+    idModalidadAcceso: String(modalidadInicial),
+    cupoMaximo: cupoInicial !== null ? String(cupoInicial) : "",
     motivoModificacion:
       evento.solicitudModificacionPendiente?.motivoModificacion ?? "",
   };
@@ -192,6 +206,7 @@ export function EditarEvento() {
     horaInicio: "",
     horaFin: "",
     idModalidadAcceso: "",
+    cupoMaximo: "",
     motivoModificacion: "",
   });
   const [logisticaInicial, setLogisticaInicial] =
@@ -606,7 +621,8 @@ export function EditarEvento() {
       logistica.fecha !== logisticaInicial.fecha ||
       logistica.horaInicio !== logisticaInicial.horaInicio ||
       logistica.horaFin !== logisticaInicial.horaFin ||
-      logistica.idModalidadAcceso !== logisticaInicial.idModalidadAcceso),
+      logistica.idModalidadAcceso !== logisticaInicial.idModalidadAcceso ||
+      logistica.cupoMaximo !== logisticaInicial.cupoMaximo),
   );
   const cambioLogisticoOperativo = camposLogisticosModificados;
   const diasParaFechaPropuesta = diasHastaFecha(logistica.fecha);
@@ -615,19 +631,35 @@ export function EditarEvento() {
     diasParaFechaPropuesta !== null &&
     diasParaFechaPropuesta >= 0 &&
     diasParaFechaPropuesta <= 7;
+  const modalidadDestinoLogistica = Number(
+    logistica.idModalidadAcceso,
+  ) as ModalidadAcceso;
+  const cupoPropuestoNumero =
+    logistica.cupoMaximo.trim() === "" ? null : Number(logistica.cupoMaximo);
+  const aforoOrigenEfectivo = subevento
+    ? calcularCapacidadEfectiva(
+        subevento.cupoMaximo,
+        subevento.recinto?.aforo ?? 0,
+        subevento.idModalidadAcceso,
+      )
+    : 0;
+  const aforoDestinoEfectivo = calcularCapacidadEfectiva(
+    cupoPropuestoNumero,
+    recintoActual?.aforo ?? 0,
+    modalidadDestinoLogistica,
+  );
   const impactoCambio =
     subevento && logistica.idRecinto && logistica.idModalidadAcceso
       ? calcularImpactoCambioSubevento({
           idSubEvento: subevento.idSubEvento,
           nombreSubEvento: nombre.trim() || subevento.nombre,
           inscritosActivos: subevento.boletosEmitidos ?? 0,
-          aforoDestino: recintoActual?.aforo ?? 0,
+          aforoOrigen: aforoOrigenEfectivo,
+          aforoDestino: aforoDestinoEfectivo,
           idRecintoOrigen: subevento.recinto?.idRecinto ?? 0,
           idRecintoDestino: Number(logistica.idRecinto) || 0,
           modalidadOrigen: subevento.idModalidadAcceso,
-          modalidadDestino: Number(
-            logistica.idModalidadAcceso,
-          ) as ModalidadAcceso,
+          modalidadDestino: modalidadDestinoLogistica,
         })
       : null;
   const avisoImpacto =
@@ -686,6 +718,19 @@ export function EditarEvento() {
     void guardarCambios(true);
   }
 
+  const errorCupoMaximo =
+    logistica.idRecinto &&
+    logistica.idModalidadAcceso &&
+    permiteCupoConfigurable(modalidadDestinoLogistica)
+      ? logistica.cupoMaximo.trim() === ""
+        ? "Indica el cupo máximo de asistentes"
+        : (validarCupoMaximo(
+            Number(logistica.cupoMaximo),
+            recintoActual?.aforo ?? 0,
+            modalidadDestinoLogistica,
+          ) ?? undefined)
+      : undefined;
+
   const erroresLogistica: EditLogisticsErrors = {
     idRecinto: !logistica.idRecinto
       ? "Selecciona un espacio para el evento"
@@ -701,12 +746,14 @@ export function EditarEvento() {
           logistica.horaInicio >= logistica.horaFin
         ? "La hora de finalización debe ser posterior a la de inicio"
         : undefined,
+    cupoMaximo: errorCupoMaximo,
   };
   const hayErroresLogistica = Boolean(
     erroresLogistica.idRecinto ||
     erroresLogistica.fecha ||
     erroresLogistica.horaInicio ||
-    erroresLogistica.horaFin,
+    erroresLogistica.horaFin ||
+    erroresLogistica.cupoMaximo,
   );
   const hayErroresGenerales = Boolean(
     !nombre.trim() ||
@@ -912,6 +959,13 @@ export function EditarEvento() {
               idModalidadAcceso: Number(
                 logistica.idModalidadAcceso,
               ) as ModalidadAcceso,
+              cupoMaximo: normalizarCupoMaximo(
+                logistica.cupoMaximo.trim() === ""
+                  ? null
+                  : Number(logistica.cupoMaximo),
+                recintoActual?.aforo ?? 0,
+                Number(logistica.idModalidadAcceso) as ModalidadAcceso,
+              ),
               fecha: logistica.fecha,
               horaInicio: logistica.horaInicio,
               horaFin: logistica.horaFin,
@@ -930,6 +984,7 @@ export function EditarEvento() {
             idRecinto: propuesta?.idRecinto ?? otroSub.recinto?.idRecinto ?? 0,
             idModalidadAcceso:
               propuesta?.idModalidadAcceso ?? otroSub.idModalidadAcceso,
+            cupoMaximo: propuesta?.cupoMaximo ?? otroSub.cupoMaximo ?? null,
             fecha: propuesta?.fecha ?? otroSub.fecha?.fecha.slice(0, 10) ?? "",
             horaInicio:
               propuesta?.horaInicio.slice(0, 5) ??
@@ -1506,7 +1561,11 @@ export function EditarEvento() {
                       idEvento={idEvento}
                       idSubEvento={subevento?.idSubEvento}
                       numeroInvitados={invitados.length}
-                      foroRecinto={recintoActual?.aforo}
+                      foroRecinto={calcularCapacidadEfectiva(
+                        subevento?.cupoMaximo,
+                        recintoActual?.aforo ?? 0,
+                        subevento?.idModalidadAcceso,
+                      )}
                       correosExistentes={invitados.map((i) => i.correo)}
                       cerrarModal={() => setModalinvitados(false)}
                       guardar={handleGuardarInvitados}

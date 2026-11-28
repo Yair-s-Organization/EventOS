@@ -7,7 +7,12 @@ import { Modal } from "../../components/molecules/Modal";
 import {
   esLaboratorioRecinto,
   ModalidadAcceso,
+  normalizarCupoMaximo,
+  permiteCupoConfigurable,
+  RecintoId,
+  validarCupoMaximo,
   validarModalidadEnRecinto,
+  type Recinto,
   type SubeventoPayload,
 } from "@eventos/shared";
 import { ModalMotivoUrgente } from "../../components/organisms/ModalMotivoUrgente/ModalMotivoUrgente";
@@ -143,8 +148,18 @@ export function sumarDias(fechaStr: string, dias: number): string {
   return date.toISOString().split("T")[0];
 }
 
+const AFORO_FALLBACK_POR_RECINTO: Record<number, number> = {
+  [RecintoId.AUDITORIO]: 242,
+  [RecintoId.LABORATORIO_2104]: 36,
+  [RecintoId.LABORATORIO_2105]: 36,
+  [RecintoId.SALA_14]: 100,
+  [RecintoId.LABORATORIO_2106]: 36,
+  [RecintoId.LABORATORIO_2107]: 36,
+};
+
 function validarSubeventos(
   subEventos: SubeventoFormData[],
+  aforoPorRecinto: Record<number, number>,
 ): ErroresSubevento[] {
   const fechaInicioEvento = subEventos[0]?.fecha;
   const fechaHoy = new Intl.DateTimeFormat("en-CA", {
@@ -237,6 +252,20 @@ function validarSubeventos(
         );
         if (errorModalidad) {
           errors.idModalidadAcceso = errorModalidad;
+        } else if (permiteCupoConfigurable(subevento.idModalidadAcceso)) {
+          const aforoRecinto = aforoPorRecinto[subevento.idRecinto] ?? 0;
+          if (subevento.cupoMaximo === null || subevento.cupoMaximo === undefined) {
+            errors.cupoMaximo = "Indica el cupo máximo de asistentes";
+          } else {
+            const errorCupo = validarCupoMaximo(
+              subevento.cupoMaximo,
+              aforoRecinto,
+              subevento.idModalidadAcceso,
+            );
+            if (errorCupo) {
+              errors.cupoMaximo = errorCupo;
+            }
+          }
         }
       }
     }
@@ -317,11 +346,31 @@ export function SolicitudEvento() {
     "cargando" | "verificado" | "requerida" | "error"
   >("cargando");
   const [errorVerificacion, setErrorVerificacion] = useState("");
+  const [aforoPorRecinto, setAforoPorRecinto] = useState<
+    Record<number, number>
+  >(AFORO_FALLBACK_POR_RECINTO);
   const errors = validarFormulario(form);
   if (form.rutaPoster && posterValidationError) {
     errors.rutaPoster = posterValidationError;
   }
-  const subeventErrors = validarSubeventos(form.subEventos);
+  const subeventErrors = validarSubeventos(form.subEventos, aforoPorRecinto);
+
+  useEffect(() => {
+    let activo = true;
+    apiRequest<Recinto[]>("espacios/disponibles")
+      .then((espacios) => {
+        if (!activo || !Array.isArray(espacios) || espacios.length === 0) return;
+        const mapa: Record<number, number> = { ...AFORO_FALLBACK_POR_RECINTO };
+        for (const esp of espacios) {
+          mapa[esp.idRecinto] = esp.aforo;
+        }
+        setAforoPorRecinto(mapa);
+      })
+      .catch(() => {});
+    return () => {
+      activo = false;
+    };
+  }, []);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -433,20 +482,40 @@ export function SolicitudEvento() {
 
         if (field === "idRecinto") {
           const idRecinto = Number(value);
-          const updated: SubeventoFormData = {
-            ...subevento,
-            idRecinto,
-          };
-          updated.idModalidadAcceso = esLaboratorioRecinto(idRecinto)
+          const aforo = aforoPorRecinto[idRecinto] ?? 0;
+          const modalidadInicial = esLaboratorioRecinto(idRecinto)
             ? ModalidadAcceso.QR_GENERAL
             : undefined;
-          return updated;
+          return {
+            ...subevento,
+            idRecinto,
+            idModalidadAcceso: modalidadInicial,
+            cupoMaximo:
+              modalidadInicial && permiteCupoConfigurable(modalidadInicial)
+                ? aforo || null
+                : null,
+          };
         }
 
         if (field === "idModalidadAcceso") {
+          const modalidad = Number(value) as ModalidadAcceso;
+          const aforo = aforoPorRecinto[subevento.idRecinto] ?? 0;
           return {
             ...subevento,
-            idModalidadAcceso: Number(value) as ModalidadAcceso,
+            idModalidadAcceso: modalidad,
+            cupoMaximo:
+              modalidad === ModalidadAcceso.QR_MAPA
+                ? aforo || 242
+                : permiteCupoConfigurable(modalidad)
+                  ? aforo || null
+                  : null,
+          };
+        }
+
+        if (field === "cupoMaximo") {
+          return {
+            ...subevento,
+            cupoMaximo: value.trim() === "" ? null : Number(value),
           };
         }
 
@@ -509,6 +578,7 @@ export function SolicitudEvento() {
         horaFin: true,
         idRecinto: true,
         idModalidadAcceso: true,
+        cupoMaximo: true,
       })),
     );
 
@@ -557,18 +627,27 @@ export function SolicitudEvento() {
       "subeventos",
       JSON.stringify(
         form.subEventos.map(
-          (subevento): SubeventoPayload => ({
-            nombre: subevento.nombre.trim() || form.nombre.trim(),
-            descripcion:
-              subevento.descripcion.trim() || form.descripcion.trim(),
-            idRecinto: Number(subevento.idRecinto),
-            fecha: subevento.fecha,
-            horaInicio: subevento.horaInicio,
-            horaFin: subevento.horaFin,
-            idModalidadAcceso: esLaboratorioRecinto(subevento.idRecinto)
+          (subevento): SubeventoPayload => {
+            const modalidad = esLaboratorioRecinto(subevento.idRecinto)
               ? ModalidadAcceso.QR_GENERAL
-              : (subevento.idModalidadAcceso ?? ModalidadAcceso.ACCESO_LIBRE),
-          }),
+              : (subevento.idModalidadAcceso ?? ModalidadAcceso.ACCESO_LIBRE);
+            const aforo = aforoPorRecinto[subevento.idRecinto] ?? 0;
+            return {
+              nombre: subevento.nombre.trim() || form.nombre.trim(),
+              descripcion:
+                subevento.descripcion.trim() || form.descripcion.trim(),
+              idRecinto: Number(subevento.idRecinto),
+              fecha: subevento.fecha,
+              horaInicio: subevento.horaInicio,
+              horaFin: subevento.horaFin,
+              idModalidadAcceso: modalidad,
+              cupoMaximo: normalizarCupoMaximo(
+                subevento.cupoMaximo,
+                aforo,
+                modalidad,
+              ),
+            };
+          },
         ),
       ),
     );

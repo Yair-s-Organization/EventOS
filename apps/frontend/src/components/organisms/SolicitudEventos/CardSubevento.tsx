@@ -6,6 +6,7 @@ import {
   RecintoId,
 } from "@eventos/shared";
 import { FormField } from "../../molecules/FormField";
+import { CupoMaximoField } from "../../molecules/CupoMaximoField";
 import { TOOLTIP_FECHA_ANTICIPACION } from "../../molecules/EventoTooltipsContent";
 import { ModalidadAccesoHelp } from "../../molecules/ModalidadAccesoHelp";
 import { Select } from "../../atoms/Select/Select";
@@ -69,7 +70,7 @@ const RECINTOS_BASE: EspacioInfo[] = [
     nombre: "Laboratorio 2105",
     aforo: 36,
   },
-  { idRecinto: RecintoId.SALA_14, nombre: "Sala 14", aforo: 50 },
+  { idRecinto: RecintoId.SALA_14, nombre: "Sala 14", aforo: 100 },
   {
     idRecinto: RecintoId.LABORATORIO_2106,
     nombre: "Laboratorio 2106",
@@ -625,6 +626,29 @@ export function CardSubevento(props: CardSubeventoProps) {
           }
         />
       </FormField>
+
+      <CupoMaximoField
+        id={`inputCupoMaximo-${index}`}
+        idRecinto={subevento.idRecinto}
+        aforoRecinto={recintoSeleccionado?.aforo}
+        idModalidadAcceso={subevento.idModalidadAcceso}
+        value={subevento.cupoMaximo}
+        readOnly={readOnly}
+        required
+        errorMessage={touched.cupoMaximo ? errors.cupoMaximo : undefined}
+        hasError={Boolean(touched.cupoMaximo && errors.cupoMaximo)}
+        onChangeValue={(valor) => {
+          if (!readOnly) {
+            props.updateSubevento(index, "cupoMaximo", valor);
+          }
+        }}
+        onBlur={
+          readOnly
+            ? undefined
+            : () => props.markSubeventoTouched(index, "cupoMaximo")
+        }
+      />
+
       <FormField
         label={readOnly ? "Espacio" : undefined}
         htmlFor={readOnly ? `recintoDetalle-${index}` : undefined}

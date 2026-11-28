@@ -26,6 +26,8 @@ export interface SubEventDetailsApi {
   descripcion: string;
   estado: EstadoSubEvento;
   idModalidadAcceso: ModalidadAcceso;
+  cupoMaximo?: number | null;
+  cupoEfectivo?: number;
   requiereSeleccionAsiento: boolean;
   fecha: EventDateApi | null;
   recinto: EventVenueApi | null;

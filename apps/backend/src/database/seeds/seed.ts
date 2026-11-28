@@ -322,7 +322,7 @@ export async function runSeed() {
       { id: 1, nombre: 'Auditorio Principal', aforo: 242, idEstadoRecinto: 1 },
       { id: 2, nombre: 'Laboratorio 2104', aforo: 36, idEstadoRecinto: 1 },
       { id: 3, nombre: 'Laboratorio 2105', aforo: 36, idEstadoRecinto: 1 },
-      { id: 4, nombre: 'Sala 14', aforo: 50, idEstadoRecinto: 1 },
+      { id: 4, nombre: 'Sala 14', aforo: 100, idEstadoRecinto: 1 },
       { id: 5, nombre: 'Laboratorio 2106', aforo: 36, idEstadoRecinto: 1 },
       { id: 6, nombre: 'Laboratorio 2107', aforo: 36, idEstadoRecinto: 1 },
     ];

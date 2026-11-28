@@ -10,7 +10,7 @@ interface EventSessionCardProps {
   activity: Pick<
     EventActivityViewModel,
     "idSubEvento" | "idEvento" | "nombre" | "idModalidadAcceso" | "fecha" | "recinto"
-  >;
+  > & { cupoEfectivo?: number };
   detailsPath?: string;
   detailsLabel?: string;
   actionLabel?: string;
@@ -37,6 +37,11 @@ export function EventSessionCard({
     availability?.idSubEvento === activity.idSubEvento
       ? availability.lugaresDisponibles
       : null;
+  const aforoTotal =
+    availability?.idSubEvento === activity.idSubEvento &&
+    availability.cupoEfectivo !== undefined
+      ? availability.cupoEfectivo
+      : (activity.cupoEfectivo ?? activity.recinto?.aforo ?? "?");
   return (
     <article className="grid w-full grid-cols-1 items-center gap-6 rounded-md bg-eventos-primary-light px-5 py-6 md:grid-cols-[minmax(0,1fr)_minmax(0,1.25fr)_auto]">
       <div className="min-w-0 text-center">
@@ -51,7 +56,7 @@ export function EventSessionCard({
         <div className="flex items-start gap-2"><CalendarDays size={19} aria-hidden="true"/><dt className="font-semibold">Fecha:</dt><dd>{formatEventDate(activity.fecha?.fecha)}</dd></div>
         <div className="flex items-start gap-2"><MapPin size={19} aria-hidden="true"/><dt className="font-semibold">Espacio:</dt><dd>{activity.recinto?.nombre ?? "Por confirmar"}</dd></div>
         <div className="flex items-start gap-2"><Clock3 size={19} aria-hidden="true"/><dt className="font-semibold">Horario:</dt><dd>{activity.fecha ? `${activity.fecha.horaInicio.slice(0,5)}–${activity.fecha.horaFin.slice(0,5)} hrs` : "Por confirmar"}</dd></div>
-        <div className="flex items-start gap-2"><UsersRound size={19} aria-hidden="true"/><dt className="font-semibold">Cupos restantes:</dt><dd aria-live="polite">{isLoading ? "Consultando..." : error || cupos === null ? "Por confirmar" : `${cupos}/${activity.recinto?.aforo ?? "?"}`}</dd></div>
+        <div className="flex items-start gap-2"><UsersRound size={19} aria-hidden="true"/><dt className="font-semibold">Cupos restantes:</dt><dd aria-live="polite">{isLoading ? "Consultando..." : error || cupos === null ? "Por confirmar" : `${cupos}/${aforoTotal}`}</dd></div>
       </dl>
       <div className="flex flex-wrap items-center justify-center gap-2 justify-self-center md:-translate-x-6">
         {(detailsPath || !onAction) && (

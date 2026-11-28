@@ -18,6 +18,8 @@ import {
   TipoCuentaUsuario,
   esModalidadConQr,
   esModalidadConRegistro,
+  esLaboratorioRecinto,
+  calcularCapacidadEfectiva,
   ModalidadAcceso,
   DURACION_RETENCION_ASIENTO_MINUTOS,
   RetencionAsientoActiva,
@@ -94,6 +96,20 @@ export class ReservationsService {
         private readonly storageService: StorageService,
     ) {}
 
+    private async obtenerAforoRealRecinto(
+        manager: EntityManager,
+        recinto: RecintoEntity,
+    ): Promise<number> {
+        if (!esLaboratorioRecinto(recinto.idRecinto)) {
+            return recinto.aforo;
+        }
+        const [{ total }] = await manager.query(
+            `SELECT COUNT(*)::int AS total FROM "estadoEquipo" WHERE "idRecinto" = $1 AND estado = true`,
+            [recinto.idRecinto],
+        );
+        return Number(total ?? 0);
+    }
+
     //CONSULTAR DISPONIBILIDAD
 
     async consultarDisponibilidad(idSubEvento: number): Promise<any> {
@@ -125,6 +141,16 @@ export class ReservationsService {
             throw new ConflictException('El recinto asignado a este evento no se encuentra habilitado.');
         }
 
+        const aforoRealRecinto = await this.obtenerAforoRealRecinto(
+            this.dataSource.manager,
+            recinto,
+        );
+        const cupoEfectivo = calcularCapacidadEfectiva(
+            subEvento.cupoMaximo,
+            aforoRealRecinto,
+            subEvento.idModalidadAcceso,
+        );
+
         const { lugaresOcupados, idsAsientosOcupados } = await this.calcularOcupacionSubEvento(this.dataSource.manager, idSubEvento);
 
         // Verificar si la actividad permite reservaciones (Evento Aceptado = 2, SubEvento Aceptado y Fecha futura en America/Mexico_City)
@@ -148,7 +174,7 @@ export class ReservationsService {
         );
 
         const lugaresDisponibles = eventoActivo
-            ? Math.max(0, recinto.aforo - lugaresOcupados - idsAsientosRetenidos.size)
+            ? Math.max(0, cupoEfectivo - lugaresOcupados - idsAsientosRetenidos.size)
             : 0;
 
         const asientosBD = requiereSeleccionAsiento
@@ -175,7 +201,12 @@ export class ReservationsService {
         return {
             idSubEvento: subEvento.idSubEvento,
             idModalidadAcceso: subEvento.idModalidadAcceso,
-            recinto: recinto,
+            recinto: {
+                ...recinto,
+                aforo: aforoRealRecinto,
+            },
+            cupoMaximo: subEvento.cupoMaximo ?? null,
+            cupoEfectivo,
             lugaresDisponibles,
             permiteReservar: Boolean(eventoActivo && permiteRegistro && lugaresDisponibles > 0),
             requiereSeleccionAsiento,
@@ -446,7 +477,13 @@ export class ReservationsService {
                 [dto.idSubEvento],
             );
             const retencionesVigentes = Number(conteoRetencionesRaw[0]?.total ?? 0);
-            if (ocupacion.lugaresOcupados + retencionesVigentes >= ctx.recinto.aforo) {
+            const aforoRealRecinto = await this.obtenerAforoRealRecinto(manager, ctx.recinto);
+            const capacidadEfectiva = calcularCapacidadEfectiva(
+                ctx.subEvento.cupoMaximo,
+                aforoRealRecinto,
+                ctx.subEvento.idModalidadAcceso,
+            );
+            if (ocupacion.lugaresOcupados + retencionesVigentes >= capacidadEfectiva) {
                 throw errorRetencion(
                     ConflictException,
                     'AFORO_AGOTADO',
@@ -729,7 +766,13 @@ export class ReservationsService {
                 retencionesAjenas = retencionesAjenasFilas.length;
             }
 
-            if (ocupacion.lugaresOcupados + retencionesAjenas >= recinto.aforo) {
+            const aforoRealRecinto = await this.obtenerAforoRealRecinto(manager, recinto);
+            const capacidadEfectiva = calcularCapacidadEfectiva(
+                subEvento.cupoMaximo,
+                aforoRealRecinto,
+                subEvento.idModalidadAcceso,
+            );
+            if (ocupacion.lugaresOcupados + retencionesAjenas >= capacidadEfectiva) {
                 throw new ConflictException('El aforo para este evento se ha agotado.');
             }
 

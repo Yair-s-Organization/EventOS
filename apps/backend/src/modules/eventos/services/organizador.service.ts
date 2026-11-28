@@ -11,6 +11,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, In, Repository } from 'typeorm';
 import {
   AlcanceEvento,
+  calcularCapacidadEfectiva,
   calcularImpactoCambioSubevento,
   esLaboratorioRecinto,
   esModalidadConQr,
@@ -151,8 +152,15 @@ export class OrganizadorService {
       .filter((s) => s.estado !== EstadoSubEvento.CANCELADO)
       .map((s) => s.idSubEvento);
 
-    const metricasPorSubevento =
-      await this.obtenerMetricasPorSubevento(subEventoIds);
+    const idsRecinto = eventos
+      .flatMap((e) => e.subEventos || [])
+      .filter((s) => s.estado !== EstadoSubEvento.CANCELADO)
+      .map((s) => s.idRecinto);
+
+    const [metricasPorSubevento, labsAforoMap] = await Promise.all([
+      this.obtenerMetricasPorSubevento(subEventoIds),
+      this.obtenerAforosRealesLaboratorios(idsRecinto),
+    ]);
 
     const ahoraCdmx = obtenerAhoraCdmx();
 
@@ -179,7 +187,17 @@ export class OrganizadorService {
       }));
 
       const primerSub = subeventos[0] || null;
-      const cupoMaximo = primerSub?.recinto?.aforo ?? 0;
+      const aforoPrimerSub = this.resolverAforoRealRecinto(
+        primerSub?.recinto,
+        labsAforoMap,
+      );
+      const cupoMaximo = primerSub
+        ? calcularCapacidadEfectiva(
+            primerSub.cupoMaximo,
+            aforoPrimerSub,
+            primerSub.idModalidadAcceso,
+          )
+        : 0;
       const boletosEmitidos = subeventos.reduce(
         (acc, sub) =>
           acc + (metricasPorSubevento.get(sub.idSubEvento)?.activos ?? 0),
@@ -276,8 +294,10 @@ export class OrganizadorService {
     });
 
     const subEventoIds = subeventos.map((s) => s.idSubEvento);
-    const metricasPorSubevento =
-      await this.obtenerMetricasPorSubevento(subEventoIds);
+    const [metricasPorSubevento, labsAforoMap] = await Promise.all([
+      this.obtenerMetricasPorSubevento(subEventoIds),
+      this.obtenerAforosRealesLaboratorios(subeventos.map((s) => s.idRecinto)),
+    ]);
 
     const ponentesPorSubevento = new Map<number, Ponente[]>();
     if (subEventoIds.length > 0) {
@@ -311,6 +331,15 @@ export class OrganizadorService {
           activos: 0,
         };
         const usaQr = esModalidadConQr(sub.idModalidadAcceso);
+        const aforoRealRecinto = this.resolverAforoRealRecinto(
+          sub.recinto,
+          labsAforoMap,
+        );
+        const cupoEfectivo = calcularCapacidadEfectiva(
+          sub.cupoMaximo,
+          aforoRealRecinto,
+          sub.idModalidadAcceso,
+        );
         boletosActivosCount += m.activos;
         totalInscritos += m.inscritos;
         if (usaQr) {
@@ -323,6 +352,8 @@ export class OrganizadorService {
           nombre: sub.nombre,
           descripcion: sub.descripcion,
           idModalidadAcceso: sub.idModalidadAcceso,
+          cupoMaximo: sub.cupoMaximo ?? null,
+          cupoEfectivo,
           estado: sub.estado,
           fecha: sub.fecha
             ? {
@@ -336,7 +367,7 @@ export class OrganizadorService {
             ? {
                 idRecinto: sub.recinto.idRecinto,
                 nombre: sub.recinto.nombre,
-                aforo: sub.recinto.aforo,
+                aforo: aforoRealRecinto,
                 idEstadoRecinto: sub.recinto.idEstadoRecinto,
               }
             : null,
@@ -347,8 +378,8 @@ export class OrganizadorService {
         };
       });
 
-    const primerSub = subeventos[0];
-    const cupoMaximo = primerSub?.recinto?.aforo ?? 0;
+    const primerSubDet = subEventosDetallados[0];
+    const cupoMaximo = primerSubDet?.cupoEfectivo ?? 0;
 
     const solicitudPendiente =
       await this.solicitudModificacionRepository.findOne({
@@ -513,7 +544,10 @@ export class OrganizadorService {
       await this.contarBoletosValidosPorSubevento(idsExistentes);
 
     const idsRecintosDestino = [
-      ...new Set(dto.subeventos.map((s) => s.idRecinto)),
+      ...new Set([
+        ...dto.subeventos.map((s) => s.idRecinto),
+        ...(evento.subEventos || []).map((s) => s.idRecinto),
+      ]),
     ];
     const recintosDestinoRaw =
       idsRecintosDestino.length > 0
@@ -545,14 +579,30 @@ export class OrganizadorService {
       if (!existente) continue;
 
       const inscritosActivos = boletosMap.get(existente.idSubEvento) ?? 0;
-      const aforoDestino = aforoPorRecinto.get(subPropuesto.idRecinto) ?? 0;
+      const aforoRecintoOrigen =
+        aforoPorRecinto.get(existente.idRecinto) ??
+        existente.recinto?.aforo ??
+        0;
+      const aforoRecintoDestino = aforoPorRecinto.get(subPropuesto.idRecinto) ?? 0;
       const modalidadDestino =
         subPropuesto.idModalidadAcceso ?? existente.idModalidadAcceso;
+
+      const aforoOrigen = calcularCapacidadEfectiva(
+        existente.cupoMaximo,
+        aforoRecintoOrigen,
+        existente.idModalidadAcceso,
+      );
+      const aforoDestino = calcularCapacidadEfectiva(
+        subPropuesto.cupoMaximo,
+        aforoRecintoDestino,
+        modalidadDestino,
+      );
 
       const impacto = calcularImpactoCambioSubevento({
         idSubEvento: existente.idSubEvento,
         nombreSubEvento: subPropuesto.nombre || existente.nombre,
         inscritosActivos,
+        aforoOrigen,
         aforoDestino,
         idRecintoOrigen: existente.idRecinto,
         idRecintoDestino: subPropuesto.idRecinto,
@@ -1055,7 +1105,18 @@ export class OrganizadorService {
       );
     }
 
-    const cupoMaximo = subEvento.recinto?.aforo ?? 0;
+    const labsAforoMap = await this.obtenerAforosRealesLaboratorios([
+      subEvento.idRecinto,
+    ]);
+    const aforoReal = this.resolverAforoRealRecinto(
+      subEvento.recinto,
+      labsAforoMap,
+    );
+    const cupoMaximo = calcularCapacidadEfectiva(
+      subEvento.cupoMaximo,
+      aforoReal,
+      subEvento.idModalidadAcceso,
+    );
     const esAccesoLibre =
       subEvento.idModalidadAcceso === ModalidadAcceso.ACCESO_LIBRE;
 
@@ -1186,6 +1247,45 @@ export class OrganizadorService {
     };
   }
 
+  private async obtenerAforosRealesLaboratorios(
+    idsRecinto: number[],
+  ): Promise<Map<number, number>> {
+    const idsLabs = [...new Set(idsRecinto)].filter((id) =>
+      esLaboratorioRecinto(id),
+    );
+    const mapa = new Map<number, number>();
+    if (idsLabs.length === 0) {
+      return mapa;
+    }
+
+    const filas: Array<{ idRecinto: number; total: number }> =
+      await this.dataSource.query(
+        `SELECT "idRecinto", COUNT(*)::int AS total
+         FROM "estadoEquipo"
+         WHERE "idRecinto" = ANY($1::int[]) AND estado = true
+         GROUP BY "idRecinto"`,
+        [idsLabs],
+      );
+
+    for (const idLab of idsLabs) {
+      mapa.set(idLab, 0);
+    }
+    for (const fila of filas) {
+      mapa.set(Number(fila.idRecinto), Number(fila.total ?? 0));
+    }
+    return mapa;
+  }
+
+  private resolverAforoRealRecinto(
+    recinto: { idRecinto: number; aforo: number } | null | undefined,
+    labsAforoMap: Map<number, number>,
+  ): number {
+    if (!recinto) return 0;
+    return esLaboratorioRecinto(recinto.idRecinto)
+      ? (labsAforoMap.get(recinto.idRecinto) ?? recinto.aforo ?? 0)
+      : (recinto.aforo ?? 0);
+  }
+
   private async esperarPausaEnvio(ms: number): Promise<void> {
     if (ms <= 0) return;
     await new Promise((resolve) => setTimeout(resolve, ms));
@@ -1214,7 +1314,18 @@ export class OrganizadorService {
       correosUnicos.push(normalizado);
     }
 
-    const cupoMaximo = subEvento.recinto?.aforo ?? 0;
+    const labsAforoMap = await this.obtenerAforosRealesLaboratorios([
+      subEvento.idRecinto,
+    ]);
+    const aforoReal = this.resolverAforoRealRecinto(
+      subEvento.recinto,
+      labsAforoMap,
+    );
+    const cupoMaximo = calcularCapacidadEfectiva(
+      subEvento.cupoMaximo,
+      aforoReal,
+      subEvento.idModalidadAcceso,
+    );
     const totalInvitadosActual = await this.invitacionRepository.count({
       where: { idSubEvento },
     });

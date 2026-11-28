@@ -230,6 +230,12 @@ function convertirSubevento(valor: unknown): EventoOrganizadorDetalleSubevento {
       valor,
       "idModalidadAcceso",
     ) as ModalidadAcceso,
+    cupoMaximo:
+      valor.cupoMaximo === null || typeof valor.cupoMaximo === "number"
+        ? (valor.cupoMaximo as number | null)
+        : undefined,
+    cupoEfectivo:
+      typeof valor.cupoEfectivo === "number" ? valor.cupoEfectivo : undefined,
     estado: convertirEstadoSubevento(valor.estado),
     fecha: convertirFecha(valor.fecha),
     recinto: convertirRecinto(valor.recinto),
@@ -740,9 +746,11 @@ export function AdministracionEvento() {
                     </div>
                   )}
                   <div className="flex min-w-0 flex-col gap-2">
-                    <span className="font-bold">Aforo del espacio</span>
+                    <span className="font-bold">Cupo máximo</span>
                     <span>
-                      {subevento.recinto?.aforo ?? datosEvento.cupoMaximo}
+                      {subevento.cupoEfectivo ??
+                        subevento.recinto?.aforo ??
+                        datosEvento.cupoMaximo}
                     </span>
                   </div>
                   <div className="flex min-w-0 flex-col gap-2">

@@ -137,6 +137,12 @@ function convertirSubevento(valor: unknown): SubeventoAdministracion {
     nombre: valor.nombre,
     descripcion: valor.descripcion,
     idModalidadAcceso: valor.idModalidadAcceso as ModalidadAcceso,
+    cupoMaximo:
+      valor.cupoMaximo === null || typeof valor.cupoMaximo === "number"
+        ? (valor.cupoMaximo as number | null)
+        : undefined,
+    cupoEfectivo:
+      typeof valor.cupoEfectivo === "number" ? valor.cupoEfectivo : undefined,
     estado: typeof valor.estado === "string" ? valor.estado : undefined,
     fecha,
     recinto,

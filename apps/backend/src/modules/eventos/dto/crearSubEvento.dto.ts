@@ -43,6 +43,17 @@ export class CrearSubEventoDto implements SubeventoPayload {
   })
   idModalidadAcceso?: ModalidadAcceso;
 
+  @ApiPropertyOptional({ nullable: true })
+  @IsOptional()
+  @Transform(({ value }: { value: unknown }) =>
+    value === undefined || value === null || value === '' ? null : Number(value),
+  )
+  @IsInt({ message: 'El cupo máximo de asistentes debe ser un número entero.' })
+  @IsPositive({
+    message: 'El cupo máximo de asistentes debe ser un número positivo mayor a cero.',
+  })
+  cupoMaximo?: number | null;
+
   @ApiProperty()
   @IsNotEmpty({ message: 'La fecha del evento es obligatoria.' })
   @IsDateString({}, { message: 'El formato de fecha debe ser válido (YYYY-MM-DD).' })

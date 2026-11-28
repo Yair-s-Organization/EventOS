@@ -13,6 +13,8 @@ export interface OrganizerSubeventCardData {
   nombre: string;
   descripcion: string;
   idModalidadAcceso: ModalidadAcceso;
+  cupoMaximo?: number | null;
+  cupoEfectivo?: number;
   estado?: string;
   inscritosCount?: number;
   ingresadosCount?: number | null;

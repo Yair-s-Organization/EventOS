@@ -11,6 +11,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, EntityManager, In, Repository } from 'typeorm';
 import {
   AlcanceEvento,
+  calcularCapacidadEfectiva,
   calcularImpactoCambioSubevento,
   clasificarTransicionModalidad,
   esLaboratorioRecinto,
@@ -20,7 +21,9 @@ import {
   EstadoSubEvento,
   EstadoVerificacion,
   ModalidadAcceso,
+  normalizarCupoMaximo,
   TipoCuentaUsuario,
+  validarCupoMaximo,
   validarModalidadEnRecinto,
   type ImpactoCambioSubevento,
   type SolicitanteResumen,
@@ -236,6 +239,7 @@ export class SolicitudesService {
     recinto: RecintoEntity,
     idModalidadAcceso: ModalidadAcceso,
     manager: EntityManager,
+    cupoMaximo?: number | null,
   ): Promise<void> {
     if (recinto.idEstadoRecinto !== EstadoRecinto.HABILITADO) {
       throw new ConflictException(
@@ -269,6 +273,15 @@ export class SolicitudesService {
           `El laboratorio "${recinto.nombre}" no cuenta con equipos de cómputo habilitados disponibles.`,
         );
       }
+    }
+
+    const errorCupo = validarCupoMaximo(
+      cupoMaximo,
+      recinto.aforo,
+      idModalidadAcceso,
+    );
+    if (errorCupo) {
+      throw new BadRequestException(errorCupo);
     }
   }
 
@@ -306,6 +319,7 @@ export class SolicitudesService {
           recinto,
           this.resolverModalidadPayload(subeventoActual),
           manager,
+          subeventoActual.cupoMaximo,
         );
         await this.consultarColisionBD(
           subeventoActual,
@@ -321,6 +335,7 @@ export class SolicitudesService {
       await this.recintoService.validarRecinto(
         subeventoActual.idRecinto,
         this.resolverModalidadPayload(subeventoActual),
+        subeventoActual.cupoMaximo,
       );
 
       await this.consultarColisionBD(subeventoActual, excluirIdEvento);
@@ -396,54 +411,73 @@ export class SolicitudesService {
             recinto,
             this.resolverModalidadPayload(subeventoActual),
             manager,
+            subeventoActual.cupoMaximo,
           );
           await this.consultarColisionBD(subeventoActual, undefined, manager);
         }
+
+        const eventoGuardado = await manager.save(EventoEntity, evento);
+        const subeventosGuardados: SubEventoEntity[] = [];
+
+        const estadoSubEventoInicial =
+          eventoGuardado.idEstadoEvento === EstadoEvento.ACEPTADO
+            ? EstadoSubEvento.ACEPTADO
+            : EstadoSubEvento.EN_PROCESO;
+
+        for (const sub of subeventos) {
+          const fechaGuardada = await manager.save(FechaEntity, {
+            fecha: sub.fecha,
+            horaInicio: sub.horaInicio,
+            horaFin: sub.horaFin,
+          });
+
+          const modalidadSub = this.resolverModalidadPayload(sub);
+          const recintoSub = recintosBloqueados.get(sub.idRecinto)!;
+          const cupoNormalizado = normalizarCupoMaximo(
+            sub.cupoMaximo,
+            recintoSub.aforo,
+            modalidadSub,
+          );
+
+          const nuevoSubEvento = await manager.save(SubEventoEntity, {
+            nombre: sub.nombre,
+            descripcion: sub.descripcion,
+            cupoMaximo: cupoNormalizado,
+            tokenInvitacion: randomUUID(),
+            enlaceInvitacionActivo: false,
+            idEvento: eventoGuardado.idEvento,
+            idRecinto: sub.idRecinto,
+            idFecha: fechaGuardada.idFecha,
+            idModalidadAcceso: modalidadSub,
+            estado: estadoSubEventoInicial,
+          });
+
+          subeventosGuardados.push(nuevoSubEvento);
+
+          await manager.save(BitacoraEventoEntity, {
+            idEvento: eventoGuardado.idEvento,
+            idSubEvento: nuevoSubEvento.idSubEvento,
+            idUsuarioActor: eventoGuardado.idOrganizador,
+            idEstadoEvento:
+              eventoGuardado.idEstadoEvento ?? EstadoEvento.ENPROCESO,
+          });
+        }
+
+        return {
+          mensaje: 'Operación realizada con éxito.',
+          evento: {
+            ...eventoGuardado,
+            subEventos: subeventosGuardados,
+          },
+        };
       }
 
       const eventoGuardado = await manager.save(EventoEntity, evento);
-      const subeventosGuardados: SubEventoEntity[] = [];
-
-      const estadoSubEventoInicial =
-        eventoGuardado.idEstadoEvento === EstadoEvento.ACEPTADO
-          ? EstadoSubEvento.ACEPTADO
-          : EstadoSubEvento.EN_PROCESO;
-
-      for (const sub of subeventos) {
-        const fechaGuardada = await manager.save(FechaEntity, {
-          fecha: sub.fecha,
-          horaInicio: sub.horaInicio,
-          horaFin: sub.horaFin,
-        });
-
-        const nuevoSubEvento = await manager.save(SubEventoEntity, {
-          nombre: sub.nombre,
-          descripcion: sub.descripcion,
-          tokenInvitacion: randomUUID(),
-          enlaceInvitacionActivo: false,
-          idEvento: eventoGuardado.idEvento,
-          idRecinto: sub.idRecinto,
-          idFecha: fechaGuardada.idFecha,
-          idModalidadAcceso: this.resolverModalidadPayload(sub),
-          estado: estadoSubEventoInicial,
-        });
-
-        subeventosGuardados.push(nuevoSubEvento);
-
-        await manager.save(BitacoraEventoEntity, {
-          idEvento: eventoGuardado.idEvento,
-          idSubEvento: nuevoSubEvento.idSubEvento,
-          idUsuarioActor: eventoGuardado.idOrganizador,
-          idEstadoEvento:
-            eventoGuardado.idEstadoEvento ?? EstadoEvento.ENPROCESO,
-        });
-      }
-
       return {
         mensaje: 'Operación realizada con éxito.',
         evento: {
           ...eventoGuardado,
-          subEventos: subeventosGuardados,
+          subEventos: [],
         },
       };
     });
@@ -689,26 +723,50 @@ export class SolicitudesService {
         const inscritosActivos = anterior
           ? (conteoBoletosPorSub.get(anterior.idSubEvento) ?? 0)
           : 0;
+        const recintoAnteriorInfo = anterior
+          ? mapaRecintos.get(anterior.idRecinto)
+          : undefined;
+        const aforoRecintoDestino = rec?.aforo ?? 0;
+        const aforoRecintoAnterior =
+          recintoAnteriorInfo?.aforo ?? anterior?.recinto?.aforo ?? 0;
+        const capacidadPropuesta = calcularCapacidadEfectiva(
+          prop.cupoMaximo,
+          aforoRecintoDestino,
+          modalidadDestino,
+        );
+        const capacidadAnterior = anterior
+          ? calcularCapacidadEfectiva(
+              anterior.cupoMaximo,
+              aforoRecintoAnterior,
+              anterior.idModalidadAcceso,
+            )
+          : null;
         const impacto: ImpactoCambioSubevento | null =
           anterior && rec
             ? calcularImpactoCambioSubevento({
                 idSubEvento: anterior.idSubEvento,
                 nombreSubEvento: prop.nombre || anterior.nombre,
                 inscritosActivos,
-                aforoDestino: rec.aforo,
+                aforoOrigen: capacidadAnterior ?? undefined,
+                aforoDestino: capacidadPropuesta,
                 idRecintoOrigen: anterior.idRecinto,
                 idRecintoDestino: prop.idRecinto,
                 modalidadOrigen: anterior.idModalidadAcceso,
                 modalidadDestino,
               })
             : null;
-        const recintoAnteriorInfo = anterior
-          ? mapaRecintos.get(anterior.idRecinto)
-          : undefined;
 
         return {
           ...prop,
           idModalidadAcceso: modalidadDestino,
+          cupoMaximo: normalizarCupoMaximo(
+            prop.cupoMaximo,
+            aforoRecintoDestino,
+            modalidadDestino,
+          ),
+          cupoEfectivo: capacidadPropuesta,
+          cupoMaximoAnterior: anterior?.cupoMaximo ?? null,
+          cupoEfectivoAnterior: capacidadAnterior,
           esNuevo: !anterior,
           boletosActivos: inscritosActivos,
           recintoAnterior: recintoAnteriorInfo ?? null,
@@ -765,6 +823,14 @@ export class SolicitudesService {
         nombre: sub.nombre,
         descripcion: sub.descripcion,
         idModalidadAcceso: sub.idModalidadAcceso,
+        cupoMaximo: sub.cupoMaximo ?? null,
+        cupoEfectivo: sub.recinto
+          ? calcularCapacidadEfectiva(
+              sub.cupoMaximo,
+              sub.recinto.aforo,
+              sub.idModalidadAcceso,
+            )
+          : null,
         boletosActivos: conteoBoletosPorSub.get(sub.idSubEvento) ?? 0,
         estado: sub.estado,
         idFecha: sub.idFecha,
@@ -914,6 +980,7 @@ export class SolicitudesService {
           recinto,
           this.resolverModalidadPayload(subeventoActual),
           manager,
+          subeventoActual.cupoMaximo,
         );
         await this.consultarColisionBD(subeventoActual, idEvento, manager);
       }
@@ -943,12 +1010,34 @@ export class SolicitudesService {
           const cambioModalidad =
             existente.idModalidadAcceso !== destinoModalidad;
           const recintoDestino = recintosBloqueados.get(propuesto.idRecinto)!;
-          aforoPorSubevento.set(
-            existente.idSubEvento,
-            recintoDestino.aforo ?? 0,
+          let aforoRecintoAnterior = recintoDestino.aforo ?? 0;
+          if (cambioRecinto) {
+            const recintoAnterior =
+              recintosBloqueados.get(existente.idRecinto) ??
+              (await manager.getRepository(RecintoEntity).findOne({
+                where: { idRecinto: existente.idRecinto },
+              }));
+            aforoRecintoAnterior = recintoAnterior?.aforo ?? 0;
+          }
+          const capacidadAnterior = calcularCapacidadEfectiva(
+            existente.cupoMaximo,
+            aforoRecintoAnterior,
+            existente.idModalidadAcceso,
           );
+          const capacidadDestino = calcularCapacidadEfectiva(
+            propuesto.cupoMaximo,
+            recintoDestino.aforo ?? 0,
+            destinoModalidad,
+          );
+          const cambioCupo = capacidadAnterior !== capacidadDestino;
+          const cupoNormalizado = normalizarCupoMaximo(
+            propuesto.cupoMaximo,
+            recintoDestino.aforo ?? 0,
+            destinoModalidad,
+          );
+          aforoPorSubevento.set(existente.idSubEvento, capacidadDestino);
 
-          if (cambioRecinto || cambioModalidad) {
+          if (cambioRecinto || cambioModalidad || cambioCupo) {
             const activos: Array<{
               idBoleto: number;
               idUsuario: number;
@@ -972,9 +1061,9 @@ export class SolicitudesService {
 
               if (
                 destinoModalidad !== ModalidadAcceso.ACCESO_LIBRE &&
-                recintoDestino.aforo < activos.length
+                capacidadDestino < activos.length
               ) {
-                const limite = Math.max(0, recintoDestino.aforo);
+                const limite = Math.max(0, capacidadDestino);
                 dentroAforo = activos.slice(0, limite);
                 const excedentesFifo = activos.slice(limite);
 
@@ -1004,7 +1093,7 @@ export class SolicitudesService {
                 }
               }
 
-              if (dentroAforo.length > 0) {
+              if (dentroAforo.length > 0 && (cambioRecinto || cambioModalidad)) {
                 const transicion = clasificarTransicionModalidad(
                   existente.idModalidadAcceso,
                   destinoModalidad,
@@ -1095,6 +1184,7 @@ export class SolicitudesService {
           await manager.update(SubEventoEntity, existente.idSubEvento, {
             nombre: propuesto.nombre,
             descripcion: propuesto.descripcion,
+            cupoMaximo: cupoNormalizado,
             idRecinto: propuesto.idRecinto,
             idModalidadAcceso: destinoModalidad,
             estado: EstadoSubEvento.ACEPTADO,
@@ -1106,15 +1196,23 @@ export class SolicitudesService {
             horaInicio: propuesto.horaInicio,
             horaFin: propuesto.horaFin,
           });
+          const modalidadNueva = this.resolverModalidadPayload(propuesto);
+          const recintoNuevo = recintosBloqueados.get(propuesto.idRecinto)!;
+          const cupoNuevoNormalizado = normalizarCupoMaximo(
+            propuesto.cupoMaximo,
+            recintoNuevo.aforo ?? 0,
+            modalidadNueva,
+          );
           const nuevoSub = await manager.save(SubEventoEntity, {
             nombre: propuesto.nombre,
             descripcion: propuesto.descripcion,
+            cupoMaximo: cupoNuevoNormalizado,
             tokenInvitacion: randomUUID(),
             enlaceInvitacionActivo: false,
             idEvento,
             idRecinto: propuesto.idRecinto,
             idFecha: nuevaFecha.idFecha,
-            idModalidadAcceso: this.resolverModalidadPayload(propuesto),
+            idModalidadAcceso: modalidadNueva,
             estado: EstadoSubEvento.ACEPTADO,
           });
           idsConservados.add(nuevoSub.idSubEvento);

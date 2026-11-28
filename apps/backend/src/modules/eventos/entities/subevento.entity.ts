@@ -25,6 +25,9 @@ export class SubEventoEntity implements SubEvento {
   @Column({ name: 'descripcion', type: 'varchar', length: 500 })
   descripcion: string;
 
+  @Column({ name: 'cupoMaximo', type: 'int', nullable: true, default: null })
+  cupoMaximo?: number | null;
+
   @Column({ name: 'idEvento', type: 'int' })
   idEvento: number;
 

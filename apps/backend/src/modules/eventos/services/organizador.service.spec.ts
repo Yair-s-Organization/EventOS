@@ -585,4 +585,66 @@ describe('OrganizadorService - Flujos diferidos, revocación y alcances', () => 
     expect(regenerado.tokenInvitacion).not.toBe('token-sub-100');
     expect(regenerado.tokenInvitacion.length).toBeGreaterThan(10);
   });
+
+  it('agregarInvitadosMasivo respeta cupoMaximo configurado menor al aforo del recinto', async () => {
+    const { service, invitacionesGuardadas } = crearOrganizadorServiceTest({
+      evento: {
+        idEvento: 10,
+        nombre: 'Taller Acotado',
+        descripcion: 'Desc',
+        idAlcance: AlcanceEvento.PRIVADO,
+        idEstadoEvento: EstadoEvento.ACEPTADO,
+        idOrganizador: 1,
+        poster: 'p.jpg',
+      },
+      subeventoEncontrado: {
+        idSubEvento: 100,
+        idEvento: 10,
+        nombre: 'Taller Privado',
+        descripcion: 'Desc',
+        estado: EstadoSubEvento.ACEPTADO,
+        idModalidadAcceso: ModalidadAcceso.QR_GENERAL,
+        cupoMaximo: 2,
+        tokenInvitacion: 'token-100',
+        enlaceInvitacionActivo: false,
+        recinto: { idRecinto: 4, nombre: 'Sala 14', aforo: 100 },
+        fecha: {
+          idFecha: 1,
+          fecha: '2026-12-10',
+          horaInicio: '10:00:00',
+          horaFin: '12:00:00',
+        },
+      },
+      invitacionesCount: 1,
+      usuariosPorCorreo: {
+        'uno@ipn.mx': {
+          idUsuario: 21,
+          nombre: 'Uno',
+          apellidoPa: 'Test',
+          correo: 'uno@ipn.mx',
+          estatus: true,
+        },
+        'dos@ipn.mx': {
+          idUsuario: 22,
+          nombre: 'Dos',
+          apellidoPa: 'Test',
+          correo: 'dos@ipn.mx',
+          estatus: true,
+        },
+      },
+    });
+
+    const res = await service.agregarInvitadosMasivo(
+      10,
+      100,
+      1,
+      { correos: ['uno@ipn.mx', 'dos@ipn.mx'] },
+      0,
+    );
+
+    expect(res.exitosos.map((e) => e.correo)).toEqual(['uno@ipn.mx']);
+    expect(res.omitidos.map((o) => o.correo)).toEqual(['dos@ipn.mx']);
+    expect(res.cupoRestante).toBe(0);
+    expect(invitacionesGuardadas).toHaveLength(1);
+  });
 });

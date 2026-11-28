@@ -9,6 +9,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import {
   AlcanceEvento,
+  calcularCapacidadEfectiva,
+  esLaboratorioRecinto,
   EstadoBoleto,
   EstadoEvento,
   EstadoSubEvento,
@@ -45,6 +47,22 @@ export class EventosService {
     private readonly dataSource: DataSource,
     private readonly storageService: StorageService,
   ) {}
+
+  private async obtenerAforoRealRecinto(
+    idRecinto: number,
+    aforoBase: number,
+    ejecutor?: { query: (sql: string, params?: any[]) => Promise<any[]> },
+  ): Promise<number> {
+    if (!esLaboratorioRecinto(idRecinto)) {
+      return aforoBase;
+    }
+    const runner = ejecutor ?? this.dataSource;
+    const filas = await runner.query(
+      `SELECT COUNT(*)::int AS total FROM "estadoEquipo" WHERE "idRecinto" = $1 AND estado = true`,
+      [idRecinto],
+    );
+    return Number(filas[0]?.total ?? 0);
+  }
 
   private obtenerAhoraCDMX(): { fechaHoy: string; horaActual: string } {
     const ahora = new Date();
@@ -304,12 +322,28 @@ export class EventosService {
           this.asientoRepository.count({ where: { idRecinto: sub.idRecinto } }),
         ]);
 
+      const aforoReal = recinto
+        ? await this.obtenerAforoRealRecinto(
+            recinto.idRecinto,
+            Number(recinto['aforo'] ?? 0),
+          )
+        : 0;
+      const cupoEfectivo = recinto
+        ? calcularCapacidadEfectiva(
+            sub.cupoMaximo,
+            aforoReal,
+            sub.idModalidadAcceso,
+          )
+        : 0;
+
       subEventosDetallados.push({
         idSubEvento: sub.idSubEvento,
         nombre: sub.nombre,
         descripcion: sub.descripcion,
         estado: sub.estado,
         idModalidadAcceso: sub.idModalidadAcceso,
+        cupoMaximo: sub.cupoMaximo ?? null,
+        cupoEfectivo,
         requiereSeleccionAsiento:
           totalAsientosRecinto > 0 &&
           sub.idModalidadAcceso === ModalidadAcceso.QR_MAPA,
@@ -325,7 +359,7 @@ export class EventosService {
           ? {
               idRecinto: recinto.idRecinto,
               nombre: recinto['nombre'],
-              aforo: recinto['aforo'],
+              aforo: aforoReal,
             }
           : null,
         ponentes: ponentes.map((p) => ({
@@ -585,7 +619,15 @@ export class EventosService {
 
     const esAccesoLibre =
       subEvento.idModalidadAcceso === ModalidadAcceso.ACCESO_LIBRE;
-    const aforo = subEvento.recinto?.aforo ?? 0;
+    const aforoReal = await this.obtenerAforoRealRecinto(
+      subEvento.idRecinto,
+      subEvento.recinto?.aforo ?? 0,
+    );
+    const aforo = calcularCapacidadEfectiva(
+      subEvento.cupoMaximo,
+      aforoReal,
+      subEvento.idModalidadAcceso,
+    );
     const ocupados = esAccesoLibre
       ? 0
       : await this.obtenerOcupadosRealesSubEvento(subEvento.idSubEvento);
@@ -622,7 +664,7 @@ export class EventosService {
         ? {
             idRecinto: subEvento.recinto.idRecinto,
             nombre: subEvento.recinto.nombre,
-            aforo: subEvento.recinto.aforo,
+            aforo: aforoReal,
           }
         : null,
       ponentes: ponentes.map((p) => ({
@@ -718,7 +760,16 @@ export class EventosService {
         );
       }
 
-      const aforo = Number(recinto?.aforo ?? 0);
+      const aforoReal = await this.obtenerAforoRealRecinto(
+        subEvento.idRecinto,
+        Number(recinto?.aforo ?? 0),
+        queryRunner.manager,
+      );
+      const aforo = calcularCapacidadEfectiva(
+        subEvento.cupoMaximo,
+        aforoReal,
+        subEvento.idModalidadAcceso,
+      );
       if (aforo > 0) {
         const ocupados = await this.obtenerOcupadosRealesSubEvento(
           subEvento.idSubEvento,
