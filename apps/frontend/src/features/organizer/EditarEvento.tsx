@@ -81,37 +81,6 @@ function diasHastaFecha(fecha: string): number | null {
   return (fechaUTC - hoyUTC) / 86_400_000;
 }
 
-function crearColumnasLogistica(
-  onEliminar: (personal: PersonalLogisticaItem) => void,
-): Columna<PersonalLogisticaItem>[] {
-  return [
-    {
-      id: "correo",
-      encabezado: "Correo",
-      render: (personal) => personal.correo,
-      className: "min-w-[12rem] sm:min-w-[13rem] break-all px-3",
-    },
-    {
-      id: "acciones",
-      encabezado: "Acción",
-      render: (personal) => {
-        return (
-          <div id="contenedorEncabezado">
-            <Button
-              text="Eliminar"
-              variant="danger"
-              type="button"
-              onClick={() => onEliminar(personal)}
-            />
-          </div>
-        );
-      },
-      className:
-        "text-center w-[8rem] min-w-[8rem] sm:min-w-[15rem] break-all px-3",
-    },
-  ];
-}
-
 type TablaInvitados = InvitadoEventoItem;
 
 function obtenerMensajeError(error: unknown): string {
@@ -209,6 +178,21 @@ export function EditarEvento() {
     PersonalLogisticaItem[]
   >([]);
   const [archivoPoster, setArchivoPoster] = useState<File | null>(null);
+  const [previewPosterUrl, setPreviewPosterUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!archivoPoster) {
+      setPreviewPosterUrl(null);
+      return;
+    }
+
+    const objectUrl = URL.createObjectURL(archivoPoster);
+    setPreviewPosterUrl(objectUrl);
+
+    return () => {
+      URL.revokeObjectURL(objectUrl);
+    };
+  }, [archivoPoster]);
   const usuarioGuardado = JSON.parse(localStorage.getItem("usuario") || "{}");
   const esSubdireccion = usuarioGuardado?.tipoCuenta === "Subdirección";
   const [ponentes, setPonentes] = useState<TablaPonente[]>([]);
@@ -220,11 +204,39 @@ export function EditarEvento() {
   );
   const [personalAEliminar, setPersonalAEliminar] =
     useState<PersonalLogisticaItem | null>(null);
+  const esVistaEvento = idSubEventoSeleccionado === undefined;
 
-  const columnasLogistica = useMemo(
-    () => crearColumnasLogistica(setPersonalAEliminar),
-    [],
-  );
+  const columnasLogistica = useMemo<Columna<PersonalLogisticaItem>[]>(() => {
+    const base: Columna<PersonalLogisticaItem>[] = [
+      {
+        id: "correo",
+        encabezado: "Correo",
+        render: (personal) => personal.correo,
+        className: "min-w-[12rem] sm:min-w-[13rem] break-all px-3",
+      },
+    ];
+
+    if (esVistaEvento) {
+      base.push({
+        id: "acciones",
+        encabezado: "Acción",
+        render: (personal) => (
+          <div id="contenedorEncabezado">
+            <Button
+              text="Eliminar"
+              variant="danger"
+              type="button"
+              onClick={() => setPersonalAEliminar(personal)}
+            />
+          </div>
+        ),
+        className:
+          "text-center w-[8rem] min-w-[8rem] sm:min-w-[15rem] break-all px-3",
+      });
+    }
+
+    return base;
+  }, [esVistaEvento]);
 
   const confirmarEliminarPersonalLogistica = () => {
     if (!personalAEliminar) return;
@@ -1112,8 +1124,11 @@ export function EditarEvento() {
             },
           }}
         />
-        {evento?.posterUrl && (
-          <EventBanner eventName={evento.nombre} posterUrl={evento.posterUrl} />
+        {(previewPosterUrl ?? evento?.posterUrl) && evento && (
+          <EventBanner
+            eventName={nombre || evento.nombre}
+            posterUrl={previewPosterUrl ?? evento.posterUrl}
+          />
         )}
       </div>
 
@@ -1156,29 +1171,34 @@ export function EditarEvento() {
           {evento.solicitudModificacionPendiente && (
             <div
               role="status"
-              className="space-y-2 rounded-lg border border-amber-300 bg-amber-50 p-5 text-amber-950 shadow-md"
+              className="space-y-3 rounded-md border border-amber-300 bg-amber-50 p-5 shadow-md"
             >
-              <div className="flex flex-col-reverse gap-2 md:flex-row md:justify-between">
+              <div className="flex flex-col-reverse gap-5 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <h2 className="text-base font-bold text-amber-950">
+                  <h2 className="text-base font-bold sm:text-lg">
                     Modificación logística pendiente de evaluación por
                     Subdirección
                   </h2>
                 </div>
                 <div>
-                  <Badge variant="warning">Solicitud en revisión</Badge>
+                  <Badge className="py-1" variant="warning">
+                    Solicitud en revisión
+                  </Badge>
                 </div>
               </div>
-              <p className="text-base text-amber-900">
-                <span className="font-semibold">Motivo registrado:</span>{" "}
+              <div className="text-[16px] text-justify break-words">
+                <span className="font-semibold">Motivo registrado: </span>
                 {evento.solicitudModificacionPendiente.motivoModificacion}
-              </p>
-              <p className="text-sm text-amber-800">
-                Mientras Subdirección dictamina esta solicitud, se conservan
-                vigentes las fechas y espacios originales. Cualquier nuevo
-                cambio logístico actualizará esta misma solicitud sin generar
-                duplicados.
-              </p>
+              </div>
+              <div className="space-y-2 text-justify">
+                <hr className="text-gray-400" />
+                <p className="text-xs ">
+                  Mientras Subdirección dictamina esta solicitud, el evento
+                  conserva vigentes sus fechas y espacios originales. Si
+                  realizas otro cambio logístico, se actualizará esta misma
+                  solicitud sin generar duplicados.
+                </p>
+              </div>
             </div>
           )}
 
@@ -1239,27 +1259,27 @@ export function EditarEvento() {
                 </div>
               </div>
 
-              <div className="grid min-w-0 grid-cols-1 items-start gap-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,0.9fr)] xl:gap-12">
-                <div className="w-full min-w-0 space-y-6">
+              <div className="grid min-w-0 grid-cols-1 gap-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,0.9fr)] xl:gap-12">
+                <div className="w-full min-w-0 space-y-10">
                   <div id="contenedorPonentes" className="space-y-5">
-                    <div id="contenedorToolTip" className="inline-flex gap-2">
+                    <div id="contenedorToolTip" className="inline-flex gap-1">
                       <h2 className="text-xl font-bold sm:text-2xl">
                         Ponentes
                       </h2>
                       <InfoTooltip
-                        ariaLabel="Informarción sobre ponentes"
+                        ariaLabel="Información sobre ponentes"
                         content="Los ponentes agregados aquí pertenecen a esta actividad y aparecerán en la ficha pública del evento. Los cambios se aplican al confirmar el guardado"
                       />
                     </div>
                     {ponentes.length > 0 ? (
-                      <div className="mt-4 w-full min-w-0 overflow-x-auto rounded-md border border-gray-200 shadow-md">
+                      <div className="w-full min-w-0 overflow-x-auto overflow-y-auto max-h-[225px] rounded-md border border-gray-200 shadow-md">
                         <Table
                           columnas={columnasPonente}
                           filas={ponentes}
                           obtenerClave={(ponente) => ponente.id}
                           encabezadoClassName="h-10 border-b border-gray-300"
                           filaClassName="h-12"
-                          className="table-auto min-w-full bg-white text-left text-sm [&_th]:py-2 [&_td]:py-2"
+                          className="table-auto min-w-full bg-white text-left text-sm [&_th]:py-3 [&_td]:py-3"
                         />
                       </div>
                     ) : (
@@ -1267,14 +1287,15 @@ export function EditarEvento() {
                         No hay ponentes registrados para este evento.
                       </p>
                     )}
-                    <Button
-                      text="Agregar ponente"
-                      variant="primary"
-                      type="button"
-                      onClick={() => setModalPonente(true)}
-                    />
+                    <div>
+                      <Button
+                        text="Agregar ponente"
+                        variant="primary"
+                        type="button"
+                        onClick={() => setModalPonente(true)}
+                      />
+                    </div>
                   </div>
-
                   {modalPontente && (
                     <ModalPonentes
                       mostrarModal={modalPontente}
@@ -1284,7 +1305,6 @@ export function EditarEvento() {
                       }}
                     />
                   )}
-
                   {ponenteAEliminar && (
                     <Modal
                       mostrarModal={Boolean(ponenteAEliminar)}
@@ -1323,7 +1343,6 @@ export function EditarEvento() {
                       </div>
                     </Modal>
                   )}
-
                   {personalAEliminar && (
                     <Modal
                       mostrarModal={Boolean(personalAEliminar)}
@@ -1355,7 +1374,6 @@ export function EditarEvento() {
                       </div>
                     </Modal>
                   )}
-
                   {invitadoAEliminar && (
                     <Modal
                       mostrarModal={Boolean(invitadoAEliminar)}
@@ -1390,28 +1408,28 @@ export function EditarEvento() {
                     </Modal>
                   )}
 
-                  {idSubEventoSeleccionado === undefined && (
-                    <div id="contenedorLogistica" className="space-y-5">
-                      <h2 className="text-xl font-bold sm:text-2xl">
-                        Personal de logística
-                      </h2>
-                      {personalLogistica.length > 0 ? (
-                        <div className="mt-4 w-full min-w-0 overflow-x-auto rounded-md border border-gray-200 shadow-md">
-                          <Table
-                            columnas={columnasLogistica}
-                            filas={personalLogistica}
-                            obtenerClave={(personal) => personal.idUsuario}
-                            encabezadoClassName="h-10 border-b border-gray-300"
-                            filaClassName="h-12"
-                            className="table-auto min-w-full bg-white text-left text-sm [&_th]:py-2 [&_td]:py-2"
-                          />
-                        </div>
-                      ) : (
-                        <p className="mt-3 text-gray-600">
-                          No hay personal de logística registrado para este
-                          evento.
-                        </p>
-                      )}
+                  <div id="contenedorLogistica" className="space-y-5">
+                    <h2 className="text-xl font-bold sm:text-2xl">
+                      Personal de logística
+                    </h2>
+                    {personalLogistica.length > 0 ? (
+                      <div className="mt-4 w-full min-w-0 overflow-x-auto overflow-y-auto max-h-[225px] rounded-md border border-gray-200 shadow-md">
+                        <Table
+                          columnas={columnasLogistica}
+                          filas={personalLogistica}
+                          obtenerClave={(personal) => personal.idUsuario}
+                          encabezadoClassName="h-10 border-b border-gray-300"
+                          filaClassName="h-12"
+                          className="table-auto min-w-full bg-white text-left text-sm [&_th]:py-3 [&_td]:py-3"
+                        />
+                      </div>
+                    ) : (
+                      <p className="mt-3 text-gray-600">
+                        No hay personal de logística registrado para este
+                        evento.
+                      </p>
+                    )}
+                    {idSubEventoSeleccionado === undefined && (
                       <Button
                         text="Agregar personal de logística"
                         variant="primary"
@@ -1419,11 +1437,19 @@ export function EditarEvento() {
                         onClick={() => {
                           navigate(
                             `/organizador/administrar-evento/${idEvento}/agregar-logistica`,
+                            {
+                              state: {
+                                returnTo: idSubEventoSeleccionado
+                                  ? `/organizador/editar-evento/${idEvento}/subevento/${idSubEventoSeleccionado}`
+                                  : `/organizador/editar-evento/${idEvento}`,
+                              },
+                            },
                           );
                         }}
                       />
-                    </div>
-                  )}
+                    )}
+                  </div>
+
                   {alcance === AlcanceEvento.PRIVADO && (
                     <div id="contenedorInvitados" className="space-y-5">
                       <div className="flex flex-row gap-2">
@@ -1451,7 +1477,7 @@ export function EditarEvento() {
                             }
                             encabezadoClassName="h-10 border-b border-gray-300"
                             filaClassName="h-12"
-                            className="table-auto min-w-full bg-white text-left text-sm [&_th]:py-2 [&_td]:py-2"
+                            className="table-auto min-w-full bg-white text-left text-sm [&_th]:py-3 [&_td]:py-3"
                           />
                         </div>
                       ) : (

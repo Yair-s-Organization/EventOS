@@ -327,8 +327,8 @@ export function EditLogisticsSection({
   );
 
   return (
-    <div id="contenedorDerecha" className="w-full min-w-0 space-y-4">
-      <article className="grid min-w-0 grid-cols-1 gap-x-6 gap-y-5 rounded-lg border border-gray-200 bg-white p-4 shadow-sm sm:grid-cols-2 sm:p-6">
+    <div id="contenedorDerecha" className="w-full h-full min-w-0 space-y-4">
+      <article className="grid min-w-0 h-full content-start grid-cols-1 gap-x-6 gap-y-5 rounded-lg border border-gray-200 bg-white p-4 shadow-sm sm:grid-cols-2 sm:p-6">
         {mostrarBanner && (
           <div className="flex min-w-0 flex-col gap-2">
             <FormField
@@ -338,7 +338,7 @@ export function EditLogisticsSection({
               mensajeAyuda="Resolución: 2048 x 1152 y en formato .jpg"
             >
               <InputFile
-                key={archivoPoster?.name ?? posterUrl ?? "poster"}
+                key={posterUrl ?? "poster"}
                 id="campoPoster"
                 accept=".jpg"
                 disabled={deshabilitado}
@@ -596,16 +596,6 @@ export function EditLogisticsSection({
             aria-label="Aforo máximo del espacio seleccionado"
           />
         </div>
-        {avisoImpacto && (
-          <div className="sm:col-span-2">
-            <FeedbackNotice
-              variant="warning"
-              title="Aviso de impacto en registros actuales"
-            >
-              {avisoImpacto}
-            </FeedbackNotice>
-          </div>
-        )}
         {mostrarBanner && (
           <div className="flex min-w-0 flex-col gap-2 sm:col-span-2">
             <div className="relative">
@@ -640,6 +630,16 @@ export function EditLogisticsSection({
                 />
               </FormField>
             </div>
+          </div>
+        )}
+        {avisoImpacto && (
+          <div className="sm:col-span-2">
+            <FeedbackNotice
+              variant="warning"
+              title="Aviso de impacto en registros actuales"
+            >
+              {avisoImpacto}
+            </FeedbackNotice>
           </div>
         )}
       </article>

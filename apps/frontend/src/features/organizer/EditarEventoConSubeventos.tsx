@@ -203,7 +203,7 @@ function crearColumnasLogistica(
             text="Eliminar"
             variant="danger"
             type="button"
-            className="w-full sm:w-auto text-xs sm:text-sm"
+            className="w-full sm:w-auto text-sm"
             onClick={() => onEliminar(personal)}
           />
         );
@@ -492,8 +492,8 @@ function FilaActividadEditable({
   const recintoSeleccionado = recintos.find(
     (r) => String(r.idRecinto) === actividad.idRecinto,
   );
-
-  return (
+  /* bg-white border border-gray-200 shadow-sm
+   */ return (
     <div className="grid min-w-0 grid-cols-1 gap-4 rounded-md bg-eventos-primary-light p-4 sm:grid-cols-2 sm:p-6 lg:grid-cols-3 lg:px-10 lg:py-8">
       <FormField
         label="Fecha"
@@ -749,11 +749,27 @@ export function EditarEventoConSubeventos() {
   >([]);
   const [recintos, setRecintos] = useState<Recinto[]>([]);
   const [archivoPoster, setArchivoPoster] = useState<File | null>(null);
+  const [previewPosterUrl, setPreviewPosterUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!archivoPoster) {
+      setPreviewPosterUrl(null);
+      return;
+    }
+
+    const objectUrl = URL.createObjectURL(archivoPoster);
+    setPreviewPosterUrl(objectUrl);
+
+    return () => {
+      URL.revokeObjectURL(objectUrl);
+    };
+  }, [archivoPoster]);
   const [motivo, setMotivo] = useState("");
   const [motivoUrgente, setMotivoUrgente] = useState("");
   const [mostrarModalMotivo, setMostrarModalMotivo] = useState(false);
   const [mostrarModalAviso, setMostrarModalAviso] = useState(false);
   const [mostrarModalUrgente, setMostrarModalUrgente] = useState(false);
+  const [mostrarModalRegreso, setMostrarModalRegreso] = useState(false);
   const [intentoGuardar, setIntentoGuardar] = useState(false);
   const [intentoMotivo, setIntentoMotivo] = useState(false);
   const [cargando, setCargando] = useState(true);
@@ -1492,18 +1508,52 @@ export function EditarEventoConSubeventos() {
 
   return (
     <section className="mx-auto w-full min-w-0 max-w-7xl space-y-8 px-4 sm:px-6 lg:space-y-10 lg:px-8">
+      {mostrarModalRegreso && (
+        <Modal
+          mostrarModal={mostrarModalRegreso}
+          titulo="Advertencia"
+          contenido="¿Estás seguro que deseas regresar? Los cambios realizados se perderán"
+          cerrarModal={() => setMostrarModalRegreso(false)}
+        >
+          <div className="flex justify-end gap-3">
+            <Button
+              text="Cancelar"
+              variant="secondary"
+              type="button"
+              onClick={() => setMostrarModalRegreso(false)}
+            />
+            <Button
+              text="Aceptar"
+              variant="success"
+              type="button"
+              onClick={() =>
+                navigate(
+                  `/organizador/administrar-evento-subeventos/${idEvento}`,
+                )
+              }
+            />
+          </div>
+        </Modal>
+      )}
+
       <div id="contenedorTituloBanner" className="space-y-4 sm:space-y-5">
         <PageHeader
           title="Modificar detalles de evento"
           back={{
             to: `/organizador/administrar-evento-subeventos/${idEvento}`,
             label: "Volver a detalles de mi evento",
+            onClick: (e) => {
+              if (cambiosGenerales || cambiosActividades) {
+                e.preventDefault();
+                setMostrarModalRegreso(true);
+              }
+            },
           }}
         />
-        {evento?.posterUrl && (
+        {(previewPosterUrl ?? evento?.posterUrl) && evento && (
           <EventBanner
             eventName={datosGenerales?.nombre ?? evento.nombre}
-            posterUrl={evento.posterUrl}
+            posterUrl={previewPosterUrl ?? evento.posterUrl}
           />
         )}
       </div>
@@ -1543,28 +1593,33 @@ export function EditarEventoConSubeventos() {
       {evento?.solicitudModificacionPendiente && (
         <div
           role="status"
-          className="space-y-2 rounded-md border border-amber-300 bg-amber-50 p-5 text-amber-950 shadow-md"
+          className="space-y-3 rounded-md border border-amber-300 bg-amber-50 p-5 shadow-md"
         >
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col-reverse gap-5 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h2 className="text-base font-bold text-amber-950 sm:text-lg">
+              <h2 className="text-base font-bold sm:text-lg">
                 Modificación logística pendiente de evaluación por Subdirección
               </h2>
             </div>
             <div>
-              <Badge variant="warning">Solicitud en revisión</Badge>
+              <Badge className="py-1" variant="warning">
+                Solicitud en revisión
+              </Badge>
             </div>
           </div>
-          <div className="text-[16px] text-amber-900 break-words">
+          <div className="text-[16px] text-justify break-words">
             <span className="font-semibold">Motivo registrado: </span>
             {evento.solicitudModificacionPendiente.motivoModificacion}
           </div>
-          <p className="text-xs text-amber-800">
-            Mientras Subdirección dictamina esta solicitud, el evento conserva
-            vigentes sus fechas y espacios originales. Si realizas otro cambio
-            logístico, se actualizará esta misma solicitud sin generar
-            duplicados.
-          </p>
+          <div className="space-y-2 text-justify">
+            <hr className="text-gray-400" />
+            <p className="text-xs ">
+              Mientras Subdirección dictamina esta solicitud, el evento conserva
+              vigentes sus fechas y espacios originales. Si realizas otro cambio
+              logístico, se actualizará esta misma solicitud sin generar
+              duplicados.
+            </p>
+          </div>
         </div>
       )}
 
@@ -1769,12 +1824,12 @@ export function EditarEventoConSubeventos() {
               </Modal>
             )}
 
-            <div id="contenedorLogistica" className="space-y-4 pt-2">
+            <div id="contenedorLogistica" className="space-y-7 pt-2">
               <h3 className="text-lg font-bold sm:text-xl md:text-2xl">
                 Personal de logística del evento
               </h3>
               {personalLogistica.length > 0 ? (
-                <div className="w-full max-w-full overflow-x-auto rounded-lg border border-gray-200 shadow-sm lg:w-150">
+                <div className="w-full max-w-full overflow-x-auto rounded-md border border-gray-200 shadow-sm lg:w-150">
                   <Table
                     columnas={columnasLogistica}
                     filas={personalLogistica}
@@ -1793,10 +1848,15 @@ export function EditarEventoConSubeventos() {
                 text="Agregar personal de logística"
                 variant="primary"
                 type="button"
-                className="w-full sm:w-auto"
+                className="w-fit sm:w-auto"
                 onClick={() => {
                   navigate(
                     `/organizador/administrar-evento/${idEvento}/agregar-logistica`,
+                    {
+                      state: {
+                        returnTo: `/organizador/editar-evento-subeventos/${idEvento}`,
+                      },
+                    },
                   );
                 }}
               />
@@ -1918,15 +1978,6 @@ export function EditarEventoConSubeventos() {
                       : null,
                   };
 
-                  const invitadosSubevento =
-                    invitadosPorSubevento[actividad.idSubEvento] ?? [];
-                  const subeventoDetalle = evento?.subEventos.find(
-                    (s) => s.idSubEvento === actividad.idSubEvento,
-                  );
-                  const esPrivado =
-                    datosGenerales?.idAlcance === AlcanceEvento.PRIVADO ||
-                    evento?.idAlcance === AlcanceEvento.PRIVADO;
-
                   return (
                     <div key={actividad.llave} className="space-y-3">
                       <OrganizerSubeventCard
@@ -1982,20 +2033,20 @@ export function EditarEventoConSubeventos() {
 
           <div
             id="contenedorBotones"
-            className="flex flex-col-reverse gap-3 pt-4 sm:flex-row sm:justify-end"
+            className="w-full flex flex-col w-fit justify-end md:flex-row md:justify-end gap-2"
           >
             <Button
               text="Agregar actividad"
               variant="primary"
               type="button"
-              className="w-full sm:w-auto"
+              className="whitespace-nowrap sm:w-auto"
               onClick={agregarActividad}
             />
             <Button
               text="Guardar cambios"
               variant="primary"
               type="submit"
-              className="w-full sm:w-auto"
+              className="whitespace-nowrap sm:w-auto"
               loading={guardando}
               loadingText="Guardando..."
             />
