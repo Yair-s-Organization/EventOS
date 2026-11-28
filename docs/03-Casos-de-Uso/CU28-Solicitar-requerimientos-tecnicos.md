@@ -3,7 +3,7 @@ caso_de_uso: "CU-28"
 nombre: "Solicitar requerimientos técnicos (extend CU-26)"
 actor: "Organizador"
 proyecto: "EventOS"
-version: "2.0"
+version: "2.1"
 tags:
   - caso-de-uso
   - ads
@@ -26,10 +26,10 @@ tags:
 | **Caso de uso** | **CU-28 Solicitar requerimientos técnicos (extend CU-26)** |
 | **Autor** | Arciniega Valdez Yair Emmanuel |
 | **Actor** | Organizador |
-| **Propósito** | Registrar la cantidad de computadoras necesarias para el evento, garantizando que no se supere la capacidad instalada. |
+| **Propósito** | Registrar la cantidad de computadoras necesarias para el evento en laboratorio, garantizando que no se supere el inventario funcional disponible (`RN-18`, hasta `36` equipos para alumno + `1` estación docente) ni el `cupoMaximo` (`RN-07`). |
 | **Entradas** | Cantidad entera de computadoras a solicitar. |
-| **Salidas** | • Pantalla **UI17** "Requerimientos Técnicos de Laboratorio".<br>• El sistema muestra MSG-I-08 operación realizada con éxito.<br>• El sistema muestra la UI15 Panel de Administración y Detalles del Evento. |
-| **Precondiciones** | El usuario se encuentra en la pantalla UI07 "Formulario de Solicitud de Evento" o UI15 "Panel de Administración y Detalles del Evento".<br>El evento está configurado para realizarse en un espacio tipo laboratorio. |
+| **Salidas** | • Modal de Requerimientos Técnicos integrado dentro de **UI07**, **UI15** o **UI16** (`SpaceRequirementsDialog`).<br>• El sistema muestra MSG-I-08 operación realizada con éxito.<br>• Retorno a **UI07**, **UI15** o **UI16** según el flujo origen. |
+| **Precondiciones** | El usuario se encuentra en **UI07** "Formulario de Solicitud de Evento", **UI15** "Administración y Detalles del Evento (Único y Multi-actividad)" o **UI16** "Formulario de Modificación de Evento (Único y Multi-actividad)".<br>El subevento está configurado para realizarse en un espacio tipo laboratorio (`2104`–`2107`). |
 | **Postcondiciones** | La cantidad de computadoras solicitadas se asocia al evento y se guarda permanentemente en la base de datos. |
 | **Errores** | MSG-E-02 Cantidad inválida. Ingrese un número entero válido.<br>MSG-E-03 La cantidad solicitada excede el límite disponible. |
 | **Tipo** | Secundario para el organizador, viene de **CU-26** Modificar detalles de un evento (`<<extend>>`). |
@@ -37,7 +37,7 @@ tags:
 
 ### Trayectoria Principal
 
-1. Muestra la pantalla **UI17** "Requerimientos Técnicos de Laboratorio", presentando el catálogo de equipos de cómputo funcionales disponibles y fuera de servicio del laboratorio asignado.
+1. Muestra el modal integrado de Requerimientos Técnicos dentro de **UI07**, **UI15** o **UI16**, presentando el catálogo de equipos de cómputo funcionales disponibles y fuera de servicio del laboratorio asignado (inventario administrado en `UI23`).
 2. Selecciona y/o ingresa la cantidad de computadoras necesarias para su actividad. [Trayectoria A]
 3. Confirma la solicitud de requerimientos.
 4. Valida que la cantidad ingresada sea un número entero y no exceda el límite máximo permitido. [Trayectoria B] [Trayectoria C]
@@ -52,7 +52,7 @@ tags:
 > **Condición:** El Organizador decide no agregar requerimientos y presiona "Cancelar" o "Regresar”.
 
 - **A-1.** Descarta los datos introducidos que no hayan sido guardados.
-- **A-2.** Regresa a UI15 Panel de Administración y Detalles del Evento.
+- **A-2.** Cierra el modal y permanece en **UI07**, **UI15** o **UI16**.
 
 *Fin de la trayectoria.*
 

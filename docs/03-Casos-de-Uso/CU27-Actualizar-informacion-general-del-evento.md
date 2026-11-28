@@ -3,7 +3,7 @@ caso_de_uso: "CU-27"
 nombre: "Actualizar información general del evento (extend CU-26)"
 actor: "Organizador"
 proyecto: "EventOS"
-version: "2.0"
+version: "2.1"
 tags:
   - caso-de-uso
   - ads
@@ -27,8 +27,8 @@ tags:
 | **Autor** | Compaired Nieto Abdiel Raúl |
 | **Actor** | Organizador |
 | **Propósito** | Permitir al Organizador modificar el texto descriptivo, configurar la accesibilidad, y asignar o editar etiquetas temáticas y áreas de conocimiento del evento. |
-| **Entradas** | • Se escribe desde el teclado la nueva descripción del evento.<br>• Se selecciona el tipo de alcance del evento (Público, Interno o Privado).<br>• Se escriben desde el teclado y/o seleccionan las etiquetas y el área de conocimiento. |
-| **Salidas** | • Mensaje unificado de éxito confirmando la actualización de la información.<br>• Habilitación de la gestión del padrón de invitados (agregar, reenviar con cooldown de 8h y eliminar invitados) si el alcance seleccionado es Privado. |
+| **Entradas** | • Se escribe desde el teclado la nueva descripción del evento.<br>• Se selecciona el tipo de alcance del evento (Público, Interno o Privado).<br>• Opcionalmente se actualiza el póster en almacenamiento público Cloudflare R2 (`2048×1152`) y los enlaces o ponentes en `UI16`.<br>• Se escriben desde el teclado y/o seleccionan las etiquetas y el área de conocimiento. |
+| **Salidas** | • Mensaje unificado de éxito confirmando la actualización de la información en `UI16` "Formulario de Modificación de Evento".<br>• Habilitación de la gestión granular por subevento del padrón de invitados privados (correo individual, carga masiva por lotes/CSV, enlace compartible `/eventos/privado/:tokenSubEvento`, reenvío con cooldown de 8h y revocación) si el alcance seleccionado es Privado (`RN-05`, `RN-29`). |
 | **Precondiciones** | • Que el sistema se encuentre en el punto de extensión de la pantalla "Modificar detalles de un evento".<br>• Que el evento seleccionado se encuentre activo. |
 | **Postcondiciones** | Se modifica en la base de datos la descripción, el nivel de visibilidad/acceso y las etiquetas del evento, alterando cómo y quién visualiza la información. |
 | **Errores** | • **MSG-E-13** Dato requerido faltante en la descripción.<br>• **MSG-E-14** La descripción excede el límite de caracteres.<br>• **MSG-E-15** Debe seleccionar un tipo de alcance válido.<br>• **MSG-E-16** Formato de etiqueta inválido.<br>• **MSG-E-17** Límite de etiquetas excedido. |
@@ -95,8 +95,8 @@ tags:
 
 ### Trayectoria alternativa F: El alcance seleccionado y actualizado es "Privado"
 
-- **F-1.** En la pantalla "Modificar detalles de un evento" (`UI16`) habilita la sección de "Tus invitados", permitiendo al Organizador preparar altas de correos de destinatarios, reenviar invitaciones respetando el *cooldown* de 8 horas o revocar invitaciones eliminando al usuario de la tabla. Si el evento provenía de alcance `Público` o `Interno`, el sistema incorpora automáticamente en `"invitacionEvento"` a los asistentes que ya tenían un boleto activo (`VALIDO` o `UTILIZADO`) para que conserven su acceso y aparezcan en el padrón.
-- **F-2.** Las altas y eliminaciones de invitados (así como bajas de personal de logística) realizadas en `UI16` permanecen en estado pendiente dentro del formulario hasta pulsar **[Guardar cambios]** / **[Confirmar cambios]**: en ese momento se envían los correos a los nuevos invitados, se revocan las invitaciones eliminadas, se cancelan automáticamente los boletos activos previos de los invitados removidos (notificándoles por correo solo si tenían boleto activo) y se persisten las modificaciones de ponentes (admitiendo captura de nombre sin exigir correo en `UI16`).
+- **F-1.** En **UI16** "Formulario de Modificación de Evento" habilita la gestión granular de invitados privados **por subevento** (`"invitacionEvento"."idSubEvento"`), permitiendo al Organizador agregar correos individuales, ejecutar carga masiva por lotes/CSV, generar enlace compartible (`/eventos/privado/:tokenSubEvento`), reenviar invitaciones respetando el *cooldown* de 8 horas o revocar invitaciones. Si el evento provenía de alcance `Público` o `Interno`, el sistema incorpora automáticamente en `"invitacionEvento"` por subevento a los asistentes que ya tenían un boleto activo (`VALIDO` o `UTILIZADO`) para que conserven su acceso y aparezcan en el padrón.
+- **F-2.** Las altas individuales y bajas de invitados (así como bajas de personal de logística) preparadas en `UI16` permanecen en estado pendiente hasta pulsar **[Guardar cambios]** / **[Confirmar cambios]** (mientras la carga masiva por lotes y el enlace privado reportan de inmediato los resultados de su operación por subevento); al confirmar se envían los correos a los nuevos invitados, se revocan las invitaciones eliminadas, se cancelan automáticamente los boletos activos previos de los invitados removidos en ese subevento (notificándoles por correo solo si tenían boleto activo) y se persisten las modificaciones de ponentes (`CU-10`).
 - **F-3.** Retoma el flujo en el paso 8 de la trayectoria principal.
 
 *Fin de la trayectoria.*

@@ -3,7 +3,7 @@ caso_de_uso: "CU-29"
 nombre: "Cancelar evento propio (extend CU-24)"
 actor: "Organizador"
 proyecto: "EventOS"
-version: "2.0"
+version: "2.1"
 tags:
   - caso-de-uso
   - ads
@@ -39,9 +39,9 @@ Se brinda al organizador la posibilidad de cancelar un evento propio, especifica
 
 ### Trayectoria Principal
 
-1. Selecciona la opción *Mis eventos* en la pantalla UI14 Panel de Consulta de Mis Eventos.
-2. Selecciona el evento que desea cancelar dentro del apartado *Mis eventos* en la pantalla UI14 Panel de Consulta de Mis Eventos.
-3. Muestra la pantalla UI15 Panel de Administración y Detalles del Evento que solicita el ingreso de la justificación de cancelación.
+1. Selecciona la opción *Mis eventos* en la pantalla UI14 Panel Consultar Mis Eventos.
+2. Selecciona el evento que desea cancelar dentro del apartado *Mis eventos* en la pantalla UI14 Panel Consultar Mis Eventos.
+3. Muestra la pantalla UI15 Administración y Detalles del Evento (Único y Multi-actividad) que solicita el ingreso de la justificación de cancelación.
 4. Ingresa la justificación de cancelación.
 5. Muestra el MSG-P-01 ¿Desea confirmar la cancelación del evento seleccionado? en la pantalla UI15 Panel de Administración y Detalles del Evento.
 6. Oprime el botón [Aceptar]. [Trayectoria A]

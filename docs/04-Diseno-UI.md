@@ -1,7 +1,7 @@
 ---
 proyecto: "EventOS"
 materia: "Análisis y Diseño de Sistemas"
-version: "2.0"
+version: "2.1"
 figma_file: "16hWE2vpbC6m8HG15tL2V1"
 tags:
   - apunte
@@ -18,7 +18,7 @@ tags:
 > [!NOTE] Fuente Oficial de Diseño (Figma)
 > - **Archivo Figma:** [DISEÑO-ADS (`16hWE2vpbC6m8HG15tL2V1`)](https://www.figma.com/design/16hWE2vpbC6m8HG15tL2V1/DISE%C3%91O-ADS)
 > - **Lienzos incluidos:** `GUIAS DE ESTILO`, `WIREFRAME` (baja/media fidelidad) y `MOCKUPS` (alta fidelidad Desktop `1512×982` y Móvil `430×932`).
-> - **Navegación:** [Hub del Proyecto](./00-Proyecto-EventOS.md) | [Catálogo de Pantallas (`UI01`–`UI35`)](./02-Actores-y-Catalogos.md#3-catalogo-oficial-de-pantallas-ui01--ui35) | [Casos de Uso (`CU-01`–`CU-39`)](./03-Casos-de-Uso/00-Indice-Casos-de-Uso.md)
+> - **Navegación:** [Hub del Proyecto](./00-Proyecto-EventOS.md) | [Catálogo de Pantallas (`UI01`–`UI32`)](./02-Actores-y-Catalogos.md#3-catalogo-oficial-de-pantallas-ui01--ui32) | [Casos de Uso (`CU-01`–`CU-39`)](./03-Casos-de-Uso/00-Indice-Casos-de-Uso.md)
 
 ---
 
@@ -59,54 +59,51 @@ Toda la interfaz utiliza la familia tipográfica **Merriweather**, respetando la
 
 ---
 
-## 2. Correspondencia entre Catálogo Oficial (`v2.0`) y Lienzos de Figma
+## 2. Correspondencia entre Catálogo Oficial (`v2.1`) y Lienzos de Figma y Aplicación
 
-El Catálogo Oficial de EventOS consta de exactamente **35 pantallas consecutivas (`UI01` a `UI35`)**, en estricta sincronía 1:1 con los frames de diseño en Figma y los 39 Casos de Uso del sistema:
+El Catálogo Oficial de EventOS consta de **32 pantallas oficiales (`UI01` a `UI32`)** en correspondencia con Figma, las rutas de React y los 39 Casos de Uso del sistema:
 
-| ID Oficial (`v2.0`) | Nombre Oficial (`v2.0`) | Etiqueta del Frame en Figma | Wireframe | Mockup |
+| ID Oficial (`v2.1`) | Nombre Oficial (`v2.1`) | Etiqueta / Alcance en Figma y Aplicación | Wireframe | Mockup |
 | :---: | :--- | :--- | :---: | :---: |
-| `UI01` | Pantalla de Inicio de Sesión | `UI01 Pantalla de Inicio de Sesión` | Sí | Sí |
-| `UI02` | Pantalla de Registro de Usuario | `UI02 Pantalla de Registro de Usuario` | Sí | Sí |
+| `UI01` | Pantalla de Inicio de Sesión | `UI01 Pantalla de Inicio de Sesión` *(incluye `/recuperar-contrasena`)* | Sí | Sí |
+| `UI02` | Pantalla de Registro de Usuario | `UI02 Pantalla de Registro de Usuario` *(incluye `/confirmar-registro` y activación logística `/activar-logistica`)* | Sí | Sí |
 | `UI03` | Menú Principal del Asistente | `UI03 Menú principal del asistente` | Sí | Sí |
-| `UI04` | Cartelera de Eventos | `UI04 Cartelera de Eventos (Sin cuenta / Para el Asistente)` | Sí | Sí |
-| `UI05` | Detalles del Evento (+ subvista `UI05.1`) | `UI05 Detalles del evento` y `UI05.1 Detalles del subevento` | Sí | Sí |
-| `UI06` | Mapa de Asientos y Disponibilidad del Recinto | `UI06 Mapa de Asientos y Disponibilidad del recinto` | Sí | Sí |
-| `UI07` | Formulario de Solicitud de Evento | `UI07 Formulario de Solicitud de Evento` (Asistente y Subdirección) | Sí | Sí |
-| `UI08` | Consultar Mis Eventos (Reservas del Asistente) | `UI08 Consultar sus Eventos (Reservas del asistente)` (Desktop y Móvil) | Sí | Sí |
-| `UI09` | Boleto Digital y Código QR | `UI09 Boleto Digital y Código QR` (Auditorio, Lab, Sala 14 y Móvil) | Sí | Sí |
-| `UI10` | Bitácora de Eventos Realizados | `UI10 Bitácora de Eventos Realizados` | Sí | En proceso |
+| `UI04` | Cartelera de Eventos | `UI04 Cartelera de Eventos (En todos sus casos)` | Sí | Sí |
+| `UI05` | Detalles del Evento (+ subvista `UI05.1`) | `UI05 Detalles del evento` y `UI05.1 Detalles del subevento` *(+ enlace privado `/eventos/privado/:tokenSubEvento`)* | Sí | Sí |
+| `UI06` | Mapa de Asientos y Disponibilidad del Recinto | `UI06 Mapa de Asientos y Disponibilidad del recinto` *(retención temporal 5 min)* | Sí | Sí |
+| `UI07` | Formulario de Solicitud de Evento | `UI07 Formulario de Solicitud de Evento` (único/multi-actividad, cupo configurable `RN-07` y tooltips) | Sí | Sí |
+| `UI08` | Consultar sus Eventos (Reservas del Asistente o Mis Boletos) | `UI08 Consultar sus Eventos (Reservas del asistente)` (Desktop y Móvil) | Sí | Sí |
+| `UI09` | Boleto Digital y Código QR | `UI09 Boleto Digital y Código QR` (Auditorio, Sala 14, Laboratorios y Móvil) | Sí | Sí |
+| `UI10` | Visualización de Verificación de Usuario por Subdirección (Solicitudes de Verificación de Cuentas) | Bandeja `/subdireccion/verificaciones` (`CU-38`) | — | Sí |
 | `UI11` | Panel de Solicitudes Pendientes | `UI11 Panel de Solicitudes Pendientes (Subdirección)` | Sí | Sí |
-| `UI12` | Detalles del Evento para Evaluación | `UI12 Detalles de Evento para evaluación (Subdirección)` *(incluye modal de solicitud de cambios)* | Sí | Sí |
-| `UI13` | Panel de Eventos | `UI13 Panel de Eventos Aprobados (Subdirección)` | Sí | Sí |
-| `UI14` | Panel de Consulta de Mis Eventos | `UI14 Panel Consultar Mis Eventos (Organizador)` | Sí | Sí |
-| `UI15` | Panel de Administración y Detalles del Evento | `UI15 Administración y Detalles de mi evento` (General, Multi-actividad, Privado) | — | Sí |
-| `UI16` | Formulario de Modificación de Evento | `UI16 Administración y Detalles de mi evento` / `Formulario de Modificación` | Sí | Sí |
-| `UI17` | Requerimientos Técnicos de Laboratorio | `UI17 Requerimientos Tecnicos` *(mockup `mk-organizador-requerimientos-lab.png`)* | — | Sí |
+| `UI12` | Detalles del Evento para Evaluación | `UI12 Detalles de Evento para evaluación (Subdirección)` *(+ modal cambios y comparador)* | Sí | Sí |
+| `UI13` | Panel de Eventos Aprobados | `UI13 Panel de Eventos Aprobados (Subdirección)` | Sí | Sí |
+| `UI14` | Panel Consultar Mis Eventos | `UI14 Panel Consultar Mis Eventos (Organizador)` | Sí | Sí |
+| `UI15` | Administración y Detalles del Evento (Único y Multi-actividad) | `UI15 Administración y Detalles de mi evento` (Único y Multi-actividad) | — | Sí |
+| `UI16` | Formulario de Modificación de Evento | `UI16 Formulario de Modificación` (Único y Multi-actividad; incluye ponentes, requerimientos lab, invitados privados y cupo) | Sí | Sí |
+| `UI17` | Control de Acceso | Gestión de acceso por subevento para Logística (`/control-acceso/:idSubEvento`) | — | Sí |
 | `UI18` | Panel de Eventos Asignados *(Logística)* | `UI18 Panel de Eventos Asignados (Logística)` (Desktop y Móvil) | Sí | Sí |
 | `UI19` | Pantalla de Escáner QR | `UI19 Pantalla de Escáner QR` + `Acceso Válido` / `Acceso Denegado` | Sí | Sí |
-| `UI20` | Bitácora Histórica del Sistema | `UI20 Bitácora histórica de eventos / del sistema` | Sí | Sí |
+| `UI20` | Bitácora Histórica de Eventos / del Sistema | `UI20 Bitácora histórica de eventos / del sistema` *(exportación CSV)* | Sí | Sí |
 | `UI21` | Gestión de Cuentas de Usuario | `UI21 Gestión de cuentas de usuario` | Sí | Sí |
-| `UI22` | Panel de Gestión de Espacios Físicos | `UI22 Panel de Gestión de Espacios Físicos` | Sí | Sí |
+| `UI22` | Panel de Gestión de Espacios Físicos | `UI22 Panel de Gestión de Espacios Físicos` (`242` / `100` / `36+1`) | Sí | Sí |
 | `UI23` | Gestión de Equipos de Laboratorio | `UI23 Gestión de equipos de laboratorio` | Sí | Sí |
-| `UI24` | Activación de Cuenta por Token | `UI24 Activación de Cuenta por Token` | Sí | Sí |
-| `UI25` | Menú Principal de Subdirección | `UI25 Menú principal del subdirección` | — | Sí |
-| `UI26` | Menú Principal de Administrador | `UI25 menú Administrador` | — | Sí |
-| `UI27` | Agregar Personal de Logística | `UI27 Agregar personal de logística` (+ modal registrar usuario) | Sí | Sí |
-| `UI28` | Visualizar Perfil de Usuario | `UI28 Perfil` | Sí | Sí |
-| `UI29` | Agregar Ponente al Evento | Integrado como modal/sección en `UI16` (`Agregar ponentes`) | Sí | Sí |
-| `UI30` | Panel de Supervisión y Calendario Institucional | Agenda institucional integrada en menú directivo | — | — |
-| `UI31` | Gestionar Estado de Verificación de Usuarios | `UI31 Visualización de verificación de usuario por parte de subdirección` | — | Sí |
-| `UI32` | Pantalla de Verificación de Identidad | `UI32 Verificacion` (Estudiante, Profesor, Empresa, Externo) | Sí | Sí |
-| `UI33` | Registro de Usuario desde Administrador | Flujo administrativo equivalente a `UI02` desde `UI21` | — | — |
-| `UI34` | Asignación de Jefes de Departamento | `UI34 Asignar Jefes de departamento` | — | Sí |
-| `UI35` | Restablecer Contraseña | Pantalla pública de restablecimiento de contraseña (`CU-39`) | — | — |
+| `UI24` | Asignar Jefes de Departamento | `Asignar Jefes de departamento` *(antes `UI34`, solo `@ipn.mx`)* | — | Sí |
+| `UI25` | Menú Principal de Subdirección | `UI25 Menú principal de Subdirección` | — | Sí |
+| `UI26` | Menú Principal de Administración | `UI26 Menú Principal de Administración` | — | Sí |
+| `UI27` | Agregar Personal de Logística | `UI27 Agregar personal de logística` (+ modal registrar usuario con token 48 h) | Sí | Sí |
+| `UI28` | Perfil de Usuario | `UI28 Perfil` | Sí | Sí |
+| `UI29` | Restablecer Contraseña | Pantalla de restablecimiento de contraseña (`CU-39`, antes `UI35`) | — | — |
+| `UI30` | Reservar Lugar (Resumen de la Reservación) | Confirmación de reserva sin mapa (`Registro simple` / `QR Admisión general`) | — | — |
+| `UI31` | Visualización de Verificación de Usuario por Subdirección (Detalle de Solicitud) | Detalle `/subdireccion/verificaciones/:id` *(PDF por URL firmada R2, antes listado+detalle)* | — | Sí |
+| `UI32` | Solicitud de Verificación de Cuenta | `UI32 Verificación` (Estudiante, Profesor, Empresa, Externo; PDF `<= 5 MB` en R2) | Sí | Sí |
 
 ---
 
 ## 3. Pantallas Universales (`Todos los Actores`)
 
-### 3.1. `UI01` — Pantalla de Inicio de Sesión (`CU-01`)
-Autenticación con correo, contraseña y validación anti-bots.
+### 3.1. `UI01` — Pantalla de Inicio de Sesión (`CU-01`, solicitud `CU-39`)
+Autenticación con correo, contraseña, sesión única JWT (`RNF-09`), validación anti-bots y enlace hacia recuperación de contraseña (`/recuperar-contrasena`).
 
 **Wireframe (`UI01`):**
 ![Wireframe UI01 Inicio de Sesión](./assets/figma/wireframes/wf-ui01-login.png)
@@ -131,7 +128,7 @@ Exploración pública y filtrada por fecha, recinto, categoría o ponente, difer
 ---
 
 ### 3.3. `UI05` y `UI05.1` — Detalles del Evento y Detalles del Subevento (`CU-05`)
-Soporta eventos de una sola sesión, eventos en laboratorios (acceso sin mapa de butacas) y eventos compuestos por múltiples actividades (`UI05.1`).
+Soporta eventos de una sola sesión, eventos en laboratorios (acceso sin mapa de butacas), eventos compuestos por múltiples actividades (`UI05.1`) y entrada directa por enlace compartible privado (`/eventos/privado/:tokenSubEvento`).
 
 **Wireframe — Evento General y Multi-actividad (`UI05`):**
 ![Wireframe UI05 Detalles del Evento](./assets/figma/wireframes/wf-ui05-detalles-evento.png)
@@ -160,20 +157,26 @@ Soporta eventos de una sola sesión, eventos en laboratorios (acceso sin mapa de
 
 ---
 
-### 3.5. `UI35` — Restablecer Contraseña (`CU-39`)
-Permite a cualquier usuario restablecer su contraseña de acceso tras recibir un enlace con token temporal de seguridad por correo electrónico. Solicita la nueva contraseña, su confirmación y valida las reglas de complejidad, notificando el éxito con `MSG-I-08` y retornando a `UI01`.
+### 3.5. `UI29` — Restablecer Contraseña (`CU-39`)
+*(Antes `UI35`).* Permite a cualquier usuario restablecer su contraseña de acceso tras recibir un enlace con token temporal de seguridad enviado desde `/recuperar-contrasena` (`UI01`). Solicita la nueva contraseña, su confirmación y valida las reglas de complejidad, notificando el éxito con `MSG-I-08` y retornando a `UI01`.
 
 ---
 
 ## 4. Pantallas del Actor Asistente
 
-### 4.1. `UI02` — Pantalla de Registro de Usuario (`CU-13`)
+### 4.1. `UI02` — Pantalla de Registro de Usuario (`CU-13`, `CU-12`, `CU-32`)
+Incluye el registro de nueva cuenta, confirmación de correo (`/confirmar-registro`) y la activación de credenciales de Personal de Logística mediante enlace temporal de 48 horas (`/activar-logistica`, consolidado en `UI02`).
 
 **Wireframe (`UI02`):**
 ![Wireframe UI02 Registro de Usuario](./assets/figma/wireframes/wf-ui02-registro.png)
 
 **Mockup (`UI02`):**
 ![Mockup UI02 Registro de Usuario](./assets/figma/mockups/mk-ui02-registro.png)
+
+**Subflujo de Activación por Token para Logística (`/activar-logistica`, antes `UI24`):**
+![Wireframe Activación por Token](./assets/figma/wireframes/wf-ui23-activacion-token.png)
+
+![Mockup Activación por Token](./assets/figma/mockups/mk-ui23-activacion-token.png)
 
 ---
 
@@ -189,7 +192,7 @@ Resumen de próximos eventos agendados y accesos directos a cartelera, reservas 
 ---
 
 ### 4.3. `UI06` — Mapa de Asientos y Disponibilidad del Recinto (`CU-15`, `CU-16`)
-Selección interactiva de butaca en Auditorio y confirmación de reserva (`MSG-I-16`).
+Selección interactiva de butaca en Auditorio (`242` asientos fijos) con **retención temporal de 5 minutos** (`retencionAsiento`) antes de confirmar la reserva (`MSG-I-16`).
 
 **Wireframe (`UI06`):**
 ![Wireframe UI06 Mapa de Asientos](./assets/figma/wireframes/wf-ui06-mapa-asientos.png)
@@ -202,7 +205,7 @@ Selección interactiva de butaca en Auditorio y confirmación de reserva (`MSG-I
 ---
 
 ### 4.4. `UI07` — Formulario de Solicitud de Evento (`CU-21`, `CU-11`)
-Incluye captura de beneficio politécnico, adición dinámica de tarjetas de subevento/actividad, candado por falta de verificación de identidad (`MSG-E-54`) y variante para Subdirección / Jefes de Academia.
+Incluye carga de póster en bucket público de Cloudflare R2 (`2048×1152`), captura de beneficio politécnico, tarjetas de subevento/actividad con **cupo máximo configurable sin sobrecupo** (`RN-07`), *tooltips* contextuales de ayuda (`InfoTooltip` / `ModalidadAccesoHelp`), selección de requerimientos técnicos de laboratorio (`CU-28`), motivo de urgencia obligatorio en antelación menor a 7 días para Asistente (omitido en Subdirección conforme a `RN-13` y `RN-14`) y candado por falta de verificación de identidad (`MSG-E-54` -> `UI32`).
 
 **Wireframe (`UI07`):**
 ![Wireframe UI07 Solicitar Evento](./assets/figma/wireframes/wf-ui07-solicitar-evento.png)
@@ -221,8 +224,8 @@ Incluye captura de beneficio politécnico, adición dinámica de tarjetas de sub
 
 ---
 
-### 4.5. `UI08` — Consultar Mis Eventos / Reservas (`CU-18`, `CU-19`)
-Visualización de reservas activas (`Activo` / `Ingresado`), acceso al QR y cancelación de asistencia en Desktop y Móvil.
+### 4.5. `UI08` — Consultar sus Eventos (Reservas del Asistente o Mis Boletos) (`CU-18`, `CU-19`, `CU-14`)
+Visualización de reservas activas (`Activo` / `Ingresado`) e historial de participación (`CU-14`), acceso al boleto digital y cancelación de asistencia en Desktop y Móvil.
 
 **Wireframe (`UI08`):**
 ![Wireframe UI08 Consultar Mis Eventos](./assets/figma/wireframes/wf-ui08-mis-eventos.png)
@@ -233,15 +236,20 @@ Visualización de reservas activas (`Activo` / `Ingresado`), acceso al QR y canc
 **Mockup Móvil (`UI08`):**
 ![Mockup UI08 Consultar Mis Eventos Móvil](./assets/figma/mockups/mk-ui08-mis-eventos-movil.png)
 
+*(Wireframes históricos de consulta de participación previa `CU-14`, consolidados en `UI08` sin pantalla independiente):*
+![Wireframe Historial Asistente](./assets/figma/wireframes/wf-ui10-bitacora-asistente.png)
+
+![Wireframe Filtros de Historial](./assets/figma/wireframes/wf-ui10-bitacora-filtros.png)
+
 ---
 
 ### 4.6. `UI09` — Boleto Digital y Código QR (`CU-17`, `CU-20`)
-Boleto digital firmado criptográficamente en variantes Auditorio, Laboratorio y vista Móvil.
+Boleto digital firmado criptográficamente en variantes Auditorio, Sala 14, Laboratorios y vista Móvil.
 
 **Wireframe (`UI09`):**
 ![Wireframe UI09 Boleto Digital QR](./assets/figma/wireframes/wf-ui09-boleto-qr.png)
 
-**Mockups — Auditorio, Laboratorio y Móvil (`UI09`):**
+**Mockups — Auditorio, Sala 14, Laboratorio y Móvil (`UI09`):**
 ![Mockup UI09 Boleto Auditorio](./assets/figma/mockups/mk-ui09-boleto-qr.png)
 
 ![Mockup UI09 Boleto Laboratorio](./assets/figma/mockups/mk-ui09-boleto-laboratorio.png)
@@ -250,18 +258,13 @@ Boleto digital firmado criptográficamente en variantes Auditorio, Laboratorio y
 
 ---
 
-### 4.7. `UI10` — Bitácora de Eventos Realizados (`CU-14`)
-Historial de participación del asistente con filtros por fecha y categoría.
-
-**Wireframes — Listado y Filtros (`UI10`):**
-![Wireframe UI10 Bitácora Asistente](./assets/figma/wireframes/wf-ui10-bitacora-asistente.png)
-
-![Wireframe UI10 Filtros de Bitácora](./assets/figma/wireframes/wf-ui10-bitacora-filtros.png)
+### 4.7. `UI30` — Reservar Lugar — Resumen de la Reservación (`CU-15`, `CU-16`)
+Pantalla de confirmación nominal para subeventos bajo modalidad *Registro simple sin QR* o *QR Admisión general* (Auditorio, Sala 14 y Laboratorios), mostrando disponibilidad efectiva (`min(cupoMaximo, aforoActualRecinto)`) antes de confirmar la inscripción.
 
 ---
 
-### 4.8. `UI32` — Pantalla de Verificación de Identidad (`CU-21`, `CU-38`)
-*(Etiquetada como `UI32 Verificacion` en Figma).* Acreditación trimestral adjuntando comprobante probatorio en PDF (máx. `5 MB`) según tipo de perfil (*Estudiante*, *Profesor*, *Empresa* o *Externo*).
+### 4.8. `UI32` — Solicitud de Verificación de Cuenta / Identidad (`CU-21`, `CU-38`)
+*(Etiquetada como `UI32 Verificacion` en Figma).* Acreditación trimestral adjuntando comprobante probatorio en PDF (máx. `5 MB`, almacenado en bucket privado de Cloudflare R2) según tipo de perfil (*Estudiante*, *Profesor*, *Empresa* o *Externo*).
 
 **Wireframe (`UI32`):**
 ![Wireframe UI32 Verificación de Identidad](./assets/figma/wireframes/wf-ui24-verificacion-identidad.png)
@@ -284,7 +287,15 @@ Historial de participación del asistente con filtros por fecha y categoría.
 
 ---
 
-### 5.2. `UI11` — Panel de Solicitudes Pendientes (`CU-06`)
+### 5.2. `UI10` — Visualización de Verificación de Usuario por Subdirección (Solicitudes de Verificación de Cuentas) (`CU-38`)
+Bandeja compartida con el Administrador (`/subdireccion/verificaciones`) para listar las solicitudes pendientes de validación de identidad (*Alumno*, *Profesor*, *Empresa*) antes de abrir su expediente individual (`UI31`).
+
+**Mockup — Listado de Solicitudes de Verificación (`UI10`):**
+![Mockup UI10 Listado de Verificación](./assets/figma/mockups/mk-ui30-verificacion-listado.png)
+
+---
+
+### 5.3. `UI11` — Panel de Solicitudes Pendientes (`CU-06`)
 
 **Wireframe (`UI11`):**
 ![Wireframe UI11 Solicitudes Pendientes](./assets/figma/wireframes/wf-ui11-solicitudes-pendientes.png)
@@ -294,8 +305,8 @@ Historial de participación del asistente con filtros por fecha y categoría.
 
 ---
 
-### 5.3. `UI12` — Detalles del Evento para Evaluación y Dictamen (`CU-07`)
-Revisión integral del evento y sus subeventos para aprobar (`MSG-P-03`), rechazar (`MSG-P-04`) o solicitar cambios a través de su modal de dictamen integrado como subcomponente operativo.
+### 5.4. `UI12` — Detalles del Evento para Evaluación y Dictamen (`CU-07`)
+Revisión integral del evento y sus subeventos (incluyendo tooltips de modalidad/cupo, comparador de modificaciones logísticas e indicador de urgencia) para aprobar (`MSG-P-03`), rechazar (`MSG-P-04`) o solicitar cambios a través de su modal de dictamen integrado como subcomponente operativo.
 
 **Wireframe (`UI12`):**
 ![Wireframe UI12 Evaluación de Evento](./assets/figma/wireframes/wf-ui12-evaluacion-evento.png)
@@ -307,7 +318,7 @@ Revisión integral del evento y sus subeventos para aprobar (`MSG-P-03`), rechaz
 
 ---
 
-### 5.4. `UI13` — Panel de Eventos Aprobados (`CU-08`, `CU-09`)
+### 5.5. `UI13` — Panel de Eventos Aprobados (`CU-08`, `CU-09`)
 
 **Wireframe (`UI13`):**
 ![Wireframe UI13 Eventos Aprobados](./assets/figma/wireframes/wf-ui13-eventos-aprobados.png)
@@ -317,11 +328,8 @@ Revisión integral del evento y sus subeventos para aprobar (`MSG-P-03`), rechaz
 
 ---
 
-### 5.5. `UI31` — Gestionar Estado de Verificación de Usuarios (`CU-38`)
-*(Etiquetada como `UI31 Visualización de verificación de usuario por parte de subdirección` en Figma).* Compartida entre Subdirección y Administrador para revisar expedientes PDF y dictaminar la verificación de cuentas (*Alumno*, *Profesor*, *Empresa*).
-
-**Mockup — Listado de Solicitudes de Verificación (`UI31`):**
-![Mockup UI31 Listado de Verificación](./assets/figma/mockups/mk-ui30-verificacion-listado.png)
+### 5.6. `UI31` — Visualización de Verificación de Usuario por Subdirección (Detalle de Solicitud) (`CU-38`)
+*(Ruta `/subdireccion/verificaciones/:id`, compartida entre Subdirección y Administrador).* Permite inspeccionar los datos del solicitante y visualizar su constancia PDF almacenada en Cloudflare R2 privado mediante una URL firmada temporal (`600 s`) para emitir el dictamen correspondiente.
 
 **Mockup — Evaluación de Expediente y Documento Probatorio (`UI31`):**
 ![Mockup UI31 Detalle de Verificación](./assets/figma/mockups/mk-ui30-verificacion-detalle.png)
@@ -330,7 +338,7 @@ Revisión integral del evento y sus subeventos para aprobar (`MSG-P-03`), rechaz
 
 ## 6. Pantallas del Actor Organizador
 
-### 6.1. `UI14` — Panel de Consulta de Mis Eventos (`CU-24`)
+### 6.1. `UI14` — Panel Consultar Mis Eventos (`CU-24`)
 
 **Wireframe (`UI14`):**
 ![Wireframe UI14 Mis Eventos Organizador](./assets/figma/wireframes/wf-ui14-mis-eventos-org.png)
@@ -340,13 +348,13 @@ Revisión integral del evento y sus subeventos para aprobar (`MSG-P-03`), rechaz
 
 ---
 
-### 6.2. `UI15` — Panel de Administración y Detalles del Evento (`CU-24`, `CU-26`, `CU-29`)
-Vista consolidada del organizador con datos logísticos, beneficio politécnico, ponentes, personal de logística (`X/10`), acceso a equipos de laboratorio y, en eventos privados, padrón de invitados.
+### 6.2. `UI15` — Administración y Detalles del Evento (Único y Multi-actividad) (`CU-24`, `CU-26`, `CU-28`, `CU-29`)
+Vista consolidada del organizador con datos logísticos por subevento, cupo configurable (`min(cupoMaximo, aforoRecinto)`), beneficio politécnico, ponentes, personal de logística (`X/10`), modal de equipos de laboratorio (`CU-28`) y acceso al padrón de invitados por subevento en eventos privados.
 
-**Mockup — Evento General (`UI15`):**
+**Mockup — Evento Único (`UI15`):**
 ![Mockup UI15 Administración de Evento](./assets/figma/mockups/mk-ui15-admin-evento.png)
 
-**Mockup — Evento con Varias Actividades (`UI15`):**
+**Mockup — Evento Multi-actividad (`UI15`):**
 ![Mockup UI15 Evento Multi-actividad](./assets/figma/mockups/mk-ui15-admin-multiactividad.png)
 
 **Mockup — Evento Privado con Lista de Invitados (`UI15`):**
@@ -354,33 +362,28 @@ Vista consolidada del organizador con datos logísticos, beneficio politécnico,
 
 ---
 
-### 6.3. `UI16` — Formulario de Modificación de Evento (`CU-25`, `CU-27`, `CU-10`)
-Permite editar parámetros menores (guardado directo: `"Cambios realizados con éxito"`) y parámetros logísticos mayores (solicitud de revisión: `"Cambios solicitados con éxito"`), gestionar actividades/subeventos, ponentes (`UI29`) y, en eventos privados, administrar invitados con reenvío sujeto a *cooldown* (`"Disponible en 8 horas"`, `RN-29`).
+### 6.3. `UI16` — Formulario de Modificación de Evento (Único y Multi-actividad) (`CU-25`, `CU-27`, `CU-10`, `CU-28`, `CU-30`)
+Permite editar parámetros menores (guardado directo: `"Cambios realizados con éxito"`) y parámetros logísticos mayores (solicitud de revisión: `"Cambios solicitados con éxito"`), ajustar `cupoMaximo` sin sobrecupo (`RN-07`), consultar *tooltips* (`InfoTooltip`/`ModalidadAccesoHelp`), gestionar actividades/subeventos, requerimientos técnicos de laboratorio (`CU-28`), ponentes (`CU-10`) y administrar invitados privados **por subevento** (alta individual, carga masiva por lotes/CSV con reporte de resultados, enlace compartible `/eventos/privado/:tokenSubEvento` y *cooldown* de 8 horas, `RN-05`, `RN-29`).
 
 **Wireframe (`UI16`):**
 ![Wireframe UI16 Modificar Evento](./assets/figma/wireframes/wf-ui16-modificar-evento.png)
 
-**Mockup — Edición de Evento General (`UI16`):**
+**Mockup — Edición de Evento Único (`UI16`):**
 ![Mockup UI16 Modificar Evento](./assets/figma/mockups/mk-ui16-modificar-evento.png)
 
-**Mockup — Edición de Evento con Varias Actividades (`UI16`):**
+**Mockup — Edición de Evento Multi-actividad (`UI16`):**
 ![Mockup UI16 Modificar Multi-actividad](./assets/figma/mockups/mk-ui16-modificar-multiactividad.png)
 
 **Mockup — Edición de Evento Privado e Invitaciones con Cooldown de 8h (`UI16`):**
 ![Mockup UI16 Modificar Evento Privado](./assets/figma/mockups/mk-ui16-modificar-privado.png)
 
----
-
-### 6.4. `UI17` — Requerimientos Técnicos de Laboratorio (`CU-28`)
-*(Etiquetada como `UI17 Requerimientos Tecnicos` en Figma).* Permite al organizador inspeccionar el inventario de cómputo funcional y fuera de servicio asignado al laboratorio donde se desarrollará el evento.
-
-**Mockup de Alta Fidelidad (`UI17`):**
-![Mockup UI17 Requerimientos Técnicos Laboratorio](./assets/figma/mockups/mk-organizador-requerimientos-lab.png)
+**Subcomponente Integrado — Requerimientos Técnicos de Laboratorio (`CU-28`, dentro de `UI07`/`UI15`/`UI16`):**
+![Mockup Modal Requerimientos Técnicos Laboratorio](./assets/figma/mockups/mk-organizador-requerimientos-lab.png)
 
 ---
 
-### 6.5. `UI27` — Agregar Personal de Logística (`CU-12`, `CU-31`, `CU-32`)
-*(Etiquetada bajo el flujo `UI27` en Figma).* Búsqueda por correo o selección de usuario con tope estricto de 10 integrantes (`MSG-E-50`) y modal de registro con invitación por token de 48 horas (`UI24`) cuando el colaborador aún no existe en la plataforma.
+### 6.4. `UI27` — Agregar Personal de Logística (`CU-12`, `CU-31`, `CU-32`)
+*(Etiquetada bajo el flujo `UI27` en Figma).* Búsqueda por correo o selección de usuario con tope estricto de 10 integrantes (`MSG-E-50`) y modal de registro con invitación por token de 48 horas (`/activar-logistica` en `UI02`) cuando el colaborador aún no existe en la plataforma.
 
 **Wireframe (`UI27`):**
 ![Wireframe UI27 Agregar Personal de Logística](./assets/figma/wireframes/wf-ui26-agregar-logistica.png)
@@ -390,11 +393,6 @@ Permite editar parámetros menores (guardado directo: `"Cambios realizados con �
 
 **Mockup — Modal para Registrar Nuevo Personal de Logística (`UI27`):**
 ![Mockup UI27 Modal Registrar Personal de Logística](./assets/figma/mockups/mk-ui32-modal-registrar-logistica.png)
-
----
-
-### 6.6. `UI29` — Agregar Ponente al Evento (`CU-10`)
-*(Integrado en `UI16` como modal/sección de Ponentes).* Formulario para capturar los datos de ponentes (nombre completo, correo, institución, trayectoria y enlaces de contacto, `RN-30`) y asociarlos al evento aprobado.
 
 ---
 
@@ -414,7 +412,12 @@ Permite editar parámetros menores (guardado directo: `"Cambios realizados con �
 
 ---
 
-### 7.2. `UI19` — Pantalla de Escáner QR y Validación de Acceso (`CU-23`)
+### 7.2. `UI17` — Control de Acceso (`/control-acceso/:idSubEvento`) (`CU-22`, `CU-23`)
+Panel operativo por subevento donde el personal de logística consulta el padrón de asistentes inscritos/confirmados y accede al módulo de escaneo QR o validación de ingreso según la modalidad del subevento.
+
+---
+
+### 7.3. `UI19` — Pantalla de Escáner QR y Validación de Acceso (`CU-23`)
 *(Etiquetada como `UI19 Pantalla de Escáner QR` en Figma).* Lectura de cámara en navegador y retroalimentación cromática inmediata (`Acceso Válido` `MSG-I-19` vs. `Acceso Denegado` `MSG-E-22` / `MSG-E-23`).
 
 **Wireframe (`UI19`):**
@@ -432,29 +435,18 @@ Permite editar parámetros menores (guardado directo: `"Cambios realizados con �
 
 ---
 
-### 7.3. `UI24` — Activación de Cuenta por Token (`CU-12`, `CU-32`)
-*(Etiquetada como `UI24 Activación de Cuenta por Token` en Figma).* Activación de credenciales mediante enlace temporal con vigencia de 48 horas.
-
-**Wireframe (`UI24`):**
-![Wireframe UI24 Activación por Token](./assets/figma/wireframes/wf-ui23-activacion-token.png)
-
-**Mockup (`UI24`):**
-![Mockup UI24 Activación por Token](./assets/figma/mockups/mk-ui23-activacion-token.png)
-
----
-
 ## 8. Pantallas del Actor Administrador
 
 ### 8.1. `UI20` — Bitácora Histórica del Sistema (`CU-37`)
-*(Etiquetada como `UI20 Bitácora histórica` en Figma).* Consulta cronológica inmutable con filtrado y exportación en formato PDF.
+*(Etiquetada como `UI20 Bitácora histórica` en Figma).* Consulta cronológica inmutable con filtrado y exportación en formato **CSV (`.csv`)**. *(El segundo mockup muestra la referencia visual previa del botón de exportación).*
 
 **Wireframe (`UI20`):**
 ![Wireframe UI20 Bitácora Histórica](./assets/figma/wireframes/wf-ui19-bitacora-historica.png)
 
-**Mockups — Consulta y Exportación PDF (`UI20`):**
+**Mockups — Consulta y Referencia Visual de Exportación (`UI20`):**
 ![Mockup UI20 Bitácora Histórica](./assets/figma/mockups/mk-ui19-bitacora-historica.png)
 
-![Mockup UI20 Exportar Bitácora PDF](./assets/figma/mockups/mk-ui19-exportar-pdf.png)
+![Mockup Referencia Exportación Bitácora](./assets/figma/mockups/mk-ui19-exportar-pdf.png)
 
 ---
 
@@ -472,7 +464,7 @@ Permite editar parámetros menores (guardado directo: `"Cambios realizados con �
 ---
 
 ### 8.3. `UI22` — Panel de Gestión de Espacios Físicos (`CU-35`)
-*(Etiquetada como `UI22 Panel de Gestión de Espacios Físicos` en Figma).* Control de aforo máximo y estado operativo (`Activo`, `Mantenimiento`, `Inactivo`) de Auditorio, Sala 14 y Laboratorios.
+*(Etiquetada como `UI22 Panel de Gestión de Espacios Físicos` en Figma).* Control de aforo oficial (`Auditorio: 242`, `Sala 14: 100`, `Laboratorios: 36 equipos de alumno + 1 docente`) y estado operativo (`Activo`, `Mantenimiento`, `Inactivo`).
 
 **Wireframe (`UI22`):**
 ![Wireframe UI22 Gestión de Espacios Físicos](./assets/figma/wireframes/wf-ui21-espacios-fisicos.png)
@@ -483,7 +475,7 @@ Permite editar parámetros menores (guardado directo: `"Cambios realizados con �
 ---
 
 ### 8.4. `UI23` — Gestión de Equipos de Laboratorio (`CU-36`)
-*(Etiquetada como `UI23 Gestión de equipos de laboratorio` en Figma).* Administración individual de cómputo funcional, en mantenimiento o inactivo por laboratorio.
+*(Etiquetada como `UI23 Gestión de equipos de laboratorio` en Figma).* Administración individual de cómputo funcional, en mantenimiento o inactivo por laboratorio (`2104`–`2107`).
 
 **Wireframe (`UI23`):**
 ![Wireframe UI23 Gestión de Equipos de Laboratorio](./assets/figma/wireframes/wf-ui22-equipos-laboratorio.png)
@@ -493,26 +485,16 @@ Permite editar parámetros menores (guardado directo: `"Cambios realizados con �
 
 ---
 
-### 8.5. `UI26` — Menú Principal de Administrador
-*(Etiquetada como `UI25 menú Administrador` en Figma).* Panel central con acceso directo a Gestión de Cuentas (`UI21`), Gestión de Espacios Físicos (`UI22`), Gestión de Equipos (`UI23`), Bitácora Histórica (`UI20`) y Asignación de Jefes de Departamento (`UI34`).
+### 8.5. `UI24` — Asignar Jefes de Departamento (`CU-33`)
+*(Antes `UI34` en borradores previos; `Asignar Jefes de departamento` en Figma).* Búsqueda por correo institucional **`@ipn.mx`** (excluyendo `@alumno.ipn.mx`) o nombre para asignar o revocar jefaturas activas.
+
+**Mockup (`UI24`):**
+![Mockup UI24 Asignar Jefes de Departamento](./assets/figma/mockups/mk-ui34-jefes-area.png)
+
+---
+
+### 8.6. `UI26` — Menú Principal de Administración
+*(Etiquetada como `UI25 menú Administrador` en Figma).* Panel central con acceso directo a Gestión de Cuentas (`UI21`), Solicitudes de Verificación (`UI10`/`UI31`), Gestión de Espacios Físicos (`UI22`), Gestión de Equipos (`UI23`), Bitácora Histórica (`UI20`) y Asignar Jefes de Departamento (`UI24`).
 
 **Mockup (`UI26`):**
 ![Mockup UI26 Menú Principal Administrador](./assets/figma/mockups/mk-ui25-menu-admin.png)
-
----
-
-### 8.6. `UI30` — Panel de Supervisión y Calendario Institucional
-Agenda institucional centralizada para Jefes de Área y Directivos con la ocupación de Auditorio, Sala 14 y Laboratorios.
-
----
-
-### 8.7. `UI33` — Registro de Usuario desde Administrador (`CU-13`)
-Flujo administrativo ejecutado por el Administrador desde `UI21` para dar de alta cuentas de usuario con roles específicos.
-
----
-
-### 8.8. `UI34` — Asignación de Jefes de Departamento (`CU-33`)
-*(Etiquetada como `UI34 Asignar Jefes de departamento` en Figma).* Búsqueda por correo institucional o nombre para asignar o revocar jefaturas activas.
-
-**Mockup (`UI34`):**
-![Mockup UI34 Asignar Jefes de Departamento](./assets/figma/mockups/mk-ui34-jefes-area.png)

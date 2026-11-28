@@ -3,7 +3,7 @@ caso_de_uso: "CU-08"
 nombre: "Consultar eventos aprobados"
 actor: "Subdirección de Servicios Educativos."
 proyecto: "EventOS"
-version: "2.0"
+version: "2.1"
 tags:
   - caso-de-uso
   - ads
@@ -28,7 +28,7 @@ tags:
 | **Actor** | Subdirección de Servicios Educativos. |
 | **Propósito** | Permitir al personal de Subdirección de Servicios Educativos visualizar y consultar los eventos que cuentan con el estatus "Aprobado", facilitando su identificación y el acceso a las operaciones correspondientes. |
 | **Entradas** | • ID del usuario autenticado, obtenido de la sesión activa.<br>• Solicitud de consulta del listado de eventos aprobados.<br>• ID del evento seleccionado para ver detalle o cancelar (opcional).<br>• Texto de búsqueda ingresado por el actor (opcional, por nombre del evento o responsable).<br>• Filtro de recinto seleccionado (opcional: Auditorio, Sala 14, Labs). |
-| **Salidas** | • Pantalla **UI13** "Panel de Eventos", presentando la tabla interactiva de eventos aprobados con buscador.<br>• Tabla con Folio, Evento, Responsable, Recinto, Fecha y Horario; filtros por nombre, responsable y recinto.<br>• Mensaje informativo **MSG-I-21** "No hay eventos aprobados registrados en este momento.", cuando no existan eventos que cumplan con el criterio de consulta.<br>• Modal de Detalle del Evento, con sinopsis, ponentes y requerimientos técnicos.<br>• Mensaje **MSG-I-22**: "No se encontraron eventos que coincidan con el criterio de búsqueda." |
+| **Salidas** | • Pantalla **UI13** "Panel de Eventos Aprobados", presentando la tabla interactiva de eventos aprobados con buscador.<br>• Tabla con Folio, Evento, Responsable, Recinto, Fecha, `cupoMaximo` / aforo físico y Horario; filtros por nombre, responsable y recinto.<br>• Mensaje informativo **MSG-I-21** "No hay eventos aprobados registrados en este momento.", cuando no existan eventos que cumplan con el criterio de consulta.<br>• Modal de Detalle del Evento, con sinopsis, ponentes y requerimientos técnicos.<br>• Mensaje **MSG-I-22**: "No se encontraron eventos que coincidan con el criterio de búsqueda." |
 | **Precondiciones** | • El actor debe contar con una cuenta registrada y activa dentro de la plataforma.<br>• El actor debe haber iniciado sesión correctamente mediante el CU-01 "Iniciar Sesión".<br>• El actor debe tener asignado el rol de Subdirección de Servicios Educativos. |
 | **Postcondiciones** | • El sistema muestra el listado de eventos aprobados o notifica que no existen eventos disponibles.<br>• El actor puede seleccionar un evento aprobado para ejecutar las operaciones de cancelación o incorporación de ponentes, conforme a los casos de uso correspondientes.<br>• La consulta no modifica el estado ni la información de los eventos almacenados en la base de datos.<br>• La sesión del actor permanece activa. |
 | **Errores** | Se mostrará el mensaje **MSG-E-08** "Error de conexión con la base de datos.", cuando el sistema no pueda recuperar la información de los eventos aprobados debido a una falla de conexión. |
@@ -40,7 +40,7 @@ tags:
 1. selecciona la opción "Eventos Aprobados" disponible en la barra de navegación superior (Navbar).
 2. consulta en la base de datos todos los eventos registrados con el estatus "Aprobado". [Trayectoria B: Error de conexión]
 3. verifica la existencia de registros. [Trayectoria A: Sin eventos aprobados]
-4. despliega la pantalla **UI13** "Panel de Eventos", presentando la tabla de control con las columnas: Folio, Evento, Responsable, Recinto, Fecha y Horario, junto con la barra de búsqueda y filtros.
+4. despliega la pantalla **UI13** "Panel de Eventos Aprobados", presentando la tabla de control con las columnas: Folio, Evento, Responsable, Recinto, Fecha y Horario, junto con la barra de búsqueda y filtros.
 5. puede interactuar con el listado:
    a) Si ingresa texto en el buscador o selecciona un recinto: El sistema filtra reactivamente las filas de la tabla en pantalla. [Trayectoria E: Búsqueda sin coincidencias]
    b) Si selecciona el botón [Ver detalles] de una fila: El sistema despliega el Modal de Detalle del Evento mostrando la ficha técnica y logística.
@@ -55,7 +55,7 @@ tags:
 > **Condición: Ocurre en el paso 3 de la trayectoria principal cuando el sistema determina que no existen eventos registrados con el estatus "Aprobado".**
 
 - **A-1.** Identifica que la consulta realizada no ha devuelto registros de eventos aprobados.
-- **A-2.** Muestra la pantalla **UI13** "Panel de Eventos" sin registros y presenta el mensaje **MSG-I-21** "No hay eventos aprobados registrados en este momento.".
+- **A-2.** Muestra la pantalla **UI13** "Panel de Eventos Aprobados" sin registros y presenta el mensaje **MSG-I-21** "No hay eventos aprobados registrados en este momento.".
 - **A-3.** Visualiza el mensaje informativo y finaliza la consulta.
 
 *Fin de la trayectoria.*
@@ -84,10 +84,10 @@ tags:
 
 > **Condición: Ocurre cuando el actor selecciona [Agregar ponente] para un evento aprobado desde UI13, conforme al CU-10.**
 
-- **D-1.** Selecciona un evento específico del listado mostrado en la pantalla **UI13** "Panel de Eventos".
+- **D-1.** Selecciona un evento específico del listado mostrado en la pantalla **UI13** "Panel de Eventos Aprobados".
 - **D-2.** Selecciona la opción [Agregar ponente] correspondiente al evento seleccionado.
-- **D-3.** Obtiene el identificador del evento seleccionado y ejecuta el caso de uso "Agregar Ponente", conforme a la relación `<<extend>>` establecida en el diagrama.
-- **D-4.** Muestra la pantalla **UI29** "Agregar Ponente al Evento", conforme a la trayectoria definida en el caso de uso correspondiente.
+- **D-3.** Obtiene el identificador del evento seleccionado y ejecuta el caso de uso "Agregar Ponente" (`CU-10`), conforme a la relación `<<extend>>` establecida en el diagrama.
+- **D-4.** Muestra la sección/modal de ponentes dentro de **UI16** "Formulario de Modificación de Evento" (o acceso equivalente desde `UI13`/`UI15`), conforme a la trayectoria definida en el `CU-10`.
 - *----- Continúa la ejecución del caso de uso "Agregar Ponente".*
 
 ### Trayectoria alternativa E: Búsqueda sin coincidencias

@@ -3,7 +3,7 @@ caso_de_uso: "CU-16"
 nombre: "Consultar disponibilidad de lugares (include del CU-15)"
 actor: "Asistente"
 proyecto: "EventOS"
-version: "2.0"
+version: "2.1"
 tags:
   - caso-de-uso
   - ads
@@ -30,7 +30,7 @@ Permitir al asistente consultar la disponibilidad de lugares de un evento durant
 | **Actor** | Asistente |
 | **Propósito** | Obtener la cantidad de lugares disponibles para determinar si el Asistente puede continuar con su reserva. |
 | **Entradas** | Identificador del evento seleccionado |
-| **Salidas** | Cantidad de lugares disponibles (`lugaresDisponibles`) para el evento.<br>Estado de disponibilidad y modalidad de registro aplicable (*QR con mapa*, *QR Admisión general* o *Registro simple sin QR*). |
+| **Salidas** | Cantidad de lugares disponibles (`lugaresDisponibles`) calculada sobre el tope efectivo `min(cupoMaximo, aforoActualRecinto)` sin sobrecupo (`RN-07`), descontando reservas activas y retenciones temporales de 5 minutos (`RN-10`).<br>Estado de disponibilidad y modalidad de registro aplicable (*QR con mapa*, *QR Admisión general* o *Registro simple sin QR*). |
 | **Precondiciones** | El Asistente ha iniciado sesión en su cuenta.<br>El Asistente ha seleccionado la opción Reservar lugar desde UI05-Detalles del Evento. |
 | **Postcondiciones** | El sistema determina e informa la disponibilidad del evento.<br>No se modifican los cupos ni se genera una reserva. |
 | **Errores** | MSG-E-05: «Evento sin lugares disponibles».<br>MSG-E-06: «Evento no encontrado o cancelado». |
@@ -41,9 +41,9 @@ Permitir al asistente consultar la disponibilidad de lugares de un evento durant
 
 1. Selecciona botón “Reservar Lugar” desde **UI05** ”Detalles del Evento.”
 2. Verifica que el evento seleccionado exista y no esté cancelado. [Trayectoria B]
-3. Consulta la cantidad de lugares disponibles (`lugaresDisponibles`) y la modalidad de registro aplicable para el subevento. [Trayectoria A]
+3. Consulta la cantidad de lugares disponibles (`lugaresDisponibles`) tomando la capacidad efectiva `min(cupoMaximo, aforoActualRecinto)` sin sobrecupo (`RN-07`) y descontando boletos activos y asientos retenidos temporalmente (5 minutos en mapa), junto con la modalidad de registro aplicable para el subevento. [Trayectoria A]
 4. Devuelve la cantidad de lugares disponibles y la modalidad de registro a **CU-15**.
-5. Muestra la disponibilidad en **UI06** “Mapa de Asientos y Disponibilidad del Recinto” únicamente cuando la modalidad corresponda a *QR con mapa de asientos* en Auditorio, o habilita la confirmación directa en `CU-15` para *QR Admisión general* y *Registro simple sin QR*.
+5. Muestra la disponibilidad en **UI06** “Mapa de Asientos y Disponibilidad del Recinto” cuando la modalidad corresponda a *QR con mapa de asientos* en Auditorio (`242` butacas), o habilita el resumen **UI30** “Reservar Lugar (Resumen de la Reservación)” en `CU-15` para *QR Admisión general* y *Registro simple sin QR*.
 
 *Fin de la trayectoria.*
 

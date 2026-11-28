@@ -3,7 +3,7 @@ caso_de_uso: "CU-12"
 nombre: "Registrar personal de logística (Subdirección)"
 actor: "Subdirección de Servicios Educativos."
 proyecto: "EventOS"
-version: "2.0"
+version: "2.1"
 tags:
   - caso-de-uso
   - ads
@@ -27,17 +27,17 @@ tags:
 | **Autor** | Vargas Rodriguez Leonardo |
 | **Actor** | Subdirección de Servicios Educativos. |
 | **Propósito** | Permitir a Subdirección registrar o invitar colaboradores de logística por correo electrónico y asociarlos directamente a eventos aprobados, respetando las restricciones de autorización y cupo. |
-| **Entradas** | ID del actor autenticado; ID del evento aprobado; correo electrónico del colaborador. Para una invitación a una cuenta no registrada, el colaborador capturará su nombre completo y establecerá su contraseña en UI24. |
-| **Salidas** | Pantalla UI27 "Agregar Personal de Logística"; mensaje MSG-I-08 "Operación realizada con éxito."; asignación directa a una cuenta activa o invitación por correo con token de un solo uso válido durante 48 horas para personas no registradas. |
+| **Entradas** | ID del actor autenticado; ID del evento aprobado; correo electrónico del colaborador. Para una invitación a una cuenta no registrada, el colaborador capturará su nombre completo y establecerá su contraseña mediante el subflujo `/activar-logistica` (consolidado en `UI02`). |
+| **Salidas** | Pantalla `UI27` "Agregar Personal de Logística"; mensaje `MSG-I-08` "Operación realizada con éxito."; asignación directa a una cuenta activa o invitación por correo con token de un solo uso válido durante 48 horas hacia `/activar-logistica` (`UI02`) para personas no registradas. |
 | **Precondiciones** | El actor debe contar con una cuenta activa y una sesión válida. El actor debe tener el rol de Subdirección de Servicios Educativos. El evento seleccionado debe encontrarse aprobado, vigente y sin alcanzar el límite de 10 integrantes de Personal de Logística. |
-| **Postcondiciones** | El colaborador queda vinculado al evento aprobado, de manera inmediata si ya estaba registrado (recibiendo correo de confirmación) o tras activar su cuenta mediante UI24 con token válido por 48 horas (enviando confirmación de activación al colaborador y notificación al responsable del evento). Los permisos de logística son exclusivos de los eventos asignados y permanecen vigentes hasta la finalización del evento con fecha/hora de término más tardía cuando tenga varias asignaciones. Al vencer todas, se conserva la cuenta con su rol base sin privilegios de logística. La asignación respeta el máximo de 10 integrantes por evento. |
+| **Postcondiciones** | El colaborador queda vinculado al evento aprobado, de manera inmediata si ya estaba registrado (recibiendo correo de confirmación) o tras activar su cuenta mediante `/activar-logistica` (`UI02`) con token válido por 48 horas (enviando confirmación de activación al colaborador y notificación al responsable del evento). Los permisos de logística son exclusivos de los eventos asignados y permanecen vigentes hasta la finalización del evento con fecha/hora de término más tardía cuando tenga varias asignaciones. Al vencer todas, se conserva la cuenta con su rol base sin privilegios de logística. La asignación respeta el máximo de 10 integrantes por evento. |
 | **Errores** | • Se mostrará el mensaje **MSG-E-11** "Por favor, completa todos los campos obligatorios resaltados para continuar.", cuando existan campos vacíos.<br>• Se mostrará el mensaje **MSG-E-21** "Advertencia: Ingrese un correo válido.", cuando el correo electrónico tenga un formato incorrecto.<br>• Se mostrará el mensaje **MSG-E-39** "El personal de logística ya se encuentra asignado al evento seleccionado.", cuando exista una asignación previa.<br>• Se mostrará el mensaje **MSG-E-06** "Evento no encontrado o cancelado.", cuando el evento no exista o esté cancelado.<br>• Se mostrará el mensaje **MSG-E-40** "No es posible asignar personal de logística a un evento que no se encuentra aprobado.", cuando el evento no tenga el estado requerido.<br>• Se mostrará el mensaje **MSG-E-08** "Error de conexión con la base de datos.", cuando ocurra un problema al registrar la información.<br>• MSG-E-50 si el evento ya alcanzó el máximo de diez integrantes de logística. |
 | **Tipo** | Primario para Subdirección de Servicios Educativos. |
 
 
 ### Trayectoria Principal
 
-1. Selecciona un evento aprobado en **UI13** "Panel de Eventos" desde su sesión de Subdirección.
+1. Selecciona un evento aprobado en **UI13** "Panel de Eventos Aprobados" desde su sesión de Subdirección.
 2. Selecciona la opción [Agregar personal de logística].
 3. Verifica que el actor tenga una sesión activa, los permisos necesarios y que el evento seleccionado se encuentre aprobado. [Trayectoria D]
 4. Muestra UI27 "Agregar Personal de Logística", donde solicita el correo electrónico del colaborador. Informa que el evento admite como máximo 10 integrantes de logística.
@@ -118,8 +118,8 @@ tags:
 > **Condición:** En el paso 7, el correo indicado no corresponde a ninguna cuenta registrada y el evento admite más integrantes de logística.
 
 - **F-1.** El sistema genera una invitación criptográfica de un solo uso, con vigencia de 48 horas, vinculada al correo y evento seleccionados.
-- **F-2.** Envía un correo electrónico de invitación con un enlace hacia UI24 "Activación de Cuenta por Token".
-- **F-3.** El destinatario abre UI24, proporciona su nombre completo y define una contraseña. El sistema valida el token y crea la cuenta.
+- **F-2.** Envía un correo electrónico de invitación con un enlace hacia `/activar-logistica` (subflujo de activación por token en `UI02`).
+- **F-3.** El destinatario accede al enlace `/activar-logistica` (`UI02`), proporciona su nombre completo y define una contraseña. El sistema valida el token y crea la cuenta.
 - **F-4.** El sistema asigna permisos temporales de Personal de Logística para el evento autorizado, sin conceder privilegios generales a la cuenta.
 - **F-5.** Cuando el usuario esté asignado a varios eventos, los permisos de logística se mantienen hasta que concluya el último por fecha y hora; posteriormente conserva su cuenta con el rol base.
 - **F-6.** El sistema confirma la activación y la asignación, envía un correo de confirmación de activación al colaborador, envía una notificación por correo al responsable del evento y muestra MSG-I-08 "Operación realizada con éxito.".
