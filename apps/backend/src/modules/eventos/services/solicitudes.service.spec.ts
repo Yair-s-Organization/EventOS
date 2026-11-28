@@ -265,7 +265,7 @@ describe('SolicitudesService - Sincronización FIFO de invitados en eventos priv
     expect(cancelacionBoletos?.params?.[1]).toEqual([3]);
     expect(correosD).toHaveLength(1);
     expect(correosD[0].destinatario).toBe('u3@ipn.mx');
-    expect(correosA).toHaveLength(2);
+    expect(correosA).toHaveLength(0);
   });
 
   it('validarSubeventos rechaza cupoMaximo mayor al aforo físico del recinto', async () => {

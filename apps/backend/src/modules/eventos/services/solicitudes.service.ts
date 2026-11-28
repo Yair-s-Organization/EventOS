@@ -1093,7 +1093,7 @@ export class SolicitudesService {
                 }
               }
 
-              if (dentroAforo.length > 0) {
+              if (dentroAforo.length > 0 && (cambioRecinto || cambioModalidad)) {
                 const transicion = clasificarTransicionModalidad(
                   existente.idModalidadAcceso,
                   destinoModalidad,
