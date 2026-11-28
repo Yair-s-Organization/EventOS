@@ -18,8 +18,8 @@ const variants = {
   },
   warning: {
     icon: AlertTriangle,
-    border: "border-eventos-panel-border",
-    color: "text-eventos-ink",
+    border: "border-amber-600",
+    color: "text-amber-700",
   },
   success: {
     icon: CheckCircle2,
@@ -29,11 +29,11 @@ const variants = {
 };
 
 export function FeedbackNotice({
-                                 variant,
-                                 title,
-                                 children,
-                                 action,
-                               }: FeedbackNoticeProps) {
+  variant,
+  title,
+  children,
+  action,
+}: FeedbackNoticeProps) {
   const config = variants[variant];
   const Icon = config.icon;
 
@@ -49,21 +49,11 @@ export function FeedbackNotice({
       />
 
       <div className="min-w-0 flex-1 space-y-2">
-        {title && (
-          <p className="font-semibold text-eventos-ink">
-            {title}
-          </p>
-        )}
+        {title && <p className="font-semibold text-eventos-ink">{title}</p>}
 
-        <div className="break-words text-sm text-eventos-ink">
-          {children}
-        </div>
+        <div className="break-words text-sm text-eventos-ink">{children}</div>
 
-        {action && (
-          <div className="pt-1">
-            {action}
-          </div>
-        )}
+        {action && <div className="pt-1">{action}</div>}
       </div>
     </div>
   );

@@ -236,12 +236,21 @@ export function SeccionSolicitudesPendientes() {
     },
 
     {
-      id: "estado",
+      id: "alcance",
       encabezado: "Alcance",
       className: "text-center",
       render: (solicitud) => (
         <div className="min-w-[10rem] lg:min-w-[8rem] flex w-fit mx-auto justify-center">
-          <Badge variant="secondary" className="!py-1">
+          <Badge
+            variant={
+              solicitud.idAlcance === 1
+                ? "scope-public"
+                : solicitud.idAlcance === 2
+                  ? "scope-internal"
+                  : "scope-private"
+            }
+            className="!py-1"
+          >
             <div className="flex gap-1 !mx-3">
               {solicitud.idAlcance === 1
                 ? "Público"

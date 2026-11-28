@@ -537,14 +537,14 @@ export function DetallesSolicitud() {
         </div>
       </div>
       {datos.esUrgente && datos.motivoUrgencia && (
-        <div className="space-y-1  border border-red-200 bg-red-50 p-4 rounded-md shadow-sm">
+        <div className="space-y-2  border border-eventos-error bg-red-50 p-4 rounded-md shadow-md">
           <div className="flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-red-600 shrink-0" />
             <span className="font-merriweather text-base font-bold text-gray-900">
-              Motivo de urgencia
+              Motivo de urgencia registrado por el organizador del evento
             </span>
           </div>
-          <p className="font-merriweather text-sm text-red-900 leading-relaxed text-justify">
+          <p className="font-merriweather text-base leading-relaxed text-red-900 leading-relaxed text-justify">
             {datos.motivoUrgencia}
           </p>
         </div>
@@ -553,9 +553,9 @@ export function DetallesSolicitud() {
       {datos.esModificacion && datos.motivoModificacion && (
         <div className="space-y-1 space-y-2 rounded-lg border border-amber-300 bg-amber-50 p-5 text-amber-950 shadow-md">
           <h3 className="font-merriweather text-base font-bold text-gray-900">
-            Motivo de modificación
+            Motivo de modificación registrado por el organizador del evento
           </h3>
-          <p className="font-merriweather text-sm text-gray-700 leading-relaxed text-justify">
+          <p className="font-merriweather text-base text-gray-700 leading-relaxed text-justify">
             {datos.motivoModificacion}
           </p>
         </div>
@@ -619,12 +619,14 @@ export function DetallesSolicitud() {
                       {subevento.nombre}
                     </h4>
                     {datos.esModificacion && subevento.esNuevo && (
-                      <Badge variant="primary">Nueva actividad</Badge>
+                      <Badge variant="neutral" className="py-1">
+                        Nueva actividad
+                      </Badge>
                     )}
                     {datos.esModificacion &&
                       (subevento.boletosActivos ?? 0) > 0 && (
-                        <Badge variant="secondary" size="sm">
-                          {subevento.boletosActivos} asistente registrados
+                        <Badge variant="neutral" size="sm" className="py-1">
+                          {subevento.boletosActivos} asistentes registrados
                         </Badge>
                       )}
                   </div>
@@ -828,7 +830,7 @@ export function DetallesSolicitud() {
                   variant="warning"
                   title="Resumen de impacto al aprobar"
                 >
-                  <ul className="list-disc pl-4 space-y-1">
+                  <ul className="mt-2 text-sm leading-relaxed list-disc pl-4 space-y-1">
                     {datos.subEventos
                       .filter((s) => Boolean(s.impacto?.resumenTexto))
                       .map((s) => (
@@ -845,10 +847,10 @@ export function DetallesSolicitud() {
               {errorAccion}
             </p>
           )}
-          <div className="flex justify-end gap-2">
+          <div className="mt-8 flex justify-end gap-2">
             <Button
               text="Cancelar"
-              variant="danger"
+              variant="secondary"
               disabled={procesando}
               onClick={() => setMostrarModalAprobar(false)}
             />
