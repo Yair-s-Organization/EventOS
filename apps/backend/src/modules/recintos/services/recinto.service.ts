@@ -15,6 +15,7 @@ import {
   EstadoRecinto,
   EstadoSubEvento,
   ModalidadAcceso,
+  validarCupoMaximo,
   validarModalidadEnRecinto,
 } from '@eventos/shared';
 
@@ -180,6 +181,7 @@ export class RecintoService {
     async validarRecinto(
         idRecinto: number,
         idModalidadAcceso?: ModalidadAcceso,
+        cupoMaximo?: number | null,
     ) {
         const recinto = await this.recintoRepository.findOneBy({ idRecinto });
 
@@ -204,13 +206,17 @@ export class RecintoService {
             throw new BadRequestException(errorModalidad);
         }
 
-        if (esLaboratorioRecinto(idRecinto)) {
-            const aforoLaboratorio = await this.obtenerAforoReal(recinto);
-            if (aforoLaboratorio <= 0) {
-                throw new ConflictException(
-                    `El laboratorio "${recinto.nombre}" no cuenta con equipos de cómputo habilitados disponibles.`,
-                );
-            }
+        const aforoReal = await this.obtenerAforoReal(recinto);
+
+        if (esLaboratorioRecinto(idRecinto) && aforoReal <= 0) {
+            throw new ConflictException(
+                `El laboratorio "${recinto.nombre}" no cuenta con equipos de cómputo habilitados disponibles.`,
+            );
+        }
+
+        const errorCupo = validarCupoMaximo(cupoMaximo, aforoReal, modalidadEfectiva);
+        if (errorCupo) {
+            throw new BadRequestException(errorCupo);
         }
 
         return true;

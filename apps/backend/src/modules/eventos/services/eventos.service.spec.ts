@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import {
   AlcanceEvento,
+  calcularCapacidadEfectiva,
   EstadoEvento,
   EstadoSubEvento,
   ModalidadAcceso,
@@ -322,5 +323,38 @@ describe('EventosService - Acceso a Eventos Privados e Internos con boleto previ
     await expect(
       service.aceptarEnlaceSubEventoPrivado('token-sub-201', 50),
     ).rejects.toThrow(ConflictException);
+  });
+
+  it('aceptarEnlaceSubEventoPrivado respeta cupoMaximo configurado menor al aforo del recinto', async () => {
+    const service = crearEventosServiceTest({
+      idAlcance: AlcanceEvento.PRIVADO,
+      ocupadosReales: 15,
+      subEventoPorToken: {
+        idSubEvento: 201,
+        idEvento: 20,
+        idRecinto: 1,
+        estado: EstadoSubEvento.ACEPTADO,
+        idModalidadAcceso: ModalidadAcceso.QR_GENERAL,
+        cupoMaximo: 15,
+        tokenInvitacion: 'token-cupo-15',
+        enlaceInvitacionActivo: true,
+      },
+    });
+
+    await expect(
+      service.aceptarEnlaceSubEventoPrivado('token-cupo-15', 50),
+    ).rejects.toThrow(ConflictException);
+  });
+
+  it('calcularCapacidadEfectiva aplica min(cupoMaximo, aforoReal) cuando bajan equipos disponibles', () => {
+    expect(
+      calcularCapacidadEfectiva(36, 34, ModalidadAcceso.QR_GENERAL),
+    ).toBe(34);
+    expect(
+      calcularCapacidadEfectiva(20, 34, ModalidadAcceso.QR_GENERAL),
+    ).toBe(20);
+    expect(
+      calcularCapacidadEfectiva(50, 242, ModalidadAcceso.QR_MAPA),
+    ).toBe(242);
   });
 });
