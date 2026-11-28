@@ -386,9 +386,9 @@ export function CardSubevento(props: CardSubeventoProps) {
     const max15Dias = sumarDias(fechaInicio, 14);
     maxFecha = max15Dias < FECHA_FIN_SEMESTRE ? max15Dias : FECHA_FIN_SEMESTRE;
   }
-
-  return (
-    <div className="grid min-w-0 grid-cols-1 gap-4 rounded-md bg-eventos-primary-light p-4 sm:grid-cols-2 sm:p-6 lg:grid-cols-3 lg:px-10 lg:py-8">
+  /* rounded-md bg-white border border-gray-200 shadow-md
+   */ return (
+    <div className="grid min-w-0 grid-cols-1 gap-4 bg-eventos-primary-light p-4 sm:grid-cols-2 sm:p-6 lg:grid-cols-3 lg:px-10 lg:py-8">
       <FormField
         label="Fecha"
         htmlFor={`selectFecha-${index}`}
