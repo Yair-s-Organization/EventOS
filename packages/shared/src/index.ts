@@ -22,6 +22,7 @@ export interface SubEvento {
   idFecha: number;
   nombre: string;
   descripcion: string;
+  cupoMaximo?: number | null;
   idModalidadAcceso: ModalidadAcceso;
   estado: EstadoSubEvento;
   tokenInvitacion?: string;
@@ -78,6 +79,8 @@ export interface DisponibilidadSubEvento {
   idSubEvento: number;
   idModalidadAcceso?: ModalidadAcceso;
   recinto: Recinto;
+  cupoMaximo?: number | null;
+  cupoEfectivo?: number;
   lugaresDisponibles: number; //<- calculado por el back
   asientos: AsientoDisponible[]; // <- lista de asientos disponibles
 }
@@ -192,6 +195,7 @@ export interface SubeventoPayload {
   descripcion: string;
   idRecinto: number;
   idModalidadAcceso?: ModalidadAcceso;
+  cupoMaximo?: number | null;
   fecha: string;
   horaInicio: string;
   horaFin: string;
@@ -227,6 +231,8 @@ export interface EventoOrganizadorDetalleSubevento {
   nombre: string;
   descripcion: string;
   idModalidadAcceso: ModalidadAcceso;
+  cupoMaximo?: number | null;
+  cupoEfectivo?: number;
   estado: EstadoSubEvento;
   tokenInvitacion?: string;
   enlaceInvitacionActivo?: boolean;
@@ -483,6 +489,78 @@ export const DESCRIPCIONES_MODALIDAD: Record<ModalidadAcceso, string> = {
     'El asistente elige una butaca específica en el mapa del Auditorio y recibe su boleto digital con código QR.',
 };
 
+export function permiteCupoConfigurable(
+  idModalidadAcceso?: ModalidadAcceso | number | null,
+): boolean {
+  return (
+    idModalidadAcceso === ModalidadAcceso.REGISTRO_SIMPLE ||
+    idModalidadAcceso === ModalidadAcceso.QR_GENERAL
+  );
+}
+
+/** Normaliza cupoMaximo según la modalidad de acceso del subevento. */
+export function normalizarCupoMaximo(
+  cupoMaximo: number | null | undefined,
+  aforoRealRecinto: number,
+  idModalidadAcceso?: ModalidadAcceso | number | null,
+): number | null {
+  if (idModalidadAcceso === ModalidadAcceso.ACCESO_LIBRE) {
+    return null;
+  }
+  if (idModalidadAcceso === ModalidadAcceso.QR_MAPA) {
+    return aforoRealRecinto > 0 ? Math.trunc(aforoRealRecinto) : null;
+  }
+  if (cupoMaximo === null || cupoMaximo === undefined || Number.isNaN(cupoMaximo)) {
+    return null;
+  }
+  return Math.trunc(cupoMaximo);
+}
+
+/** Valida que cupoMaximo sea entero positivo y no exceda el aforo real del recinto. */
+export function validarCupoMaximo(
+  cupoMaximo: number | null | undefined,
+  aforoRealRecinto: number,
+  idModalidadAcceso?: ModalidadAcceso | number | null,
+): string | null {
+  if (!permiteCupoConfigurable(idModalidadAcceso)) {
+    return null;
+  }
+  if (cupoMaximo === null || cupoMaximo === undefined) {
+    return null;
+  }
+  if (!Number.isInteger(cupoMaximo) || cupoMaximo < 1) {
+    return 'El cupo máximo de asistentes debe ser un número entero mayor o igual a 1.';
+  }
+  if (aforoRealRecinto > 0 && cupoMaximo > aforoRealRecinto) {
+    return `El cupo máximo (${cupoMaximo}) no puede exceder el aforo físico vigente del recinto (${aforoRealRecinto}).`;
+  }
+  return null;
+}
+
+/** Calcula la capacidad operativa real aplicando min(cupoMaximo, aforoRealRecinto). */
+export function calcularCapacidadEfectiva(
+  cupoMaximo: number | null | undefined,
+  aforoRealRecinto: number,
+  idModalidadAcceso?: ModalidadAcceso | number | null,
+): number {
+  const aforoSeguro = Math.max(0, Math.trunc(aforoRealRecinto));
+  if (
+    idModalidadAcceso === ModalidadAcceso.QR_MAPA ||
+    idModalidadAcceso === ModalidadAcceso.ACCESO_LIBRE
+  ) {
+    return aforoSeguro;
+  }
+  if (
+    cupoMaximo === null ||
+    cupoMaximo === undefined ||
+    !Number.isFinite(cupoMaximo) ||
+    cupoMaximo < 1
+  ) {
+    return aforoSeguro;
+  }
+  return Math.min(Math.trunc(cupoMaximo), aforoSeguro);
+}
+
 export function esModalidadConQr(
   idModalidadAcceso?: ModalidadAcceso | number | null,
 ): boolean {
@@ -589,6 +667,7 @@ export interface ImpactoCambioSubevento {
   idSubEvento: number;
   nombreSubEvento: string;
   inscritosActivos: number;
+  aforoOrigen?: number;
   aforoDestino: number;
   idRecintoOrigen: number;
   idRecintoDestino: number;
@@ -596,6 +675,7 @@ export interface ImpactoCambioSubevento {
   modalidadDestino: ModalidadAcceso;
   cambioRecinto: boolean;
   cambioModalidad: boolean;
+  cambioCupo?: boolean;
   conservadosFifo: number;
   canceladosSobrecupoFifo: number;
   canceladosPorTransicion: number;
@@ -634,6 +714,7 @@ export function calcularImpactoCambioSubevento(params: {
   idSubEvento: number;
   nombreSubEvento: string;
   inscritosActivos: number;
+  aforoOrigen?: number;
   aforoDestino: number;
   idRecintoOrigen: number;
   idRecintoDestino: number;
@@ -642,8 +723,11 @@ export function calcularImpactoCambioSubevento(params: {
 }): ImpactoCambioSubevento | null {
   const cambioRecinto = params.idRecintoOrigen !== params.idRecintoDestino;
   const cambioModalidad = params.modalidadOrigen !== params.modalidadDestino;
+  const cambioCupo =
+    typeof params.aforoOrigen === 'number' &&
+    params.aforoOrigen !== params.aforoDestino;
 
-  if (!cambioRecinto && !cambioModalidad) {
+  if (!cambioRecinto && !cambioModalidad && !cambioCupo) {
     return null;
   }
 
@@ -655,6 +739,7 @@ export function calcularImpactoCambioSubevento(params: {
       ...params,
       cambioRecinto,
       cambioModalidad,
+      cambioCupo,
       conservadosFifo: 0,
       canceladosSobrecupoFifo: 0,
       canceladosPorTransicion: 0,
@@ -668,6 +753,7 @@ export function calcularImpactoCambioSubevento(params: {
       ...params,
       cambioRecinto,
       cambioModalidad,
+      cambioCupo,
       conservadosFifo: 0,
       canceladosSobrecupoFifo: 0,
       canceladosPorTransicion: inscritosActivos,
@@ -685,7 +771,10 @@ export function calcularImpactoCambioSubevento(params: {
 
   let resumenTexto = '';
   if (canceladosSobrecupoFifo > 0 && transicion === 'CONSERVADO') {
-    resumenTexto = `El espacio destino tiene capacidad para ${aforoSeguro} personas y actualmente hay ${inscritosActivos} inscritos. Se conservarán los primeros ${enAforo} registros por orden cronológico de inscripción y los ${canceladosSobrecupoFifo} restantes serán cancelados por sobrecupo.`;
+    resumenTexto =
+      !cambioRecinto && !cambioModalidad && cambioCupo
+        ? `El cupo máximo configurado será de ${aforoSeguro} personas y actualmente hay ${inscritosActivos} inscritos. Se conservarán los primeros ${enAforo} registros por orden cronológico de inscripción y los ${canceladosSobrecupoFifo} restantes serán cancelados.`
+        : `El espacio destino tiene capacidad para ${aforoSeguro} personas y actualmente hay ${inscritosActivos} inscritos. Se conservarán los primeros ${enAforo} registros por orden cronológico de inscripción y los ${canceladosSobrecupoFifo} restantes serán cancelados por sobrecupo.`;
   } else if (canceladosSobrecupoFifo > 0 && transicion === 'CANCELADO_REAUTH') {
     resumenTexto = `El espacio destino tiene capacidad para ${aforoSeguro} personas y actualmente hay ${inscritosActivos} inscritos. Los ${canceladosSobrecupoFifo} registros más recientes serán cancelados por sobrecupo y los primeros ${enAforo} deberán realizar un nuevo registro por cambio de modalidad.`;
   } else if (transicion === 'CANCELADO_REAUTH') {
@@ -703,6 +792,7 @@ export function calcularImpactoCambioSubevento(params: {
     ...params,
     cambioRecinto,
     cambioModalidad,
+    cambioCupo,
     conservadosFifo,
     canceladosSobrecupoFifo,
     canceladosPorTransicion,
