@@ -6,6 +6,7 @@ import {
   esLaboratorioRecinto,
   modalidadPorDefectoRecinto,
   obtenerModalidadesPermitidasPorRecinto,
+  permiteCupoConfigurable,
   RecintoId,
   validarModalidadEnRecinto,
   type Recinto,
@@ -16,6 +17,7 @@ import { Select } from "../../../components/atoms/Select/Select";
 import { TextArea } from "../../../components/atoms/TextArea/TextArea";
 import { InputFile } from "../../../components/atoms/InputFile/InputFile";
 import { FeedbackNotice } from "../../../components/molecules/FeedbackNotice";
+import { CupoMaximoField } from "../../../components/molecules/CupoMaximoField";
 import {
   TOOLTIP_ALCANCE_EVENTO,
   TOOLTIP_BANNER_EVENTO,
@@ -210,6 +212,7 @@ export interface EditLogisticsValues {
   horaInicio: string;
   horaFin: string;
   idModalidadAcceso: string;
+  cupoMaximo: string;
   motivoModificacion: string;
 }
 
@@ -218,6 +221,7 @@ export interface EditLogisticsErrors {
   fecha?: string;
   horaInicio?: string;
   horaFin?: string;
+  cupoMaximo?: string;
 }
 
 interface EditLogisticsSectionProps {
@@ -375,23 +379,40 @@ export function EditLogisticsSection({
               hasError={Boolean(intentoGuardar && errores?.idRecinto)}
               onChange={(event) => {
                 const idRecinto = Number(event.currentTarget.value);
+                const nuevoRecinto = opcionesRecinto.find(
+                  (recinto) => recinto.idRecinto === idRecinto,
+                );
+                const aforoNuevo = nuevoRecinto?.aforo ?? 0;
                 onCambioLogistica("idRecinto", String(idRecinto));
                 const permitidas =
                   obtenerModalidadesPermitidasPorRecinto(idRecinto);
                 const modalidadActual = Number(
                   valores.idModalidadAcceso,
                 ) as ModalidadAcceso;
+                let modalidadFinal = modalidadActual;
                 if (
                   !permitidas.includes(modalidadActual) ||
                   validarModalidadEnRecinto(idRecinto, modalidadActual) !== null
                 ) {
+                  modalidadFinal = esLaboratorioRecinto(idRecinto)
+                    ? ModalidadAcceso.QR_GENERAL
+                    : modalidadPorDefectoRecinto(idRecinto, true);
                   onCambioLogistica(
                     "idModalidadAcceso",
-                    String(
-                      esLaboratorioRecinto(idRecinto)
-                        ? ModalidadAcceso.QR_GENERAL
-                        : modalidadPorDefectoRecinto(idRecinto, true),
-                    ),
+                    String(modalidadFinal),
+                  );
+                }
+                if (modalidadFinal === ModalidadAcceso.ACCESO_LIBRE) {
+                  onCambioLogistica("cupoMaximo", "");
+                } else if (modalidadFinal === ModalidadAcceso.QR_MAPA) {
+                  onCambioLogistica(
+                    "cupoMaximo",
+                    aforoNuevo > 0 ? String(aforoNuevo) : "242",
+                  );
+                } else {
+                  onCambioLogistica(
+                    "cupoMaximo",
+                    aforoNuevo > 0 ? String(aforoNuevo) : "",
                   );
                 }
               }}
@@ -543,12 +564,37 @@ export function EditLogisticsSection({
               }))}
               value={valores.idModalidadAcceso}
               disabled={deshabilitado || accesoFijo}
-              onChange={(event) =>
+              onChange={(event) => {
+                const nuevaModalidad = Number(
+                  event.currentTarget.value,
+                ) as ModalidadAcceso;
                 onCambioLogistica(
                   "idModalidadAcceso",
                   event.currentTarget.value,
-                )
-              }
+                );
+                const aforoActual = recintoSeleccionado?.aforo ?? 0;
+                if (nuevaModalidad === ModalidadAcceso.ACCESO_LIBRE) {
+                  onCambioLogistica("cupoMaximo", "");
+                } else if (nuevaModalidad === ModalidadAcceso.QR_MAPA) {
+                  onCambioLogistica(
+                    "cupoMaximo",
+                    aforoActual > 0 ? String(aforoActual) : "242",
+                  );
+                } else if (
+                  permiteCupoConfigurable(nuevaModalidad) &&
+                  aforoActual > 0
+                ) {
+                  const cupoNum = Number(valores.cupoMaximo);
+                  if (
+                    !valores.cupoMaximo ||
+                    !Number.isInteger(cupoNum) ||
+                    cupoNum < 1 ||
+                    cupoNum > aforoActual
+                  ) {
+                    onCambioLogistica("cupoMaximo", String(aforoActual));
+                  }
+                }
+              }}
             />
           </FormField>
         </div>
@@ -582,18 +628,21 @@ export function EditLogisticsSection({
           </div>
         )}
         <div className="flex min-w-0 flex-col gap-2">
-          <label htmlFor="campoAforo" className="font-bold">
-            Aforo del espacio
-          </label>
-          <Input
+          <CupoMaximoField
             id="campoAforo"
-            value={
-              recintoSeleccionado?.aforo
-                ? recintoSeleccionado.aforo
-                : "No disponible"
+            idRecinto={recintoSeleccionado?.idRecinto}
+            aforoRecinto={recintoSeleccionado?.aforo}
+            idModalidadAcceso={
+              valores.idModalidadAcceso
+                ? (Number(valores.idModalidadAcceso) as ModalidadAcceso)
+                : undefined
             }
-            disabled
-            aria-label="Aforo máximo del espacio seleccionado"
+            value={valores.cupoMaximo}
+            disabled={deshabilitado}
+            labelClassName="!font-bold !text-black"
+            errorMessage={intentoGuardar ? errores?.cupoMaximo : undefined}
+            hasError={Boolean(intentoGuardar && errores?.cupoMaximo)}
+            onChangeValue={(valor) => onCambioLogistica("cupoMaximo", valor)}
           />
         </div>
         {avisoImpacto && (

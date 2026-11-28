@@ -21,6 +21,8 @@ function mapActivity(activity: SubEventDetailsApi, idEvento: number): EventActiv
     nombre: activity.nombre,
     descripcion: activity.descripcion ?? "",
     idModalidadAcceso: activity.idModalidadAcceso,
+    cupoMaximo: activity.cupoMaximo ?? null,
+    cupoEfectivo: activity.cupoEfectivo,
     requiereSeleccionAsiento: activity.requiereSeleccionAsiento,
     fecha: activity.fecha ? {
       fecha: activity.fecha.fecha,

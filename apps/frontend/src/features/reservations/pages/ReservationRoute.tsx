@@ -269,7 +269,7 @@ export function ReservationRoute() {
           venue={venue}
           idModalidadAcceso={activity.idModalidadAcceso}
           availableSeats={availability.lugaresDisponibles}
-          capacity={availability.recinto.aforo}
+          capacity={availability.cupoEfectivo ?? availability.recinto.aforo}
           isRefreshing={isRefreshing}
           seats={toSeatMapItems(availability.asientos)}
           aisleAfter={[6, 17]}
@@ -288,7 +288,7 @@ export function ReservationRoute() {
           venue={venue}
           idModalidadAcceso={activity.idModalidadAcceso}
           availableSeats={availability.lugaresDisponibles}
-          capacity={availability.recinto.aforo}
+          capacity={availability.cupoEfectivo ?? availability.recinto.aforo}
           isRefreshing={isRefreshing}
           canReserve={canReserve}
           onReserve={() => submitReservation()}

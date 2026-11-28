@@ -8,11 +8,15 @@ import {
   EstadoSubEvento,
   InvitadoEventoItem,
   ModalidadAcceso,
+  calcularCapacidadEfectiva,
   calcularImpactoCambioSubevento,
   esLaboratorioRecinto,
   modalidadPorDefectoRecinto,
+  normalizarCupoMaximo,
   obtenerModalidadesPermitidasPorRecinto,
+  permiteCupoConfigurable,
   RecintoId,
+  validarCupoMaximo,
   validarModalidadEnRecinto,
   type ActualizarInfoGeneralPayload,
   type EventoOrganizadorDetalle,
@@ -36,6 +40,7 @@ import {
   TOOLTIP_FECHA_ANTICIPACION,
 } from "../../components/molecules/EventoTooltipsContent";
 import { FormField } from "../../components/molecules/FormField";
+import { CupoMaximoField } from "../../components/molecules/CupoMaximoField";
 import { Modal } from "../../components/molecules/Modal";
 import { ModalidadAccesoHelp } from "../../components/molecules/ModalidadAccesoHelp";
 import { apiRequest } from "../../lib/apiClient";
@@ -73,6 +78,7 @@ interface ActividadEditable {
   horaInicio: string;
   horaFin: string;
   idModalidadAcceso: ModalidadAcceso;
+  cupoMaximo?: number | null;
 }
 
 interface DatosGenerales {
@@ -87,6 +93,7 @@ interface ErroresActividad {
   idRecinto?: string;
   horaInicio?: string;
   horaFin?: string;
+  cupoMaximo?: string;
 }
 
 const ALCANCES = [
@@ -283,6 +290,19 @@ function mapearPropuesta(
   const llave = actividad.idSubEvento
     ? `subevento-${actividad.idSubEvento}`
     : `nuevo-${crypto.randomUUID()}`;
+  const modalidad =
+    actividad.idModalidadAcceso ??
+    actual?.idModalidadAcceso ??
+    ModalidadAcceso.ACCESO_LIBRE;
+  const cupoInicial = permiteCupoConfigurable(modalidad)
+    ? (actividad.cupoMaximo ??
+        actual?.cupoMaximo ??
+        actual?.recinto?.aforo ??
+        null)
+    : modalidad === ModalidadAcceso.QR_MAPA
+      ? (actual?.recinto?.aforo ?? 242)
+      : null;
+
   return {
     llave,
     ...(actividad.idSubEvento !== undefined
@@ -294,10 +314,8 @@ function mapearPropuesta(
     fecha: actividad.fecha.slice(0, 10),
     horaInicio: actividad.horaInicio.slice(0, 5),
     horaFin: actividad.horaFin.slice(0, 5),
-    idModalidadAcceso:
-      actividad.idModalidadAcceso ??
-      actual?.idModalidadAcceso ??
-      ModalidadAcceso.ACCESO_LIBRE,
+    idModalidadAcceso: modalidad,
+    cupoMaximo: cupoInicial,
   };
 }
 
@@ -318,36 +336,55 @@ function obtenerActividades(
 
   return evento.subEventos
     .filter((subevento) => subevento.estado !== EstadoSubEvento.CANCELADO)
-    .map((subevento) => ({
-      llave: `subevento-${subevento.idSubEvento}`,
-      idSubEvento: subevento.idSubEvento,
-      nombre: subevento.nombre,
-      descripcion: subevento.descripcion,
-      idRecinto: subevento.recinto ? String(subevento.recinto.idRecinto) : "",
-      fecha: subevento.fecha?.fecha.slice(0, 10) ?? "",
-      horaInicio: subevento.fecha?.horaInicio.slice(0, 5) ?? "",
-      horaFin: subevento.fecha?.horaFin.slice(0, 5) ?? "",
-      idModalidadAcceso: subevento.idModalidadAcceso,
-    }));
+    .map((subevento) => {
+      const cupoInicial = permiteCupoConfigurable(subevento.idModalidadAcceso)
+        ? (subevento.cupoMaximo ?? subevento.recinto?.aforo ?? null)
+        : subevento.idModalidadAcceso === ModalidadAcceso.QR_MAPA
+          ? (subevento.recinto?.aforo ?? 242)
+          : null;
+      return {
+        llave: `subevento-${subevento.idSubEvento}`,
+        idSubEvento: subevento.idSubEvento,
+        nombre: subevento.nombre,
+        descripcion: subevento.descripcion,
+        idRecinto: subevento.recinto ? String(subevento.recinto.idRecinto) : "",
+        fecha: subevento.fecha?.fecha.slice(0, 10) ?? "",
+        horaInicio: subevento.fecha?.horaInicio.slice(0, 5) ?? "",
+        horaFin: subevento.fecha?.horaFin.slice(0, 5) ?? "",
+        idModalidadAcceso: subevento.idModalidadAcceso,
+        cupoMaximo: cupoInicial,
+      };
+    });
 }
 
 function obtenerPayloadActividades(
   actividades: ActividadEditable[],
   nombreEvento: string,
   descripcionEvento: string,
+  recintos: Recinto[],
 ): SubEventoLogisticaPayload[] {
-  return actividades.map((actividad) => ({
-    ...(actividad.idSubEvento !== undefined
-      ? { idSubEvento: actividad.idSubEvento }
-      : {}),
-    nombre: actividad.nombre.trim() || nombreEvento.trim(),
-    descripcion: actividad.descripcion.trim() || descripcionEvento.trim(),
-    idRecinto: Number(actividad.idRecinto),
-    idModalidadAcceso: actividad.idModalidadAcceso,
-    fecha: actividad.fecha,
-    horaInicio: actividad.horaInicio,
-    horaFin: actividad.horaFin,
-  }));
+  return actividades.map((actividad) => {
+    const aforoRecinto =
+      recintos.find((r) => String(r.idRecinto) === actividad.idRecinto)
+        ?.aforo ?? 0;
+    return {
+      ...(actividad.idSubEvento !== undefined
+        ? { idSubEvento: actividad.idSubEvento }
+        : {}),
+      nombre: actividad.nombre.trim() || nombreEvento.trim(),
+      descripcion: actividad.descripcion.trim() || descripcionEvento.trim(),
+      idRecinto: Number(actividad.idRecinto),
+      idModalidadAcceso: actividad.idModalidadAcceso,
+      cupoMaximo: normalizarCupoMaximo(
+        actividad.cupoMaximo,
+        aforoRecinto,
+        actividad.idModalidadAcceso,
+      ),
+      fecha: actividad.fecha,
+      horaInicio: actividad.horaInicio,
+      horaFin: actividad.horaFin,
+    };
+  });
 }
 
 interface FilaActividadEditableProps {
@@ -556,11 +593,16 @@ function FilaActividadEditable({
           hasError={Boolean(errorAct?.idRecinto)}
           onChange={(e) => {
             const idRecintoNum = Number(e.target.value);
+            const nuevoRecinto = recintos.find(
+              (r) => r.idRecinto === idRecintoNum,
+            );
+            const aforoNuevo = nuevoRecinto?.aforo ?? 0;
             actualizarActividad(actividad.llave, "idRecinto", e.target.value);
             actualizarActividad(actividad.llave, "horaInicio", "");
             actualizarActividad(actividad.llave, "horaFin", "");
             const permitidas =
               obtenerModalidadesPermitidasPorRecinto(idRecintoNum);
+            let modalidadFinal = actividad.idModalidadAcceso;
             if (
               !permitidas.includes(actividad.idModalidadAcceso) ||
               validarModalidadEnRecinto(
@@ -568,14 +610,26 @@ function FilaActividadEditable({
                 actividad.idModalidadAcceso,
               ) !== null
             ) {
+              modalidadFinal = esLaboratorioRecinto(idRecintoNum)
+                ? ModalidadAcceso.QR_GENERAL
+                : modalidadPorDefectoRecinto(idRecintoNum, true);
               actualizarActividad(
                 actividad.llave,
                 "idModalidadAcceso",
-                esLaboratorioRecinto(idRecintoNum)
-                  ? ModalidadAcceso.QR_GENERAL
-                  : modalidadPorDefectoRecinto(idRecintoNum, true),
+                modalidadFinal,
               );
             }
+            actualizarActividad(
+              actividad.llave,
+              "cupoMaximo",
+              modalidadFinal === ModalidadAcceso.ACCESO_LIBRE
+                ? null
+                : aforoNuevo > 0
+                  ? aforoNuevo
+                  : modalidadFinal === ModalidadAcceso.QR_MAPA
+                    ? 242
+                    : null,
+            );
           }}
         />
       </FormField>
@@ -654,15 +708,57 @@ function FilaActividadEditable({
               : ""
           }
           disabled={esLaboratorioRecinto(Number(actividad.idRecinto))}
-          onChange={(e) =>
+          onChange={(e) => {
+            const nuevaModalidad = Number(e.target.value) as ModalidadAcceso;
             actualizarActividad(
               actividad.llave,
               "idModalidadAcceso",
-              Number(e.target.value) as ModalidadAcceso,
-            )
-          }
+              nuevaModalidad,
+            );
+            const aforoActual = recintoSeleccionado?.aforo ?? 0;
+            if (nuevaModalidad === ModalidadAcceso.ACCESO_LIBRE) {
+              actualizarActividad(actividad.llave, "cupoMaximo", null);
+            } else if (nuevaModalidad === ModalidadAcceso.QR_MAPA) {
+              actualizarActividad(
+                actividad.llave,
+                "cupoMaximo",
+                aforoActual > 0 ? aforoActual : 242,
+              );
+            } else if (
+              permiteCupoConfigurable(nuevaModalidad) &&
+              aforoActual > 0
+            ) {
+              const actual = actividad.cupoMaximo;
+              if (
+                actual === null ||
+                actual === undefined ||
+                actual < 1 ||
+                actual > aforoActual
+              ) {
+                actualizarActividad(actividad.llave, "cupoMaximo", aforoActual);
+              }
+            }
+          }}
         />
       </FormField>
+
+      <CupoMaximoField
+        id={`inputCupoMaximo-${indice}`}
+        idRecinto={Number(actividad.idRecinto) || undefined}
+        aforoRecinto={recintoSeleccionado?.aforo}
+        idModalidadAcceso={actividad.idModalidadAcceso}
+        value={actividad.cupoMaximo}
+        required
+        errorMessage={errorAct?.cupoMaximo}
+        hasError={Boolean(errorAct?.cupoMaximo)}
+        onChangeValue={(valor) =>
+          actualizarActividad(
+            actividad.llave,
+            "cupoMaximo",
+            valor.trim() === "" ? null : Number(valor),
+          )
+        }
+      />
 
       <FormField label={undefined} htmlFor={`botonEspacio-${indice}`}>
         <Button
@@ -1030,11 +1126,13 @@ export function EditarEventoConSubeventos() {
     actividades,
     datosGenerales?.nombre ?? "",
     datosGenerales?.descripcion ?? "",
+    recintos,
   );
   const actividadesInicialesPayload = obtenerPayloadActividades(
     actividadesIniciales,
     datosGeneralesIniciales?.nombre ?? "",
     datosGeneralesIniciales?.descripcion ?? "",
+    recintos,
   );
   const cambiosActividades =
     JSON.stringify(payloadActividades) !==
@@ -1072,11 +1170,22 @@ export function EditarEventoConSubeventos() {
       const recintoDest =
         recintos.find((r) => String(r.idRecinto) === act.idRecinto) ??
         subOriginal.recinto;
+      const aforoOrigen = calcularCapacidadEfectiva(
+        subOriginal.cupoMaximo,
+        subOriginal.recinto?.aforo ?? 0,
+        subOriginal.idModalidadAcceso,
+      );
+      const aforoDestino = calcularCapacidadEfectiva(
+        act.cupoMaximo,
+        recintoDest?.aforo ?? 0,
+        act.idModalidadAcceso,
+      );
       const impacto = calcularImpactoCambioSubevento({
         idSubEvento: subOriginal.idSubEvento,
         nombreSubEvento: act.nombre.trim() || subOriginal.nombre,
         inscritosActivos: subOriginal.boletosEmitidos ?? 0,
-        aforoDestino: recintoDest?.aforo ?? 0,
+        aforoOrigen,
+        aforoDestino,
         idRecintoOrigen: subOriginal.recinto?.idRecinto ?? 0,
         idRecintoDestino: Number(act.idRecinto) || 0,
         modalidadOrigen: subOriginal.idModalidadAcceso,
@@ -1127,6 +1236,22 @@ export function EditarEventoConSubeventos() {
 
         if (!act.idRecinto) {
           err.idRecinto = "Selecciona un espacio para el evento";
+        } else if (permiteCupoConfigurable(act.idModalidadAcceso)) {
+          const aforoRecinto =
+            recintos.find((r) => String(r.idRecinto) === act.idRecinto)
+              ?.aforo ?? 0;
+          if (act.cupoMaximo === null || act.cupoMaximo === undefined) {
+            err.cupoMaximo = "Indica el cupo máximo de asistentes";
+          } else {
+            const errorCupo = validarCupoMaximo(
+              act.cupoMaximo,
+              aforoRecinto,
+              act.idModalidadAcceso,
+            );
+            if (errorCupo) {
+              err.cupoMaximo = errorCupo;
+            }
+          }
         }
 
         if (!act.horaInicio) {
@@ -1807,6 +1932,9 @@ export function EditarEventoConSubeventos() {
                 const actividadModal = actividades.find(
                   (a) => a.idSubEvento === subeventoModalInvitados,
                 );
+                const subeventoModal = evento?.subEventos.find(
+                  (s) => s.idSubEvento === subeventoModalInvitados,
+                );
                 const recintoModal = recintos.find(
                   (r) => String(r.idRecinto) === actividadModal?.idRecinto,
                 );
@@ -1819,7 +1947,11 @@ export function EditarEventoConSubeventos() {
                     idEvento={idEvento}
                     idSubEvento={subeventoModalInvitados}
                     numeroInvitados={invitadosActualesModal.length}
-                    foroRecinto={recintoModal?.aforo}
+                    foroRecinto={calcularCapacidadEfectiva(
+                      subeventoModal?.cupoMaximo,
+                      recintoModal?.aforo ?? subeventoModal?.recinto?.aforo ?? 0,
+                      subeventoModal?.idModalidadAcceso,
+                    )}
                     correosExistentes={invitadosActualesModal.map(
                       (i) => i.correo,
                     )}
@@ -1897,11 +2029,16 @@ export function EditarEventoConSubeventos() {
                   (item) => String(item.idRecinto) === actividad.idRecinto,
                 );
                 if (actividad.idSubEvento !== undefined) {
+                  const subeventoDetalle = evento?.subEventos.find(
+                    (s) => s.idSubEvento === actividad.idSubEvento,
+                  );
                   const subevento: OrganizerSubeventCardData = {
                     idSubEvento: actividad.idSubEvento,
                     nombre: actividad.nombre,
                     descripcion: actividad.descripcion,
                     idModalidadAcceso: actividad.idModalidadAcceso,
+                    cupoMaximo: subeventoDetalle?.cupoMaximo ?? null,
+                    cupoEfectivo: subeventoDetalle?.cupoEfectivo,
                     fecha: actividad.fecha
                       ? {
                           fecha: actividad.fecha,
@@ -1917,15 +2054,6 @@ export function EditarEventoConSubeventos() {
                         }
                       : null,
                   };
-
-                  const invitadosSubevento =
-                    invitadosPorSubevento[actividad.idSubEvento] ?? [];
-                  const subeventoDetalle = evento?.subEventos.find(
-                    (s) => s.idSubEvento === actividad.idSubEvento,
-                  );
-                  const esPrivado =
-                    datosGenerales?.idAlcance === AlcanceEvento.PRIVADO ||
-                    evento?.idAlcance === AlcanceEvento.PRIVADO;
 
                   return (
                     <div key={actividad.llave} className="space-y-3">

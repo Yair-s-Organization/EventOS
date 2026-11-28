@@ -23,6 +23,8 @@ export interface EventActivityViewModel {
   nombre: string;
   descripcion: string;
   idModalidadAcceso: ModalidadAcceso;
+  cupoMaximo?: number | null;
+  cupoEfectivo?: number;
   requiereSeleccionAsiento: boolean;
   fecha: EventDateViewModel | null;
   recinto: EventVenueViewModel | null;

@@ -135,18 +135,22 @@ function convertirSubevento(valor: unknown): SubeventoDetalleItem {
   let nombreRecinto = "-";
   let aforo: number | string = "-";
 
+  if (typeof valor.cupoEfectivo === "number") {
+    aforo = valor.cupoEfectivo;
+  }
+
   if (esRegistro(valor.espacio)) {
     if (typeof valor.espacio.nombre === "string") {
       nombreRecinto = valor.espacio.nombre;
     }
-    if (typeof valor.espacio.aforo === "number") {
+    if (aforo === "-" && typeof valor.espacio.aforo === "number") {
       aforo = valor.espacio.aforo;
     }
   } else if (esRegistro(valor.recinto)) {
     if (typeof valor.recinto.nombre === "string") {
       nombreRecinto = valor.recinto.nombre;
     }
-    if (typeof valor.recinto.aforo === "number") {
+    if (aforo === "-" && typeof valor.recinto.aforo === "number") {
       aforo = valor.recinto.aforo;
     }
   }
@@ -176,9 +180,11 @@ function convertirSubevento(valor: unknown): SubeventoDetalleItem {
         ? recintoAnt.nombre
         : null,
     aforoAnterior:
-      recintoAnt && typeof recintoAnt.aforo === "number"
-        ? recintoAnt.aforo
-        : null,
+      typeof valor.cupoEfectivoAnterior === "number"
+        ? valor.cupoEfectivoAnterior
+        : recintoAnt && typeof recintoAnt.aforo === "number"
+          ? recintoAnt.aforo
+          : null,
     modalidadAnterior:
       typeof valor.modalidadAnterior === "number"
         ? (valor.modalidadAnterior as ModalidadAcceso)
