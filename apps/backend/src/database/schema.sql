@@ -130,6 +130,7 @@ CREATE TABLE "subEvento" (
   estado varchar(50) NOT NULL,
   nombre varchar(150) NOT NULL,
   descripcion varchar(500) NOT NULL,
+  "cupoMaximo" integer CHECK ("cupoMaximo" IS NULL OR "cupoMaximo" > 0),
   "tokenInvitacion" varchar(64) NOT NULL UNIQUE,
   "enlaceInvitacionActivo" boolean NOT NULL DEFAULT false,
   "idEvento" integer NOT NULL REFERENCES evento("idEvento"),
@@ -265,7 +266,7 @@ VALUES
   (1, 'Auditorio Principal', 242, 1),
   (2, 'Laboratorio 2104', 36, 1),
   (3, 'Laboratorio 2105', 36, 1),
-  (4, 'Sala 14', 50, 1),
+  (4, 'Sala 14', 100, 1),
   (5, 'Laboratorio 2106', 36, 1),
   (6, 'Laboratorio 2107', 36, 1)
 ON CONFLICT ("idRecinto") DO UPDATE
