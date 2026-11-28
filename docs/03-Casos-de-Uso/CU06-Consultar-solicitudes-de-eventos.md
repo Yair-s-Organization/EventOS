@@ -3,7 +3,7 @@ caso_de_uso: "CU-06"
 nombre: "Consultar solicitudes de eventos"
 actor: "Subdirección de Servicios Educativo"
 proyecto: "EventOS"
-version: "2.0"
+version: "2.1"
 tags:
   - caso-de-uso
   - ads
@@ -70,7 +70,7 @@ tags:
 
 ### Trayectoria alternativa C: Solicitar Cambios
 
-> **Condición:** Ocurre después del paso 5 de la trayectoria principal cuando Subdirección revisa una solicitud pendiente y detecta traslapes, mantenimiento del recinto o ajustes de horario, aforo u otros aspectos técnicos que deben atenderse antes de aprobarla o rechazarla.
+> **Condición:** Ocurre después del paso 5 de la trayectoria principal cuando Subdirección revisa una solicitud pendiente y detecta traslapes, mantenimiento del recinto o ajustes de horario, `cupoMaximo` (`RN-07`) u otros aspectos técnicos que deben atenderse antes de aprobarla o rechazarla.
 
 - **C-1.** El actor selecciona la solicitud desde **UI11** "Panel de Solicitudes Pendientes" y consulta sus detalles mediante el CU-07 "Consultar datos de un evento", en **UI12** "Detalles del Evento para Evaluación".
 - **C-2.** Selecciona la opción [Solicitar Cambios]. El sistema muestra el modal de Solicitud de Cambios (subcomponente de **UI12**), con un campo obligatorio para registrar las observaciones técnicas y las modificaciones requeridas.

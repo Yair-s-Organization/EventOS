@@ -2,7 +2,7 @@
 proyecto: "EventOS"
 materia: "Análisis y Diseño de Sistemas"
 equipo: "Sinergia Ágil"
-version: "2.0"
+version: "2.1"
 tags:
   - apunte
   - escuela
@@ -12,7 +12,7 @@ tags:
   - catalogos
 ---
 
-# Actores, Diagramas de Casos de Uso y Catálogos — EventOS (v2.0)
+# Actores, Diagramas de Casos de Uso y Catálogos — EventOS (v2.1)
 
 > [!NOTE] Navegación Rápida
 > **Hub del Proyecto:** [00-Proyecto-EventOS](./00-Proyecto-EventOS.md) | **Requerimientos y Reglas:** [01-Requerimientos-y-Reglas-de-Negocio](./01-Requerimientos-y-Reglas-de-Negocio.md) | **Casos de Uso (`CU-01`–`CU-39`):** [00-Indice-Casos-de-Uso](./03-Casos-de-Uso/00-Indice-Casos-de-Uso.md)
@@ -23,23 +23,23 @@ tags:
 
 ### Asistente
 
-Este actor interactúa con la plataforma para consultar la cartelera (`CU-04`) y gestionar su participación. Tiene la capacidad de reservar su lugar o butaca (`CU-15`, `CU-16` en `UI06`), generar y visualizar su boleto digital de acceso mediante código QR cuando la modalidad del evento lo requiera (`CU-17`, `CU-20` en `UI09`), administrar o cancelar sus reservas activas (`CU-18`, `CU-19` en `UI08`), consultar la bitácora de eventos realizados (`CU-14` en `UI10`) y solicitar la creación de un evento (`CU-21` en `UI07`) contando previamente con su identidad verificada (`UI32`). Puede operar desde una cuenta de tipo `Usuario Interno` (comunidad ESCOM/IPN) o `Usuario Externo` (público general), lo cual determinará su visibilidad en la cartelera.
+Este actor interactúa con la plataforma para consultar la cartelera (`CU-04` en `UI04`) y gestionar su participación. Tiene la capacidad de reservar su lugar o butaca con retención temporal de 5 minutos (`CU-15`, `CU-16` en `UI06` y `UI30`), generar y visualizar su boleto digital de acceso mediante código QR cuando la modalidad del evento lo requiera (`CU-17`, `CU-20` en `UI09`), administrar o cancelar sus reservas activas (`CU-18`, `CU-19` en `UI08`), consultar su historial de participación (`CU-14` consolidado en `UI08`) y solicitar la creación de un evento (`CU-21` en `UI07`) contando previamente con su identidad verificada (`UI32`). Puede operar desde una cuenta de tipo `Usuario Interno` (comunidad ESCOM/IPN) o `Usuario Externo` (público general), lo cual determinará su visibilidad en la cartelera.
 
 ### Organizador
 
-Este actor es responsable de la propuesta, creación y administración operativa de los eventos bajo su responsabilidad (privilegio otorgado por evento conforme a `RN-02`), pudiendo pertenecer a la comunidad institucional, a un club estudiantil o a una entidad externa. Sus capacidades incluyen consultar y administrar sus eventos (`CU-24` en `UI14`/`UI15`), reprogramar o reubicar su logística (`CU-25` en `UI16`), actualizar la información general (`CU-26`, `CU-27`), solicitar requerimientos técnicos de cómputo en laboratorios (`CU-28` en `UI17`), agregar ponentes (`CU-10` en `UI29`), invitar asistentes a eventos privados (`CU-30`), asignar o registrar personal de logística (`CU-31`, `CU-32` en `UI27`) y cancelar sus eventos especificando un motivo obligatorio (`CU-29`).
+Este actor es responsable de la propuesta, creación y administración operativa de los eventos bajo su responsabilidad (privilegio otorgado por evento conforme a `RN-02`), pudiendo pertenecer a la comunidad institucional, a un club estudiantil o a una entidad externa. Sus capacidades incluyen consultar y administrar sus eventos únicos y multi-actividad (`CU-24` en `UI14`/`UI15`), reprogramar o reubicar su logística y cupo configurable (`CU-25` en `UI16`), actualizar la información general y requerimientos técnicos de laboratorio (`CU-26`, `CU-27`, `CU-28` en `UI15`/`UI16`), agregar ponentes (`CU-10` en `UI16`), invitar asistentes por subevento mediante correo, carga masiva o enlace privado (`/eventos/privado/:tokenSubEvento`, `CU-30`), asignar o registrar personal de logística (`CU-31`, `CU-32` en `UI27`) y cancelar sus eventos especificando un motivo obligatorio (`CU-29`).
 
 ### Subdirección de Servicios Educativos
 
-Este actor es el encargado de consultar y evaluar las solicitudes de eventos pendientes de aprobación (`CU-06`, `CU-07` en `UI11`/`UI12`), dictaminando si se aprueban, rechazan o requieren cambios (modal como subcomponente de `UI12`) con base en la agenda de disponibilidad y el impacto académico frente a las clases regulares. Asimismo, puede consultar los eventos aprobados (`CU-08` en `UI13`), cancelarlos justificadamente (`CU-09`), agregar ponentes (`CU-10` en `UI29`), solicitar eventos cuyas solicitudes se aprueban de forma automática (`CU-11` en `UI07`), registrar personal de logística (`CU-12` en `UI27`) y evaluar el estado de verificación de identidad de los usuarios (`CU-38` en `UI31`).
+Este actor es el encargado de consultar y evaluar las solicitudes de eventos pendientes de aprobación (`CU-06`, `CU-07` en `UI11`/`UI12`), dictaminando si se aprueban, rechazan o requieren cambios (modal como subcomponente de `UI12`) con base en la agenda de disponibilidad y el impacto académico frente a las clases regulares. Asimismo, puede consultar los eventos aprobados (`CU-08` en `UI13`), cancelarlos justificadamente (`CU-09`), agregar ponentes (`CU-10` en `UI16`), solicitar eventos cuyas solicitudes se aprueban de forma automática sin modal de urgencia (`CU-11` en `UI07`), registrar personal de logística (`CU-12` en `UI27`) y consultar la bandeja (`UI10`) y dictamen de verificación de identidad de los usuarios (`CU-38` en `UI31`).
 
 ### Personal de Logística
 
-Actor operativo cuyo propósito en el sistema es la validación de acceso de los asistentes en los eventos a los que ha sido asignado. Activa su cuenta por token (`UI24`), interactúa con el panel de eventos asignados (`CU-22` en `UI18`), visualiza los detalles del evento (`CU-05` en `UI05`) y utiliza la cámara del dispositivo desde el navegador web para escanear los códigos QR de los boletos digitales (`CU-23` en `UI19`), recibiendo el dictamen del sistema (acceso válido, código no reconocido o código ya validado) y actualizando el estado del boleto a `Ingresado`.
+Actor operativo cuyo propósito en el sistema es la validación de acceso de los asistentes en los eventos a los que ha sido asignado. Activa su cuenta mediante token (`/activar-logistica` dentro de `UI02`), interactúa con el panel de eventos asignados (`CU-22` en `UI18`), gestiona el control de acceso por subevento (`UI17`), visualiza los detalles del evento (`CU-05` en `UI05`) y utiliza la cámara del dispositivo desde el navegador web para escanear los códigos QR de los boletos digitales (`CU-23` en `UI19`), recibiendo el dictamen del sistema (acceso válido, código no reconocido o código ya validado) y actualizando el estado del boleto a `Ingresado`.
 
 ### Administrador
 
-Este actor cuenta con privilegios de gestión sobre las cuentas de usuario, la infraestructura de espacios físicos y la auditoría del sistema desde su menú principal (`UI26`). Puede registrar usuarios manualmente (`CU-13` en `UI33`), registrar jefes de área (`CU-33` en `UI34`), activar o desactivar cuentas de usuario mediante borrado lógico (`CU-34` en `UI21`), actualizar el estado operativo (`Activo`, `Mantenimiento`, `Inactivo`) y aforo máximo de los espacios físicos de ESCOM (`CU-35` en `UI22`), administrar el estado del inventario de equipos de cómputo por laboratorio (`CU-36` en `UI23`), consultar/exportar en formato PDF la bitácora histórica inmutable del sistema (`CU-37` en `UI20`) y gestionar el estado de verificación de usuarios (`CU-38` en `UI31`).
+Este actor cuenta con privilegios de gestión sobre las cuentas de usuario, la infraestructura de espacios físicos y la auditoría del sistema desde su menú principal (`UI26`). Puede asignar o revocar jefes de departamento con dominio `@ipn.mx` (`CU-33` en `UI24`), activar o desactivar cuentas de usuario mediante borrado lógico (`CU-34` en `UI21`), actualizar el estado operativo (`Activo`, `Mantenimiento`, `Inactivo`) y aforo máximo de los espacios físicos de ESCOM (`CU-35` en `UI22`), administrar el estado del inventario de equipos de cómputo por laboratorio (`CU-36` en `UI23`), consultar y exportar en formato CSV (`.csv`) la bitácora histórica inmutable del sistema (`CU-37` en `UI20`) y consultar/evaluar el estado de verificación de usuarios (`CU-38` en `UI10`/`UI31`).
 
 ---
 
@@ -62,48 +62,45 @@ Este actor cuenta con privilegios de gestión sobre las cuentas de usuario, la i
 
 ---
 
-## 3. Catálogo Oficial de Pantallas (`UI01` – `UI35`)
+## 3. Catálogo Oficial de Pantallas (`UI01` – `UI32`)
 
 > [!TIP] Guía de Estilo, Wireframes y Mockups en Figma
-> Para consultar la tipografía (`Merriweather`), paleta institucional (`#5F1B36` / `#1B585F`), tabla de correspondencia con los nombres de frames en Figma y capturas de **Wireframes** y **Mockups** (Desktop y Móvil), revisa [04-Diseno-UI](./04-Diseno-UI.md).
+> Para consultar la tipografía (`Merriweather`), paleta institucional (`#5F1B36` / `#1B585F`), tabla de correspondencia oficial `UI01`–`UI32` y capturas de **Wireframes** y **Mockups** (Desktop y Móvil), revisa [04-Diseno-UI](./04-Diseno-UI.md).
 
 | Actor / Rol | ID | Nombre de la Pantalla / Componente |
 | :--- | :---: | :--- |
-| Todos | `UI01` | Pantalla de Inicio de Sesión |
-| Asistente | `UI02` | Pantalla de Registro de Usuario |
+| Todos | `UI01` | Pantalla de Inicio de Sesión *(incluye solicitud `/recuperar-contrasena`)* |
+| Todos / Asistente / Logística | `UI02` | Pantalla de Registro de Usuario *(incluye `/confirmar-registro` y activación de logística `/activar-logistica`)* |
 | Asistente | `UI03` | Menú Principal del Asistente |
-| Todos / Público General | `UI04` | Cartelera de Eventos |
-| Todos / Público General | `UI05` | Detalles del Evento *(incluye subvista `UI05.1` Detalles del subevento)* |
-| Asistente | `UI06` | Mapa de Asientos y Disponibilidad del Recinto |
-| Asistente / Subdirección | `UI07` | Formulario de Solicitud de Evento |
-| Asistente | `UI08` | Consultar Mis Eventos (Reservas del Asistente) |
-| Asistente | `UI09` | Boleto Digital y Código QR |
-| Asistente | `UI10` | Bitácora de Eventos Realizados |
+| Todos / Público General | `UI04` | Cartelera de Eventos *(en todos sus casos)* |
+| Todos / Público General | `UI05` | Detalles del Evento *(incluye subvista `UI05.1` Detalles del subevento y acceso por enlace privado `/eventos/privado/:tokenSubEvento`)* |
+| Asistente | `UI06` | Mapa de Asientos y Disponibilidad del Recinto *(con retención temporal de 5 min)* |
+| Asistente / Subdirección | `UI07` | Formulario de Solicitud de Evento *(único y multi-actividad, cupo configurable y tooltips)* |
+| Asistente | `UI08` | Consultar sus Eventos (Reservas del Asistente o Mis Boletos) |
+| Asistente | `UI09` | Boleto Digital y Código QR *(Auditorio, Sala 14, Laboratorios y Móvil)* |
+| Subdirección / Administrador | `UI10` | Visualización de Verificación de Usuario por Subdirección (Solicitudes de Verificación de Cuentas) *(`/subdireccion/verificaciones`)* |
 | Subdirección de Servicios Educativos | `UI11` | Panel de Solicitudes Pendientes |
-| Subdirección de Servicios Educativos | `UI12` | Detalles del Evento para Evaluación *(incluye Modal de Solicitud de Cambios como subcomponente)* |
-| Subdirección de Servicios Educativos | `UI13` | Panel de Eventos |
-| Organizador | `UI14` | Panel de Consulta de Mis Eventos |
-| Organizador | `UI15` | Panel de Administración y Detalles del Evento |
-| Organizador | `UI16` | Formulario de Modificación de Evento |
-| Organizador | `UI17` | Requerimientos Técnicos de Laboratorio |
+| Subdirección de Servicios Educativos | `UI12` | Detalles de Evento para Evaluación *(incluye Modal de Solicitud de Cambios / Comparador Logístico)* |
+| Subdirección de Servicios Educativos | `UI13` | Panel de Eventos Aprobados |
+| Organizador | `UI14` | Panel Consultar Mis Eventos |
+| Organizador | `UI15` | Administración y Detalles del Evento (Único y Multi-actividad) |
+| Organizador | `UI16` | Formulario de Modificación de Evento *(Único y Multi-actividad; incluye ponentes, invitados por subevento y cupo)* |
+| Personal de Logística | `UI17` | Control de Acceso *(`/control-acceso/:idSubEvento`)* |
 | Personal de Logística | `UI18` | Panel de Eventos Asignados |
 | Personal de Logística | `UI19` | Pantalla de Escáner QR |
-| Administrador | `UI20` | Bitácora Histórica del Sistema |
+| Administrador | `UI20` | Bitácora Histórica de Eventos / del Sistema *(exportación CSV)* |
 | Administrador | `UI21` | Gestión de Cuentas de Usuario |
 | Administrador | `UI22` | Panel de Gestión de Espacios Físicos |
 | Administrador | `UI23` | Gestión de Equipos de Laboratorio |
-| Personal de Logística | `UI24` | Activación de Cuenta por Token |
+| Administrador | `UI24` | Asignar Jefes de Departamento *(antes `UI34`; solo `@ipn.mx`)* |
 | Subdirección de Servicios Educativos | `UI25` | Menú Principal de Subdirección |
-| Administrador | `UI26` | Menú Principal de Administrador |
+| Administrador | `UI26` | Menú Principal de Administración |
 | Subdirección / Organizador | `UI27` | Agregar Personal de Logística |
-| Todos | `UI28` | Visualizar Perfil de Usuario |
-| Subdirección / Organizador | `UI29` | Agregar Ponente al Evento |
-| Jefe de Área / Directivo | `UI30` | Panel de Supervisión y Calendario Institucional |
-| Subdirección / Administrador | `UI31` | Gestionar Estado de Verificación de Usuarios |
-| Asistente / Usuario Externo | `UI32` | Pantalla de Verificación de Identidad *(vigencia trimestral, PDF máx. 5 MB)* |
-| Administrador | `UI33` | Registro de Usuario desde Administrador |
-| Administrador | `UI34` | Asignación de Jefes de Departamento |
-| Público / Todos | `UI35` | Restablecer Contraseña *(asociada a `CU-39`)* |
+| Todos | `UI28` | Perfil de Usuario |
+| Todos / Público | `UI29` | Restablecer Contraseña *(asociada a `CU-39`, antes `UI35`)* |
+| Asistente | `UI30` | Reservar Lugar — Resumen de la Reservación *(admisión general y registro simple sin QR)* |
+| Subdirección / Administrador | `UI31` | Visualización de Verificación de Usuario por Subdirección (Detalle de Solicitud) *(`/subdireccion/verificaciones/:id`, constancia PDF en R2)* |
+| Asistente / Usuario Externo | `UI32` | Solicitud de Verificación de Cuenta / Identidad *(vigencia trimestral, PDF máx. 5 MB en R2)* |
 
 ---
 
@@ -308,13 +305,15 @@ Equipo de EventOS
 
 ---
 
-## 8. Notas de Consolidación (Versión 2.0 — Unificación Normativa UI35)
+## 8. Notas de Consolidación (Versión 2.1 — Catálogo `UI32` y Cupo Configurable sin Sobrecupo)
 
-- La cartelera y la visualización de detalles del evento quedaron como casos universales `CU-04` y `CU-05`.
-- El catálogo oficial consta de exactamente **35 pantallas consecutivas (`UI01` a `UI35`)**, en estricta sincronía 1:1 con Figma y los 39 Casos de Uso del sistema.
-- Se integra formalmente `UI17 Requerimientos Técnicos de Laboratorio` (mockup de Figma `mk-organizador-requerimientos-lab.png`), sincronizando correlativamente `UI18` a `UI24`.
-- El modal de solicitud de cambios al evento queda modelado como subcomponente operativo de `UI12` (Detalles del Evento para Evaluación), eliminando los identificadores huérfanos `UI36` y `UI37`.
-- El Menú Principal de Subdirección se consolida como `UI25`, y el Menú Principal de Administrador como `UI26`.
-- `UI27` unifica Agregar Personal de Logística tanto para Subdirección (`CU-12`) como para el Organizador (`CU-31`, `CU-32`), integrando su modal de registro por token de 48 horas (`UI24`).
-- `UI28` consolida la visualización de perfil (`CU-02`), `UI29` la asignación de ponentes (`CU-10`), `UI30` el panel directivo de supervisión y calendario institucional, `UI31` la gestión de verificación de usuarios por Subdirección/Administrador (`CU-38`), `UI32` la pantalla de verificación de identidad con comprobante PDF (`CU-21`), `UI33` el registro de usuarios por el Administrador (`CU-13`), `UI34` la asignación de jefes de departamento (`CU-33`), y `UI35` culmina el catálogo oficial con el restablecimiento de contraseñas (`CU-39`).
+- La cartelera y la visualización de detalles del evento se mantienen como casos universales `CU-04` (`UI04`) y `CU-05` (`UI05`/`UI05.1`, incluyendo acceso por enlace privado `/eventos/privado/:tokenSubEvento`).
+- El catálogo oficial validado contra la aplicación real consta de exactamente **32 pantallas (`UI01` a `UI32`)** en correspondencia con Figma y los **39 Casos de Uso (`CU-01`–`CU-39`)**:
+  - **Restablecer Contraseña (`CU-39`)** pasa de `UI35` a `UI29` (la solicitud desde `/recuperar-contrasena` se agrupa en `UI01`).
+  - **Asignar Jefes de Departamento (`CU-33`)** pasa de `UI34` a `UI24`, restringida al dominio `@ipn.mx` (excluyendo `@alumno.ipn.mx`).
+  - **Reservar Lugar (Resumen de la Reservación, `CU-15`)** ocupa `UI30` para admisión general y registro simple sin QR, mientras `UI09` representa el **Boleto Digital y Código QR** en Auditorio, Sala 14, Laboratorios y Móvil.
+  - **Visualización de Verificación de Usuario por Subdirección (Solicitudes de Verificación de Cuentas, `CU-38`)** ocupa `UI10` (`/subdireccion/verificaciones`) complementando el detalle y dictamen en `UI31` (**Visualización de Verificación de Usuario por Subdirección (Detalle de Solicitud)** en `/subdireccion/verificaciones/:id`) con constancia PDF (`<= 5 MB`) en bucket privado de Cloudflare R2.
+  - **Control de Acceso (`CU-22`/`CU-23`)** ocupa `UI17` (`/control-acceso/:idSubEvento`); la activación por token de logística (`/activar-logistica`) y confirmación de correo (`/confirmar-registro`) se consolidan bajo `UI02`; la captura de ponentes (`CU-10`) y requerimientos técnicos de laboratorio (`CU-28`) viven integrados en `UI15`/`UI16`; y la consulta de eventos pasados del asistente (`CU-14`) se gestiona dentro de `UI08` (descartando el calendario institucional previo y el alta manual exclusiva desde Administrador `UI33`).
+- Se simplifica `RN-07` sustituyendo el sobrecupo escalonado por **cupo máximo configurable sin sobrecupo (`min(cupoMaximo, aforoActualRecinto)`)** y se registran los aforos físicos oficiales confirmados por ESCOM (`Auditorio Principal: 242`, `Sala 14: 100`, `Laboratorios 2104–2107: 36 equipos para alumnos + 1 estación de docente`).
+- Se documentan las capacidades implementadas al cierre de `develop`: invitaciones privadas **por subevento** con carga masiva por lotes/CSV y enlace compartible, retención temporal de asientos (5 min en `UI06`), tooltips (`InfoTooltip`/`ModalidadAccesoHelp`), almacenamiento en Cloudflare R2, endurecimiento (`helmet` + sesión única JWT) y exportación de bitácora en CSV (`.csv`).
 

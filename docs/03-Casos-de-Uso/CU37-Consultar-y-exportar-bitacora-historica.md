@@ -3,7 +3,7 @@ caso_de_uso: "CU-37"
 nombre: "Consultar y exportar bitácora histórica"
 actor: "Administrador"
 proyecto: "EventOS"
-version: "2.0"
+version: "2.1"
 tags:
   - caso-de-uso
   - ads
@@ -19,7 +19,7 @@ tags:
 
 **Resumen:**
 
-Permitir al Administrador consultar y exportar los registros históricos de las actividades realizadas dentro de la plataforma, incluyendo eventos y acciones de los usuarios. La información podrá filtrarse y descargarse en un archivo PDF, garantizando que los registros originales no sean modificados.
+Permitir al Administrador consultar y exportar los registros históricos de las actividades realizadas dentro de la plataforma, incluyendo eventos y acciones de los usuarios. La información podrá filtrarse y descargarse en un archivo CSV (`.csv`), garantizando que los registros originales no sean modificados.
 
 **Descripción:**
 
@@ -29,11 +29,11 @@ Permitir al Administrador consultar y exportar los registros históricos de las 
 | **Autor** | Arciniega Valdez Yair Emmanuel |
 | **Actor** | Administrador |
 | **Propósito** | Permitir al Administrador consultar los registros históricos de las actividades del sistema y exportar la información para facilitar su revisión y utilización en auditorías institucionales, sin modificar los datos almacenados en la base de datos. |
-| **Entradas** | • ID del Administrador autenticado, obtenido de la sesión activa.<br>• Solicitud de consulta de la bitácora histórica.<br>• Criterios de búsqueda o filtrado por usuario, tipo de acción y periodo de tiempo (opcionales).<br>• Solicitud de exportación de los registros consultados.<br>• Formato de exportación PDF (.pdf). |
-| **Salidas** | • Pantalla **UI20** "Bitácora Histórica del Sistema".<br>• Listado de registros históricos, mostrando información como usuario responsable, acción realizada, fecha, hora y métricas consolidadas de eventos (**Inscritos** para todo registro y **Ingresados** para modalidades con boleto QR validado en `CU-23`).<br>• Archivo PDF con los registros consultados, cuando el actor solicite su exportación.<br>• Mensaje informativo **MSG-I-08** "Operación realizada con éxito.", cuando se complete correctamente la exportación. |
+| **Entradas** | • ID del Administrador autenticado, obtenido de la sesión activa.<br>• Solicitud de consulta de la bitácora histórica.<br>• Criterios de búsqueda o filtrado por usuario, tipo de acción y periodo de tiempo (opcionales).<br>• Solicitud de exportación de los registros consultados.<br>• Formato de exportación CSV (.csv). |
+| **Salidas** | • Pantalla **UI20** "Bitácora Histórica del Sistema".<br>• Listado de registros históricos, mostrando información como usuario responsable, acción realizada, fecha, hora y métricas consolidadas de eventos (**Inscritos** para todo registro y **Ingresados** para modalidades con boleto QR validado en `CU-23`).<br>• Archivo CSV (`.csv`) con los registros consultados, cuando el actor solicite su exportación.<br>• Mensaje informativo **MSG-I-08** "Operación realizada con éxito.", cuando se complete correctamente la exportación. |
 | **Precondiciones** | • El actor debe contar con una cuenta registrada y activa dentro de la plataforma.<br>• El actor debe haber iniciado sesión correctamente mediante el CU-01 "Iniciar Sesión".<br>• El actor debe tener asignado el rol de Administrador.<br>• El actor debe contar con permisos para consultar y exportar los registros históricos del sistema. |
-| **Postcondiciones** | • El Administrador visualiza los registros históricos almacenados en la base de datos.<br>• Si el actor utiliza filtros, el sistema muestra únicamente los registros que cumplen con los criterios seleccionados.<br>• Si el actor solicita la exportación, se genera un archivo PDF con la información consultada.<br>• Los registros originales de la bitácora permanecen sin modificaciones en la base de datos.<br>• Si el Administrador decide no exportar la información, únicamente se realiza la consulta.<br>• La sesión del Administrador permanece activa. |
-| **Errores** | • Se mostrará el mensaje **MSG-E-08** "Error de conexión con la base de datos.", cuando el sistema no pueda recuperar la información histórica.<br>• Se mostrará el mensaje **MSG-E-31** "No hay registros de eventos disponibles.", cuando la bitácora no contenga registros para consultar.<br>• Se mostrará el mensaje **MSG-I-23** "No se encontraron registros que coincidan con los filtros seleccionados.", cuando la búsqueda no devuelva resultados.<br>• Se mostrará el mensaje **MSG-E-32** "Error al exportar el archivo.", cuando ocurra una falla durante la generación del archivo PDF. |
+| **Postcondiciones** | • El Administrador visualiza los registros históricos almacenados en la base de datos.<br>• Si el actor utiliza filtros, el sistema muestra únicamente los registros que cumplen con los criterios seleccionados.<br>• Si el actor solicita la exportación, se genera un archivo CSV (`.csv`) con la información consultada.<br>• Los registros originales de la bitácora permanecen sin modificaciones en la base de datos.<br>• Si el Administrador decide no exportar la información, únicamente se realiza la consulta.<br>• La sesión del Administrador permanece activa. |
+| **Errores** | • Se mostrará el mensaje **MSG-E-08** "Error de conexión con la base de datos.", cuando el sistema no pueda recuperar la información histórica.<br>• Se mostrará el mensaje **MSG-E-31** "No hay registros de eventos disponibles.", cuando la bitácora no contenga registros para consultar.<br>• Se mostrará el mensaje **MSG-I-23** "No se encontraron registros que coincidan con los filtros seleccionados.", cuando la búsqueda no devuelva resultados.<br>• Se mostrará el mensaje **MSG-E-32** "Error al exportar el archivo.", cuando ocurra una falla durante la generación del archivo CSV. |
 | **Tipo** | Primario para el actor Administrador. |
 
 **Trayectorias del caso de uso:**
@@ -47,11 +47,11 @@ Permitir al Administrador consultar y exportar los registros históricos de las 
 4. Muestra la pantalla **UI20** "Bitácora Histórica del Sistema", presentando los registros ordenados cronológicamente del más reciente al más antiguo, incluyendo usuario, acción realizada, fecha y hora.
 5. Consulta los registros históricos y, de manera opcional, ingresa criterios de búsqueda o selecciona filtros para localizar información específica.
 6. Aplica los filtros seleccionados y actualiza el listado de registros mostrados en la pantalla **UI20** "Bitácora Histórica del Sistema". [Trayectoria A]
-7. Selecciona la opción [Exportar PDF] para descargar los registros consultados. [Trayectoria D]
-8. Genera un archivo PDF con los registros mostrados de acuerdo con los filtros aplicados, sin modificar la información original de la base de datos. [Trayectoria C]
+7. Selecciona la opción [Exportar CSV] para descargar los registros consultados. [Trayectoria D]
+8. Genera un archivo CSV (`text/csv`, `.csv`) con los registros mostrados de acuerdo con los filtros aplicados, sin modificar la información original de la base de datos. [Trayectoria C]
 9. Completa la generación del archivo y pone a disposición del actor su descarga.
 10. Muestra el mensaje **MSG-I-08** "Operación realizada con éxito." en la pantalla **UI20** "Bitácora Histórica del Sistema".
-11. Descarga el archivo PDF y finaliza la operación.
+11. Descarga el archivo CSV y finaliza la operación.
 
 *Fin de la trayectoria.*
 
@@ -82,12 +82,12 @@ Permitir al Administrador consultar y exportar los registros históricos de las 
 
 ### Trayectoria alternativa C: Error al exportar el archivo
 
-> **Condición:** Ocurre en el paso 8 de la trayectoria principal cuando el sistema presenta un error durante la generación del archivo PDF.
+> **Condición:** Ocurre en el paso 8 de la trayectoria principal cuando el sistema presenta un error durante la generación del archivo CSV.
 
-- **C-1.** Detecta una falla al intentar generar el archivo PDF con los registros históricos consultados.
+- **C-1.** Detecta una falla al intentar generar el archivo CSV con los registros históricos consultados.
 - **C-2.** Detiene el proceso de exportación y muestra el mensaje **MSG-E-32** "Error al exportar el archivo.".
 - **C-3.** Mantiene al Administrador en la pantalla **UI20** "Bitácora Histórica del Sistema", conservando los filtros y registros consultados.
-- **C-4.** Puede seleccionar nuevamente la opción [Exportar PDF] para intentar generar el archivo.
+- **C-4.** Puede seleccionar nuevamente la opción [Exportar CSV] para intentar generar el archivo.
 
 *Fin de la trayectoria.*
 
@@ -96,7 +96,7 @@ Permitir al Administrador consultar y exportar los registros históricos de las 
 
 > **Condición:** Ocurre en el paso 7 de la trayectoria principal cuando el Administrador decide únicamente consultar los registros históricos sin realizar una exportación.
 
-- **D-1.** Revisa la información presentada en la pantalla **UI20** "Bitácora Histórica del Sistema" y decide no seleccionar la opción [Exportar PDF].
+- **D-1.** Revisa la información presentada en la pantalla **UI20** "Bitácora Histórica del Sistema" y decide no seleccionar la opción [Exportar CSV].
 - **D-2.** Mantiene disponibles los registros históricos consultados y los filtros aplicados, sin generar ningún archivo.
 - **D-3.** Finaliza la consulta o regresa a la pantalla **UI26** "Menú Principal de Administrador".
 

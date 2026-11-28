@@ -3,7 +3,7 @@ caso_de_uso: "CU-35"
 nombre: "Gestionar espacios físicos"
 actor: "Administrador"
 proyecto: "EventOS"
-version: "2.0"
+version: "2.1"
 tags:
   - caso-de-uso
   - ads
@@ -28,7 +28,7 @@ Permitir al Administrador consultar y modificar el estado operativo de los espac
 | **Caso de uso** | **CU-35 Gestionar espacios físicos** |
 | **Autor** | Zempoalteca Salinas Enrique |
 | **Actor** | Administrador |
-| **Propósito** | Permitir al Administrador mantener actualizada la información de los espacios físicos de la Escuela Superior de Cómputo (ESCOM), controlando su aforo máximo y disponibilidad mediante la modificación de su estado operativo. |
+| **Propósito** | Permitir al Administrador mantener actualizada la información de los espacios físicos de la Escuela Superior de Cómputo (ESCOM) —**Auditorio Principal (`242`)**, **Sala 14 (`100`)** y **Laboratorios `2104`–`2107` (`36` equipos para alumno + `1` estación docente)**—, controlando su aforo máximo oficial sin sobrecupo (`RN-07`, techo operativo en `min(cupoMaximo, aforoRecinto)`) y disponibilidad mediante la modificación de su estado operativo. |
 | **Entradas** | • ID del Administrador autenticado, obtenido de la sesión activa.<br>• ID del recinto seleccionado.<br>• Nuevo estado del recinto: Activo, Mantenimiento o Inactivo.<br>• Aforo máximo del recinto, en caso de requerir una actualización.<br>• Confirmación de los cambios realizados. |
 | **Salidas** | • Pantalla **UI22** "Panel de Gestión de Espacios Físicos".<br>• Listado de tarjetas representativas de los recintos registrados, mostrando su nombre, tipo, aforo máximo y estado operativo.<br>• Mensaje de confirmación **MSG-P-06** "¿Desea confirmar la actualización del recinto seleccionado?".<br>• Mensaje informativo **MSG-I-13** "Operación realizada con éxito. Recinto actualizado.".<br>• Actualización de la información y disponibilidad del recinto seleccionado. |
 | **Precondiciones** | • El actor debe contar con una cuenta registrada y activa dentro de la plataforma.<br>• El actor debe haber iniciado sesión correctamente mediante el CU-01 "Iniciar Sesión".<br>• El actor debe tener asignado el rol de Administrador.<br>• El espacio físico que se desea modificar debe encontrarse previamente registrado en la base de datos. |
@@ -45,7 +45,7 @@ Permitir al Administrador consultar y modificar el estado operativo de los espac
 2. Consulta en la base de datos la información de los espacios físicos registrados en la plataforma. [Trayectoria B]
 3. Muestra la pantalla **UI22** "Panel de Gestión de Espacios Físicos", presentando las tarjetas de los recintos con su nombre, tipo, aforo máximo y estado operativo.
 4. Selecciona la tarjeta correspondiente al recinto que desea modificar.
-5. Muestra la información actual del recinto seleccionado, permitiendo modificar su aforo máximo y estado operativo.
+5. Muestra la información actual del recinto seleccionado, permitiendo modificar su aforo máximo oficial (techo físico sin sobrecupo conforme a `RN-07` y `RN-18`) y estado operativo.
 6. Selecciona el nuevo estado del recinto entre las opciones "Activo", "Mantenimiento" o "Inactivo", o modifica su aforo máximo, según corresponda, y selecciona la opción [Guardar cambios].
 7. Valida que los datos ingresados sean correctos y que el aforo máximo, en caso de haberse modificado, sea un número entero positivo. [Trayectoria D]
 8. Si se modifica el aforo, verifica que no se afecten reservas aprobadas; la inhabilitación por mantenimiento se gestiona según RN-37. [Trayectoria C]

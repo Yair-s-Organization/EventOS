@@ -4,7 +4,7 @@ layout: home
 hero:
   name: "EventOS"
   text: "Gestión de Eventos y Control de Acceso"
-  tagline: "Documentación Oficial de Análisis y Diseño de Sistemas (v2.0) — Equipo Sinergia Ágil (ESCOM - IPN)"
+  tagline: "Documentación Oficial de Análisis y Diseño de Sistemas (v2.1) — Equipo Sinergia Ágil (ESCOM - IPN)"
   actions:
     - theme: brand
       text: Explorar Hub del Proyecto
@@ -19,16 +19,16 @@ hero:
 features:
   - icon: 🎓
     title: Ámbito Institucional (ESCOM / IPN)
-    details: Auditorio, Sala 14 y Laboratorios de cómputo con validación de correos @alumno.ipn.mx y @ipn.mx, candado de identidad y evaluación de expedientes (CU-38 en UI31).
+    details: Auditorio (242), Sala 14 (100) y Laboratorios (36 alumnos + 1 docente) con validación @alumno.ipn.mx / @ipn.mx, candado de identidad en bucket privado R2 y dictamen de expedientes (CU-38 en UI10 y UI31).
   - icon: 🎫
     title: Boletos Digitales y Acceso QR
-    details: Control de acceso firmado criptográficamente, sobrecupo escalonado controlado, eventos privados lean por token de invitación y validación por personal de logística.
+    details: Control de acceso firmado criptográficamente, cupo configurable sin sobrecupo por subevento, retención temporal de asientos (5 min), invitaciones privadas por subevento con carga masiva/enlace y control en UI17/UI19.
   - icon: ⚡
     title: Arquitectura Moderna (100% Bun)
-    details: Monorepo con NestJS, TypeORM, PostgreSQL 18, React, Vite y MinIO/Cloudflare R2.
+    details: Monorepo con NestJS, TypeORM, PostgreSQL 18, React, Vite y MinIO/Cloudflare R2 (público/privado).
   - icon: 📑
-    title: Especificación Consolidada v2.0
-    details: 39 Casos de Uso detallados (CU-01–CU-39), 45 Reglas de Negocio, catálogo de 35 pantallas oficiales (UI01–UI35) y mensajes MSG-E, MSG-I y MSG-P.
+    title: Especificación Consolidada v2.1
+    details: 39 Casos de Uso detallados (CU-01–CU-39), 28 RF, 27 RNF, 45 Reglas de Negocio, catálogo confirmado de 32 pantallas oficiales (UI01–UI32) y mensajes MSG-E, MSG-I y MSG-P.
 ---
 
 <style>

@@ -3,7 +3,7 @@ caso_de_uso: "CU-31"
 nombre: "Asignar personal de logística"
 actor: "Organizador"
 proyecto: "EventOS"
-version: "2.0"
+version: "2.1"
 tags:
   - caso-de-uso
   - ads
@@ -29,7 +29,7 @@ tags:
 | **Propósito** | Permitir al organizador buscar opciones entre los usuarios del sistema para asignarlos como parte del personal de logística de su evento ya agendado. |
 | **Entradas** | Click en el botón “Asignar” sobre un candidato de la lista de usuarios del sistema. |
 | **Salidas** | • Pantalla **UI27** "Agregar Personal de Logística".<br>• Se mostrará en pantalla el mensaje MSG-I-08 Operación realizada con éxito.<br>• Actualización del contador de logística asignada vs logística requerido. |
-| **Precondiciones** | Que el organizador tenga un evento en estado “Aprobado” o “Activo”.<br>Que haya usuarios activos en el sistema. |
+| **Precondiciones** | Que el organizador tenga un evento en estado “Aprobado” o “Activo” sin haber alcanzado el límite de 10 integrantes (`RN-41`, `MSG-E-50`).<br>Que haya usuarios activos en el sistema sin reserva previa como asistente en ese evento (`RN-21`, `MSG-E-12`). |
 | **Postcondiciones** | Después de asignar al usuario como personal de logística, el sistema asigna el permiso temporal de “Personal de Logística” a ese usuario, exclusivamente para ese evento. |
 | **Errores** | Se mostrará el MSG-E-08 Error de conexión con la base de datos en caso de fallo de red. |
 | **Tipo** | Secundario para el Organizador, viene del caso de uso CU-24 Consultar mis eventos (`<<extend>>`). |

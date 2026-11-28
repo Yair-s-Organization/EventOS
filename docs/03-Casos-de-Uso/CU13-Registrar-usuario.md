@@ -3,7 +3,7 @@ caso_de_uso: "CU-13"
 nombre: "Registrar usuario"
 actor: "Asistente (usuario que se registra) y Administrador (registro manual de cuentas)."
 proyecto: "EventOS"
-version: "2.0"
+version: "2.1"
 tags:
   - caso-de-uso
   - ads
@@ -17,7 +17,7 @@ tags:
 > - [Requerimientos y Reglas de Negocio](../01-Requerimientos-y-Reglas-de-Negocio.md)
 > - [Catálogos de Pantallas y Mensajes](../02-Actores-y-Catalogos.md)
 
-**Resumen:** Permitir que una persona registre una cuenta desde la pantalla de Registro, capturando sus datos personales y credenciales. El Administrador también puede crear cuentas manualmente y asignarles un rol permitido.
+**Resumen:** Permitir que una persona registre una cuenta desde la pantalla de Registro (`UI02`), capturando sus datos personales y credenciales, y complete la confirmación de correo en `/confirmar-registro` (así como la activación por token `/activar-logistica` para invitados de logística).
 
 **Descripción:**
 
@@ -25,12 +25,12 @@ tags:
 | :--- | :--- |
 | **Caso de uso** | **CU-13 Registrar usuario** |
 | **Autor** | Por definir. |
-| **Actor** | Asistente (usuario que se registra) y Administrador (registro manual de cuentas). |
-| **Propósito** | Permitir el alta de usuarios con datos y credenciales válidas, evitando cuentas duplicadas y distinguiendo el registro público de la creación manual autorizada al Administrador. |
-| **Entradas** | • Nombre, apellido paterno, apellido materno, correo electrónico, contraseña y confirmación de contraseña (obligatorios).<br>• Rol de la cuenta (únicamente en el alta manual realizada por Administrador: Asistente o Subdirección de Servicios Educativos). |
-| **Salidas** | • Pantalla **UI02** "Pantalla de Registro de Usuario".<br>• Mensaje **MSG-I-08** "Operación realizada con éxito." después de guardar la cuenta.<br>• Cuenta registrada, clasificada como Usuario Interno o Usuario Externo según su dominio (RN-01).<br>• Correo de bienvenida con confirmación de registro enviado a la dirección del nuevo usuario. |
-| **Precondiciones** | • Para el registro público, la persona no necesita una sesión iniciada.<br>• Para el alta manual, el Administrador debe tener una cuenta activa y haber iniciado sesión desde CU-01. |
-| **Postcondiciones** | • Se crea una cuenta sin duplicar el correo electrónico.<br>• El sistema clasifica el dominio institucional o externo (RN-01).<br>• El alta manual asigna únicamente el rol permitido elegido por el Administrador (RF-24).<br>• Ningún usuario obtiene automáticamente permisos generales de Administrador mediante el registro público.<br>• El sistema envía un correo de bienvenida y confirmación de cuenta después del alta exitosa. |
+| **Actor** | Asistente (usuario que se registra) / Invitado de Personal de Logística. |
+| **Propósito** | Permitir el alta de usuarios con datos y credenciales válidas mediante autogestión y verificación por correo electrónico, evitando cuentas duplicadas y clasificando cuentas internas o externas (`RN-01`). |
+| **Entradas** | • Nombre, apellido paterno, apellido materno, correo electrónico, contraseña y confirmación de contraseña (obligatorios).<br>• Token de confirmación (`/confirmar-registro`) o token de activación de logística (`/activar-logistica`, cuando proviene de `CU-12`/`CU-32`). |
+| **Salidas** | • Pantalla **UI02** "Pantalla de Registro de Usuario" (y vistas `/confirmar-registro` y `/activar-logistica` asociadas a `UI02`).<br>• Mensaje **MSG-I-08** "Operación realizada con éxito." después de guardar/confirmar la cuenta.<br>• Cuenta registrada, clasificada como Usuario Interno o Usuario Externo según su dominio (RN-01).<br>• Correo de confirmación enviado a la dirección del nuevo usuario. |
+| **Precondiciones** | • Para el registro público o activación por token, la persona no necesita una sesión iniciada.<br>• Para asignación de jefaturas de departamento sobre cuentas registradas, el Administrador opera desde `CU-33` (`UI24`). |
+| **Postcondiciones** | • Se crea una cuenta sin duplicar el correo electrónico.<br>• El sistema clasifica el dominio institucional o externo (RN-01).<br>• Ningún usuario obtiene automáticamente permisos generales de Administrador o Jefatura mediante el registro público.<br>• El sistema envía un correo de confirmación de registro para habilitar la cuenta en `/confirmar-registro` (o la activa tras validar el token en `/activar-logistica`). |
 | **Errores** | • **MSG-E-11** cuando algún campo obligatorio esté vacío.<br>• **MSG-E-21** cuando el correo no tenga un formato válido.<br>• **MSG-E-37** cuando el correo ya exista.<br>• **MSG-E-46** cuando las contraseñas no coincidan.<br>• **MSG-E-08** cuando no sea posible guardar la cuenta. |
 | **Tipo** | Primario para el Asistente y el Administrador. |
 
@@ -83,13 +83,13 @@ tags:
 *Fin de la trayectoria.*
 
 
-### Trayectoria alternativa D: Registro manual realizado por Administrador
+### Trayectoria alternativa D: Confirmación de correo o activación de logística por token
 
-> **Condición:** El Administrador selecciona [Registrar usuario] desde **UI21** "Gestión de Cuentas de Usuario".
+> **Condición:** El usuario abre el enlace de confirmación (`/confirmar-registro`) tras registrarse, o el enlace de invitación de logística (`/activar-logistica`, `CU-12` / `CU-32`) en **UI02**.
 
-- **D-1.** El sistema abre el formulario **UI02** para captura manual y permite asignar únicamente el rol Asistente o Subdirección de Servicios Educativos (RF-24).
-- **D-2.** El Administrador completa los datos del usuario y selecciona [Registrar].
-- **D-3.** Continúa las validaciones desde el paso 4 de la trayectoria principal y guarda la cuenta con el rol seleccionado.
+- **D-1.** El sistema valida la vigencia e integridad del token recibido.
+- **D-2.** En `/confirmar-registro`, activa definitivamente la cuenta recién registrada; en `/activar-logistica`, permite capturar nombre completo y contraseña con vigencia de 48 horas, activando la cuenta con el permiso del evento asignado (`RN-41`).
+- **D-3.** Muestra **MSG-I-08** y habilita el inicio de sesión en **UI01**.
 
 *Fin de la trayectoria.*
 
