@@ -85,7 +85,7 @@ export function ModalMotivo({
 
       <Modal
         mostrarModal={mostrarModalAviso}
-        titulo="Confirmar modificación logística"
+        titulo="Confirmar modificación de evento"
         contenido="Los cambios que desea realizar requieren una nueva revisión, su evento pasara a pendiente, hasta que subdirección lo vuelva a autorizar"
         cerrarModal={onCerrarAviso}
       >

@@ -17,6 +17,7 @@ import type {
 
 interface SeccionDatosEventoProps extends PropsValidacionFormulario {
   form: FormularioSolicitudData;
+  posterResetKey?: number;
   actualizarCampo: (field: CampoTextoFormulario, value: string) => void;
   actualizarPoster: (poster: File | null) => void;
 }
@@ -29,6 +30,7 @@ const CATEGORIAS = [
 
 export function SeccionDatosEvento({
   form,
+  posterResetKey = 0,
   actualizarCampo,
   actualizarPoster,
   errores: errors,
@@ -36,7 +38,7 @@ export function SeccionDatosEvento({
   esTocado: markTouched,
 }: SeccionDatosEventoProps) {
   return (
-    <section className="space-y-5 rounded-xl border border-gray-200 shadow-md p-5 bg-white">
+    <section className="space-y-5 rounded-md bg-white border border-gray-200 shadow-md p-5">
       <FormHeader
         titulo="Datos del evento"
         descripcion="Ingresa la información principal de tu evento, la visibilidad que tendrá en la cartelera y el beneficio que aporta a la comunidad politécnica para que Subdirección evalúe tu solicitud."
@@ -45,6 +47,8 @@ export function SeccionDatosEvento({
         <span className="block text-xs text-red-500">*</span>
         <span className="block text-xs">Campos obligatorios</span>
       </div>
+      {/*       bg-white rounded-md border border-gray-200 shadow-md
+       */}{" "}
       <div
         id="camposEvento"
         className="grid min-w-0 grid-cols-1 gap-6 md:grid-cols-3 xl:grid-cols-3"
@@ -100,6 +104,7 @@ export function SeccionDatosEvento({
             errorMessage={touched.rutaPoster ? errors.rutaPoster : undefined}
           >
             <InputFile
+              key={posterResetKey}
               id="campoPoster"
               accept=".jpg"
               hasError={Boolean(touched.rutaPoster && errors.rutaPoster)}

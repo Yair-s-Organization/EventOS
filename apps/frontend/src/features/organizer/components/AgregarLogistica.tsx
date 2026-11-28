@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router";
+import { useLocation, useNavigate, useParams } from "react-router";
 import type {
   EventoOrganizadorDetalle,
   PersonalLogisticaItem,
@@ -35,6 +35,8 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 export function AgregarLogistica() {
   const { idEvento } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const returnTo = (location.state as { returnTo?: string } | null)?.returnTo;
 
   const [nombreEvento, setNombreEvento] = useState("");
   const [tieneSubeventos, setTieneSubeventos] = useState(false);
@@ -367,7 +369,11 @@ export function AgregarLogistica() {
     );
   }
 
-  const ruta = `/organizador/editar-evento/${idEvento}`;
+  const ruta =
+    returnTo ??
+    (tieneSubeventos
+      ? `/organizador/editar-evento-subeventos/${idEvento}`
+      : `/organizador/editar-evento/${idEvento}`);
 
   return (
     <section id="seccionLogistica" className="space-y-10">

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router";
+import { Navigate, useNavigate, useParams } from "react-router";
 import { ArrowLeft } from "lucide-react";
 import {
   AlcanceEvento,
@@ -60,7 +60,7 @@ const columnasLogistica: Columna<PersonalLogisticaItem>[] = [
     id: "correo",
     encabezado: "Correo",
     render: (personal) => personal.correo,
-    className: "min-w-[32rem] max-w-[32rem] break-all px-3",
+    className: "min-w-[32rem] break-all px-3",
   },
 ];
 
@@ -341,6 +341,12 @@ export function AdministracionEventoConSubeventos() {
         subevento.descripcion.trim().length > 0,
     ) ?? [];
 
+  if (datosEvento && subeventosCompletos.length === 1) {
+    return (
+      <Navigate to={`/organizador/administrar-evento/${idEvento}`} replace />
+    );
+  }
+
   return (
     <section className="mx-auto w-full max-w-7xl space-y-8 px-4 sm:px-6 lg:space-y-10 lg:px-8">
       <div id="contenedorTituloBanner" className="space-y-4 sm:space-y-5">
@@ -376,23 +382,29 @@ export function AdministracionEventoConSubeventos() {
       {datosEvento && (
         <>
           {datosEvento.idEstadoEvento === EstadoEvento.RECHAZADO && (
-            <div className="flex flex-col space-y-2 border border-red-500 rounded-md bg-red-50 p-5 shadow-md">
-              <div
-                role="alert"
-                className="flex flex-col-reverse sm:flex-row gap-3 justify-between"
-              >
-                <div className="flex items-center gap-2">
-                  <h2 className="font-bold text-gray-900">Motivo de rechazo</h2>
+            <div
+              role="alert"
+              className="space-y-3 rounded-md border border-eventos-error bg-red-50 p-5 shadow-md"
+            >
+              <div className="flex flex-col-reverse gap-5 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h2 className="text-base font-bold sm:text-lg">
+                    Subdirección ha determinado que tu solictud sea rechazada
+                  </h2>
                 </div>
                 <div>
-                  <Badge variant="error">Solicitud rechazada</Badge>
+                  <Badge className="py-1" variant="error">
+                    Solicitud rechazada
+                  </Badge>
                 </div>
               </div>
-              <div>
-                <p className="break-words text-base text-red-900  ">
-                  {datosEvento.motivoRechazo ||
-                    "No se especificó un motivo para el rechazo de la solicitud."}
-                </p>
+              <div className="text-[16px] text-justify break-words">
+                <span className="font-semibold">Motivo de rechazo: </span>
+                {datosEvento.motivoRechazo ||
+                  "No se especificó un motivo para el rechazo de la solicitud."}
+              </div>
+              <div className="space-y-2 text-justify">
+                <p className="text-xs "></p>
               </div>
             </div>
           )}
@@ -400,29 +412,34 @@ export function AdministracionEventoConSubeventos() {
           {datosEvento.solicitudModificacionPendiente && (
             <div
               role="status"
-              className="space-y-2 rounded-md border border-amber-300 bg-amber-50 p-5 text-amber-950 shadow-md"
+              className="space-y-3 rounded-md border border-amber-300 bg-amber-50 p-5 shadow-md"
             >
-              <div className="flex justify-between gap-2">
+              <div className="flex flex-col-reverse gap-5 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <h2 className="text-1xl font-bold text-amber-950">
+                  <h2 className="text-base font-bold sm:text-lg">
                     Modificación logística pendiente de evaluación por
                     Subdirección
                   </h2>
                 </div>
                 <div>
-                  <Badge variant="warning">Solicitud en revisión</Badge>
+                  <Badge className="py-1" variant="warning">
+                    Solicitud en revisión
+                  </Badge>
                 </div>
               </div>
-              <div className="text-[16px] text-amber-900 break-words">
-                <span className="font-semibold">Motivo registrado:</span>
+              <div className="text-[16px] text-justify break-words">
+                <span className="font-semibold">Motivo registrado: </span>
                 {datosEvento.solicitudModificacionPendiente.motivoModificacion}
               </div>
-              <p className="text-xs text-amber-800">
-                Mientras Subdirección dictamina esta solicitud, el evento
-                conserva vigentes sus fechas y espacios originales. Si realizas
-                otro cambio logístico, se actualizará esta misma solicitud sin
-                generar duplicados.
-              </p>
+              <div className="space-y-2 text-justify">
+                <hr className="text-gray-400" />
+                <p className="text-xs ">
+                  Mientras Subdirección dictamina esta solicitud, el evento
+                  conserva vigentes sus fechas y espacios originales. Si
+                  realizas otro cambio logístico, se actualizará esta misma
+                  solicitud sin generar duplicados.
+                </p>
+              </div>
             </div>
           )}
 
@@ -431,7 +448,6 @@ export function AdministracionEventoConSubeventos() {
               {datosEvento.nombre}
             </h2>
             <div>
-              <h2 className="font-bold">Descripción</h2>
               <p className="break-words">{datosEvento.descripcion}</p>
             </div>
             <div>
@@ -455,13 +471,13 @@ export function AdministracionEventoConSubeventos() {
             {datosEvento.personalLogistica.length > 0 ? (
               <div
                 id="contenedorLogistica"
-                className="shadow-md w-fit overflow-x-auto rounded-md"
+                className="w-full max-w-full overflow-x-auto rounded-md border border-gray-200 shadow-sm lg:w-150"
               >
                 <Table
                   columnas={columnasLogistica}
                   filas={datosEvento.personalLogistica}
                   obtenerClave={(personal) => personal.idUsuario}
-                  className="bg-white text-left text-sm [&_tbody_tr]:h-12 [&_thead_tr]:h-10 [&_th]:py-2 [&_td]:py-2"
+                  className="w-full min-w-full bg-white text-left text-sm [&_tbody_tr]:h-12 [&_thead_tr]:h-10 [&_th]:py-2 [&_td]:py-2"
                 />
               </div>
             ) : (
@@ -506,11 +522,12 @@ export function AdministracionEventoConSubeventos() {
           )}
           {datosEvento.idEstadoEvento !== EstadoEvento.RECHAZADO &&
             datosEvento.idEstadoEvento !== EstadoEvento.CANCELADO && (
-              <div className="flex flex-wrap justify-end gap-3">
+              <div className="w-full flex inline-flex justify-end md:justify-end gap-3">
                 <Button
                   text="Cancelar evento"
                   variant="danger"
                   type="button"
+                  className="whitespace-nowrap"
                   onClick={() => {
                     setMotivoCancelacion("");
                     setErrorMotivoCancelacion("");
@@ -521,6 +538,7 @@ export function AdministracionEventoConSubeventos() {
                   text="Modificar evento"
                   variant="primary"
                   type="button"
+                  className="whitespace-nowrap"
                   onClick={() =>
                     navigate(
                       `/organizador/editar-evento-subeventos/${datosEvento.idEvento}`,
@@ -532,21 +550,24 @@ export function AdministracionEventoConSubeventos() {
 
           {mostrarModalCancelar && (
             <Modal
-              titulo="Motivo de cancelación"
+              titulo="Cancelación del evento"
               contenido="Por favor, ingresa el motivo por el cual cancelas este evento. Esta justificación será notificada a los asistentes."
               mostrarModal={mostrarModalCancelar}
               cerrarModal={() => setMostrarModalCancelar(false)}
             >
-              <span className="text-xs text-gray-500">
-                Máximo 500 caracteres
-              </span>
-              <FormField errorMessage={errorMotivoCancelacion}>
+              <FormField
+                label="Motivo de cancelación"
+                required
+                errorMessage={errorMotivoCancelacion}
+              >
+                <span className="text-xs text-gray-500">
+                  Máximo 500 caracteres y mínimo 10 caracteres
+                </span>
                 <TextArea
                   id="contenedorMotivoCancelacion"
                   className="h-32 resize-none"
                   value={motivoCancelacion}
                   maxLength={500}
-                  hasError={Boolean(errorMotivoCancelacion)}
                   onChange={(e) => {
                     setMotivoCancelacion(e.currentTarget.value);
                     if (errorMotivoCancelacion) setErrorMotivoCancelacion("");
@@ -564,20 +585,8 @@ export function AdministracionEventoConSubeventos() {
                   text="Continuar"
                   variant="primary"
                   type="button"
+                  disabled={motivoCancelacion.trim().length < 10}
                   onClick={() => {
-                    const limpio = motivoCancelacion.trim();
-                    if (!limpio) {
-                      setErrorMotivoCancelacion(
-                        "Dato requerido faltante. La justificación no puede estar vacía.",
-                      );
-                      return;
-                    }
-                    if (limpio.length > 500) {
-                      setErrorMotivoCancelacion(
-                        "La descripción excede el límite máximo de caracteres permitidos.",
-                      );
-                      return;
-                    }
                     setMostrarModalCancelar(false);
                     setMostrarConfirmacionCancelar(true);
                   }}

@@ -22,7 +22,7 @@ import { SpaceRequerimentsDialog } from "../../components/organisms/SpaceRequire
 import { Modal } from "../../components/molecules/Modal";
 import { TextArea } from "../../components/atoms/TextArea/TextArea";
 import { FormField } from "../../components/molecules/FormField";
-import { useNavigate } from "react-router";
+import { Navigate, useNavigate } from "react-router";
 import { apiRequest } from "../../lib/apiClient";
 
 import { Badge } from "../../components/atoms/Badge/Badge";
@@ -353,20 +353,21 @@ export function AdministracionEvento() {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [mostrarModal, setMostrarModal] = useState(false);
+
+  const subeventosActivos =
+    datosEvento?.subEventos.filter(
+      (item) => item.estado !== EstadoSubEvento.CANCELADO,
+    ) ?? [];
+
   const subevento = datosEvento
     ? idSubEventoSeleccionado
-      ? (datosEvento.subEventos.find(
+      ? (subeventosActivos.find(
           (item) => item.idSubEvento === idSubEventoSeleccionado,
         ) ?? null)
-      : datosEvento.subEventos.length === 1
-        ? datosEvento.subEventos[0]
+      : subeventosActivos.length === 1
+        ? subeventosActivos[0]
         : null
     : null;
-  const subeventosVisibles = idSubEvento
-    ? subevento
-      ? [subevento]
-      : []
-    : (datosEvento?.subEventos ?? []);
   const personalLogistica =
     subevento && datosEvento ? (datosEvento.personalLogistica ?? []) : [];
   const invitados = subevento
@@ -457,19 +458,22 @@ export function AdministracionEvento() {
     return () => controller.abort();
   }, [idEvento, idSubEvento]);
 
-  const ponentes: TablaPonente[] = (
-    idSubEvento
-      ? subevento
-        ? [subevento]
-        : []
-      : (datosEvento?.subEventos ?? [])
-  ).flatMap((subevento) =>
-    subevento.ponentes.map((ponente) => ({
+  const ponentes: TablaPonente[] = (subevento?.ponentes ?? []).map(
+    (ponente) => ({
       id: ponente.idPonente,
       nombre:
         `${ponente.nombre} ${ponente.apellidoPa} ${ponente.apellidoMa ?? ""}`.trim(),
-    })),
+    }),
   );
+
+  if (datosEvento && !idSubEventoSeleccionado && subeventosActivos.length > 1) {
+    return (
+      <Navigate
+        to={`/organizador/administrar-evento-subeventos/${idEvento}`}
+        replace
+      />
+    );
+  }
 
   return (
     <section className="mx-auto w-full max-w-7xl space-y-8 px-4 sm:px-6 lg:space-y-10 lg:px-8">
@@ -513,23 +517,29 @@ export function AdministracionEvento() {
       {datosEvento && (
         <>
           {datosEvento.idEstadoEvento === EstadoEvento.RECHAZADO && (
-            <div className="flex flex-col space-y-2 border border-red-500 rounded-md bg-red-50 p-5 shadow-md">
-              <div
-                role="alert"
-                className="flex flex-col-reverse sm:flex-row gap-3 justify-between"
-              >
-                <div className="flex items-center gap-2">
-                  <h2 className="font-bold text-gray-900">Motivo de rechazo</h2>
+            <div
+              role="alert"
+              className="space-y-3 rounded-md border border-eventos-error bg-red-50 p-5 shadow-md"
+            >
+              <div className="flex flex-col-reverse gap-5 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h2 className="text-base font-bold sm:text-lg">
+                    Subdirección ha determinado que tu solictud sea rechazada
+                  </h2>
                 </div>
                 <div>
-                  <Badge variant="error">Solicitud rechazada</Badge>
+                  <Badge className="py-1" variant="error">
+                    Solicitud rechazada
+                  </Badge>
                 </div>
               </div>
-              <div>
-                <p className="break-words text-base text-red-900  ">
-                  {datosEvento.motivoRechazo ||
-                    "No se especificó un motivo para el rechazo de la solicitud."}
-                </p>
+              <div className="text-[16px] text-justify break-words">
+                <span className="font-semibold">Motivo de rechazo: </span>
+                {datosEvento.motivoRechazo ||
+                  "No se especificó un motivo para el rechazo de la solicitud."}
+              </div>
+              <div className="space-y-2 text-justify">
+                <p className="text-xs "></p>
               </div>
             </div>
           )}
@@ -537,37 +547,42 @@ export function AdministracionEvento() {
           {datosEvento.solicitudModificacionPendiente && (
             <div
               role="status"
-              className="space-y-2 rounded-lg border border-amber-300 bg-amber-50 p-5 text-amber-950 shadow-md"
+              className="space-y-3 rounded-md border border-amber-300 bg-amber-50 p-5 shadow-md"
             >
-              <div className="flex flex-col-reverse gap-2 md:flex-row md:justify-between">
+              <div className="flex flex-col-reverse gap-5 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <h2 className="text-base font-bold text-amber-950">
+                  <h2 className="text-base font-bold sm:text-lg">
                     Modificación logística pendiente de evaluación por
                     Subdirección
                   </h2>
                 </div>
                 <div>
-                  <Badge variant="warning">Solicitud en revisión</Badge>
+                  <Badge className="py-1" variant="warning">
+                    Solicitud en revisión
+                  </Badge>
                 </div>
               </div>
-              <p className="text-base text-amber-900">
-                <span className="font-semibold">Motivo registrado:</span>{" "}
+              <div className="text-[16px] text-justify break-words">
+                <span className="font-semibold">Motivo registrado: </span>
                 {datosEvento.solicitudModificacionPendiente.motivoModificacion}
-              </p>
-              <p className="text-sm text-amber-800">
-                Mientras Subdirección dictamina esta solicitud, se conservan
-                vigentes las fechas y espacios originales. Cualquier nuevo
-                cambio logístico actualizará esta misma solicitud sin generar
-                duplicados.
-              </p>
+              </div>
+              <div className="space-y-2 text-justify">
+                <hr className="text-gray-400" />
+                <p className="text-xs ">
+                  Mientras Subdirección dictamina esta solicitud, el evento
+                  conserva vigentes sus fechas y espacios originales. Si
+                  realizas otro cambio logístico, se actualizará esta misma
+                  solicitud sin generar duplicados.
+                </p>
+              </div>
             </div>
           )}
 
           <div
             id="contenedorTitulo"
-            className="space-y-2 border border-gray-200 bg-white shadow-md p-5"
+            className="space-y-3 border border-gray-200 bg-white shadow-md p-5"
           >
-            <span className="font-merriweather text-xl font-bold text-secondary sm:text-2xl">
+            <span className="block font-merriweather text-xl font-bold text-secondary sm:text-2xl">
               {datosEvento.nombre}
             </span>
             <p className="break-words">{datosEvento.descripcion}</p>
@@ -592,36 +607,39 @@ export function AdministracionEvento() {
               evento.
             </p>
           )}
-          <div
-            id="contenedorDatos"
-            className="grid min-w-0 grid-cols-1 items-start gap-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,0.9fr)] xl:gap-12"
-          >
-            <div id="contenedorIzquierda" className="w-full min-w-0 space-y-6">
-              <div id="contenedorPonentes">
-                <h2 className="text-xl font-bold sm:text-2xl">Ponentes</h2>
-                {ponentes.length > 0 ? (
-                  <div className="mt-4 w-full min-w-0 overflow-x-auto rounded-md border border-gray-200 shadow-md">
-                    <Table
-                      columnas={columnasPonente}
-                      filas={ponentes}
-                      obtenerClave={(ponente) => ponente.id}
-                      className="table-auto min-w-full bg-white text-left text-sm [&_tbody_tr]:h-12 [&_thead_tr]:h-10 [&_th]:py-2 [&_td]:py-2"
-                    />
-                  </div>
-                ) : (
-                  <p className="mt-3 text-gray-600">
-                    No hay ponentes registrados para esta actividad.
-                  </p>
-                )}
-              </div>
+          {subevento && (
+            <div
+              id="contenedorDatos"
+              className="grid min-w-0 grid-cols-1 gap-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,0.9fr)] xl:gap-12"
+            >
+              <div
+                id="contenedorIzquierda"
+                className="w-full min-w-0 space-y-6"
+              >
+                <div id="contenedorPonentes">
+                  <h2 className="text-xl font-bold sm:text-2xl">Ponentes</h2>
+                  {ponentes.length > 0 ? (
+                    <div className="mt-4 w-full overflow-x-auto overflow-y-auto max-h-[200px] rounded-md border border-gray-200 shadow-md">
+                      <Table
+                        columnas={columnasPonente}
+                        filas={ponentes}
+                        obtenerClave={(ponente) => ponente.id}
+                        className="table-auto min-w-full bg-white text-left text-sm [&_tbody_tr]:h-12 [&_thead_tr]:h-10 [&_th]:py-2 [&_td]:py-2"
+                      />
+                    </div>
+                  ) : (
+                    <p className="mt-3 text-gray-600">
+                      No hay ponentes registrados para esta actividad.
+                    </p>
+                  )}
+                </div>
 
-              {!idSubEvento && subevento && (
                 <div id="contenedorLogistica">
                   <h2 className="text-xl font-bold sm:text-2xl">
                     Personal de logística
                   </h2>
                   {personalLogistica.length > 0 ? (
-                    <div className="mt-4 w-full min-w-0 overflow-x-auto rounded-md border border-gray-200 shadow-md">
+                    <div className="mt-4 w-full overflow-x-auto overflow-y-auto max-h-[200px] rounded-md border border-gray-200 shadow-md">
                       <Table
                         columnas={columnasLogistica}
                         filas={personalLogistica}
@@ -635,148 +653,160 @@ export function AdministracionEvento() {
                     </p>
                   )}
                 </div>
-              )}
-              {datosEvento.idAlcance === AlcanceEvento.PRIVADO && subevento && (
-                <div id="contenedorInvitados" className="space-y-4">
-                  <h2 className="text-xl font-bold sm:text-2xl">
-                    Tus invitados
-                  </h2>
-                  {invitados.length > 0 ? (
-                    <div className="w-full overflow-x-auto overflow-y-auto max-h-[200px] rounded-md border border-gray-200 shadow-md">
-                      <Table
-                        columnas={columnasInvitados}
-                        filas={invitados}
-                        obtenerClave={(invitado) =>
-                          invitado.correo ||
-                          (invitado.idInvitacionEvento
-                            ? String(invitado.idInvitacionEvento)
-                            : "") ||
-                          String(invitado.idUsuario)
-                        }
-                        encabezadoClassName="h-10 border-b border-gray-300"
-                        filaClassName="h-12"
-                        className="table-auto min-w-full bg-white text-left text-sm [&_th]:py-2 [&_td]:py-2"
-                      />
-                    </div>
-                  ) : (
-                    <p className="mt-3 text-gray-600">
-                      No hay invitados registrados para este evento.
-                    </p>
-                  )}
-                  <EnlaceInvitacionSubevento
-                    idEvento={datosEvento.idEvento}
-                    idSubEvento={subevento.idSubEvento}
-                    tokenInvitacion={subevento.tokenInvitacion}
-                    enlaceInvitacionActivo={subevento.enlaceInvitacionActivo}
-                    onActualizado={(datos) => {
-                      setDatosEvento((prev) =>
-                        prev
-                          ? {
-                              ...prev,
-                              subEventos: prev.subEventos.map((s) =>
-                                s.idSubEvento === datos.idSubEvento
-                                  ? {
-                                      ...s,
-                                      tokenInvitacion: datos.tokenInvitacion,
-                                      enlaceInvitacionActivo:
-                                        datos.enlaceInvitacionActivo,
-                                    }
-                                  : s,
-                              ),
+
+                {datosEvento.idAlcance === AlcanceEvento.PRIVADO &&
+                  subevento && (
+                    <div id="contenedorInvitados" className="space-y-4">
+                      <h2 className="text-xl font-bold sm:text-2xl">
+                        Tus invitados
+                      </h2>
+                      {invitados.length > 0 ? (
+                        <div className="w-full overflow-x-auto overflow-y-auto max-h-[200px] rounded-md border border-gray-200 shadow-md">
+                          <Table
+                            columnas={columnasInvitados}
+                            filas={invitados}
+                            obtenerClave={(invitado) =>
+                              invitado.correo ||
+                              (invitado.idInvitacionEvento
+                                ? String(invitado.idInvitacionEvento)
+                                : "") ||
+                              String(invitado.idUsuario)
                             }
-                          : prev,
-                      );
-                    }}
-                  />
-                </div>
-              )}
-            </div>
-
-            <div id="contenedorDerecha" className="w-full min-w-0 space-y-4">
-              {subeventosVisibles.map((subevento) => (
-                <article
-                  key={subevento.idSubEvento}
-                  className="grid min-w-0 grid-cols-1 gap-x-6 gap-y-5 rounded-lg border border-gray-200 bg-white p-4 shadow-sm sm:grid-cols-2 sm:p-6 text-gray-900"
-                >
-                  <div className="flex min-w-0 flex-col gap-2">
-                    <span className="font-bold">Espacio</span>
-                    <span>{subevento.recinto?.nombre}</span>
-                  </div>
-                  <div className="flex min-w-0 flex-col gap-2">
-                    <span className="font-bold">Fecha</span>
-                    <span>{formatearFecha(subevento.fecha?.fecha)}</span>
-                  </div>
-                  <div className="flex min-w-0 flex-col gap-2">
-                    <span className="font-bold">Hora de inicio</span>
-                    <span>{formatearHora(subevento.fecha?.horaInicio)}</span>
-                  </div>
-                  <div className="flex min-w-0 flex-col gap-2">
-                    <span className="font-bold">Hora de finalización</span>
-                    <span>{formatearHora(subevento.fecha?.horaFin)}</span>
-                  </div>
-
-                  <div className="flex min-w-0 flex-col gap-2 sm:col-span-2">
-                    <span className="font-bold">Modalidad de acceso</span>
-                    <div className="flex items-center gap-1.5">
-                      <span>
-                        {obtenerEtiquetaModalidad(subevento.idModalidadAcceso)}
-                      </span>
-                      <InfoTooltip
-                        ariaLabel="Información de modalidad de acceso"
-                        content={
-                          <ModalidadAccesoHelp
-                            idModalidadAcceso={subevento.idModalidadAcceso}
-                            embedded
+                            encabezadoClassName="h-10 border-b border-gray-300"
+                            filaClassName="h-12"
+                            className="table-auto min-w-full bg-white text-left text-sm [&_th]:py-2 [&_td]:py-2"
                           />
+                        </div>
+                      ) : (
+                        <p className="mt-3 text-gray-600">
+                          No hay invitados registrados para este evento.
+                        </p>
+                      )}
+                      <EnlaceInvitacionSubevento
+                        idEvento={datosEvento.idEvento}
+                        idSubEvento={subevento.idSubEvento}
+                        tokenInvitacion={subevento.tokenInvitacion}
+                        enlaceInvitacionActivo={
+                          subevento.enlaceInvitacionActivo
                         }
+                        onActualizado={(datos) => {
+                          setDatosEvento((prev) =>
+                            prev
+                              ? {
+                                  ...prev,
+                                  subEventos: prev.subEventos.map((s) =>
+                                    s.idSubEvento === datos.idSubEvento
+                                      ? {
+                                          ...s,
+                                          tokenInvitacion:
+                                            datos.tokenInvitacion,
+                                          enlaceInvitacionActivo:
+                                            datos.enlaceInvitacionActivo,
+                                        }
+                                      : s,
+                                  ),
+                                }
+                              : prev,
+                          );
+                        }}
                       />
                     </div>
-                  </div>
+                  )}
+              </div>
 
-                  {!idSubEvento && (
+              <div
+                id="contenedorDerecha"
+                className="w-full h-full min-w-0 space-y-4"
+              >
+                {subevento && (
+                  <article
+                    key={subevento.idSubEvento}
+                    className="grid min-w-0 h-full content-start grid-cols-1 gap-x-6 gap-y-5 rounded-lg border border-gray-200 bg-white p-4 shadow-sm sm:grid-cols-2 sm:p-6 text-gray-900"
+                  >
                     <div className="flex min-w-0 flex-col gap-2">
-                      <span className="font-bold">Alcance</span>
-                      <span>{obtenerTextoAlcance(datosEvento.idAlcance)}</span>
+                      <span className="font-bold">Espacio</span>
+                      <span>{subevento.recinto?.nombre}</span>
                     </div>
-                  )}
-                  <div className="flex min-w-0 flex-col gap-2">
-                    <span className="font-bold">Aforo del espacio</span>
-                    <span>
-                      {subevento.recinto?.aforo ?? datosEvento.cupoMaximo}
-                    </span>
-                  </div>
-                  <div className="flex min-w-0 flex-col gap-2">
-                    <span className="font-bold">Inscritos</span>
-                    <span>
-                      {subevento.inscritosCount ?? subevento.boletosEmitidos}
-                    </span>
-                  </div>
-                  <div className="flex min-w-0 flex-col gap-2">
-                    <span className="font-bold">Ingresados</span>
-                    <span>
-                      {subevento.ingresadosCount !== null &&
-                      subevento.ingresadosCount !== undefined
-                        ? subevento.ingresadosCount
-                        : esModalidadConQr(subevento.idModalidadAcceso)
-                          ? 0
-                          : "No aplica (sin QR)"}
-                    </span>
-                  </div>
+                    <div className="flex min-w-0 flex-col gap-2">
+                      <span className="font-bold">Fecha</span>
+                      <span>{formatearFecha(subevento.fecha?.fecha)}</span>
+                    </div>
+                    <div className="flex min-w-0 flex-col gap-2">
+                      <span className="font-bold">Hora de inicio</span>
+                      <span>{formatearHora(subevento.fecha?.horaInicio)}</span>
+                    </div>
+                    <div className="flex min-w-0 flex-col gap-2">
+                      <span className="font-bold">Hora de finalización</span>
+                      <span>{formatearHora(subevento.fecha?.horaFin)}</span>
+                    </div>
 
-                  {!idSubEvento && (
                     <div className="flex min-w-0 flex-col gap-2 sm:col-span-2">
-                      <span className="font-bold">Beneficio politécnico</span>
-                      <p className="mt-2 break-words">
-                        {datosEvento.justificacion || "No especificado"}
-                      </p>
+                      <span className="font-bold">Modalidad de acceso</span>
+                      <div className="flex items-center gap-1.5">
+                        <span>
+                          {obtenerEtiquetaModalidad(
+                            subevento.idModalidadAcceso,
+                          )}
+                        </span>
+                        <InfoTooltip
+                          ariaLabel="Información de modalidad de acceso"
+                          content={
+                            <ModalidadAccesoHelp
+                              idModalidadAcceso={subevento.idModalidadAcceso}
+                              embedded
+                            />
+                          }
+                        />
+                      </div>
                     </div>
-                  )}
-                </article>
-              ))}
-            </div>
-          </div>
 
-          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:justify-end">
+                    {!idSubEvento && (
+                      <div className="flex min-w-0 flex-col gap-2">
+                        <span className="font-bold">Alcance</span>
+                        <span>
+                          {obtenerTextoAlcance(datosEvento.idAlcance)}
+                        </span>
+                      </div>
+                    )}
+                    <div className="flex min-w-0 flex-col gap-2">
+                      <span className="font-bold">Aforo del espacio</span>
+                      <span>
+                        {subevento.recinto?.aforo ?? datosEvento.cupoMaximo}
+                      </span>
+                    </div>
+                    <div className="flex min-w-0 flex-col gap-2">
+                      <span className="font-bold">Inscritos</span>
+                      <span>
+                        {subevento.inscritosCount ?? subevento.boletosEmitidos}
+                      </span>
+                    </div>
+                    <div className="flex min-w-0 flex-col gap-2">
+                      <span className="font-bold">Ingresados</span>
+                      <span>
+                        {subevento.ingresadosCount !== null &&
+                        subevento.ingresadosCount !== undefined
+                          ? subevento.ingresadosCount
+                          : esModalidadConQr(subevento.idModalidadAcceso)
+                            ? 0
+                            : "No aplica (sin QR)"}
+                      </span>
+                    </div>
+
+                    {!idSubEvento && (
+                      <div className="flex min-w-0 flex-col gap-2 sm:col-span-2">
+                        <span className="font-bold">Beneficio politécnico</span>
+                        <p className="mt-2 break-words">
+                          {datosEvento.justificacion || "No especificado"}
+                        </p>
+                      </div>
+                    )}
+                  </article>
+                )}
+              </div>
+            </div>
+          )}
+
+          <div className="flex flex-col gap-3 sm:justify-end sm:flex-row sm:flex-wrap sm:justify-end">
             {datosEvento.idEstadoEvento !== EstadoEvento.RECHAZADO &&
               datosEvento.idEstadoEvento !== EstadoEvento.CANCELADO &&
               subevento?.estado !== "Finalizado" &&
@@ -803,8 +833,10 @@ export function AdministracionEvento() {
                 />
               )}
 
-            {datosEvento.idEstadoEvento !== EstadoEvento.RECHAZADO &&
-              subevento?.estado !== "Finalizado" && (
+            {subevento &&
+              datosEvento.idEstadoEvento !== EstadoEvento.RECHAZADO &&
+              datosEvento.idEstadoEvento !== EstadoEvento.CANCELADO &&
+              subevento.estado !== "Finalizado" && (
                 <Button
                   text={
                     idSubEvento ? "Modificar actividad" : "Modificar Evento"

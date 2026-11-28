@@ -9,7 +9,12 @@ import { formatEventDate } from "../../utils/formatEventDate";
 interface EventSessionCardProps {
   activity: Pick<
     EventActivityViewModel,
-    "idSubEvento" | "idEvento" | "nombre" | "idModalidadAcceso" | "fecha" | "recinto"
+    | "idSubEvento"
+    | "idEvento"
+    | "nombre"
+    | "idModalidadAcceso"
+    | "fecha"
+    | "recinto"
   >;
   detailsPath?: string;
   detailsLabel?: string;
@@ -21,15 +26,15 @@ interface EventSessionCardProps {
 }
 
 export function EventSessionCard({
-                                   activity,
-                                   detailsPath,
-                                   detailsLabel = "Ver detalles",
-                                   actionLabel,
-                                   actionVariant = "danger",
-                                   onAction,
-                                   catalogReturnTo,
-                                   onOpenDetails,
-                                 }: EventSessionCardProps) {
+  activity,
+  detailsPath,
+  detailsLabel = "Ver detalles",
+  actionLabel,
+  actionVariant = "danger",
+  onAction,
+  catalogReturnTo,
+  onOpenDetails,
+}: EventSessionCardProps) {
   const { availability, isLoading, error } = useReservationAvailability(
     activity.idSubEvento,
   );
@@ -38,9 +43,10 @@ export function EventSessionCard({
       ? availability.lugaresDisponibles
       : null;
   return (
-    <article className="grid w-full grid-cols-1 items-center gap-6 rounded-md bg-eventos-primary-light px-5 py-6 md:grid-cols-[minmax(0,1fr)_minmax(0,1.25fr)_auto]">
+    /* rounded-md bg-white shadow-sm border border-gray-200 */
+    <article className="grid w-full grid-cols-1 items-center gap-6 rounded-md bg-eventos-primary-light px-5 py-6 md:grid-cols-[minmax(0,1.5fr)_minmax(0,1.25fr)_auto]">
       <div className="min-w-0 text-center">
-        <h3 className="font-merriweather text-lg font-semibold text-eventos-ink">
+        <h3 className="mx-auto max-w-sm font-merriweather text-md font-semibold text-eventos-ink">
           {activity.nombre}
         </h3>
         <p className="mt-2 text-sm font-medium text-eventos-secondary">
@@ -48,10 +54,36 @@ export function EventSessionCard({
         </p>
       </div>
       <dl className="min-w-0 space-y-3 text-sm text-eventos-body-text">
-        <div className="flex items-start gap-2"><CalendarDays size={19} aria-hidden="true"/><dt className="font-semibold">Fecha:</dt><dd>{formatEventDate(activity.fecha?.fecha)}</dd></div>
-        <div className="flex items-start gap-2"><MapPin size={19} aria-hidden="true"/><dt className="font-semibold">Espacio:</dt><dd>{activity.recinto?.nombre ?? "Por confirmar"}</dd></div>
-        <div className="flex items-start gap-2"><Clock3 size={19} aria-hidden="true"/><dt className="font-semibold">Horario:</dt><dd>{activity.fecha ? `${activity.fecha.horaInicio.slice(0,5)}–${activity.fecha.horaFin.slice(0,5)} hrs` : "Por confirmar"}</dd></div>
-        <div className="flex items-start gap-2"><UsersRound size={19} aria-hidden="true"/><dt className="font-semibold">Cupos restantes:</dt><dd aria-live="polite">{isLoading ? "Consultando..." : error || cupos === null ? "Por confirmar" : `${cupos}/${activity.recinto?.aforo ?? "?"}`}</dd></div>
+        <div className="flex items-start gap-2">
+          <CalendarDays size={19} aria-hidden="true" />
+          <dt className="font-semibold">Fecha:</dt>
+          <dd>{formatEventDate(activity.fecha?.fecha)}</dd>
+        </div>
+        <div className="flex items-start gap-2">
+          <MapPin size={19} aria-hidden="true" />
+          <dt className="font-semibold">Espacio:</dt>
+          <dd>{activity.recinto?.nombre ?? "Por confirmar"}</dd>
+        </div>
+        <div className="flex items-start gap-2">
+          <Clock3 size={19} aria-hidden="true" />
+          <dt className="font-semibold">Horario:</dt>
+          <dd>
+            {activity.fecha
+              ? `${activity.fecha.horaInicio.slice(0, 5)}–${activity.fecha.horaFin.slice(0, 5)} hrs`
+              : "Por confirmar"}
+          </dd>
+        </div>
+        <div className="flex items-start gap-2">
+          <UsersRound size={19} aria-hidden="true" />
+          <dt className="font-semibold">Cupos restantes:</dt>
+          <dd aria-live="polite">
+            {isLoading
+              ? "Consultando..."
+              : error || cupos === null
+                ? "Por confirmar"
+                : `${cupos}/${activity.recinto?.aforo ?? "?"}`}
+          </dd>
+        </div>
       </dl>
       <div className="flex flex-wrap items-center justify-center gap-2 justify-self-center md:-translate-x-6">
         {(detailsPath || !onAction) && (
@@ -63,9 +95,9 @@ export function EventSessionCard({
             state={
               catalogReturnTo || onOpenDetails
                 ? {
-                  ...(catalogReturnTo ? { catalogReturnTo } : {}),
-                  ...(onOpenDetails ? { restoreEventScroll: true } : {}),
-                }
+                    ...(catalogReturnTo ? { catalogReturnTo } : {}),
+                    ...(onOpenDetails ? { restoreEventScroll: true } : {}),
+                  }
                 : undefined
             }
             className="whitespace-nowrap rounded-md bg-eventos-primary px-5 py-3 text-sm font-semibold text-eventos-on-primary hover:bg-eventos-action-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-eventos-primary"

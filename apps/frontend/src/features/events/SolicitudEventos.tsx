@@ -310,6 +310,7 @@ export function SolicitudEvento() {
 
   const [mensajeError, setMensajeError] = useState("");
   const [posterValidationError, setPosterValidationError] = useState("");
+  const [posterResetKey, setPosterResetKey] = useState(0);
   const posterValidationRequest = useRef(0);
   const [modalUrgente, setModalUrgente] = useState(false);
   const [motivoUrgente, setMotivoUrgente] = useState("");
@@ -608,6 +609,7 @@ export function SolicitudEvento() {
     setSubeventTouched([{}]);
     posterValidationRequest.current += 1;
     setPosterValidationError("");
+    setPosterResetKey((prev) => prev + 1);
     setMotivoUrgente("");
     setMensajeError("");
     setModal("exito");
@@ -651,6 +653,7 @@ export function SolicitudEvento() {
         <form onSubmit={handleSubmit} className="space-y-7">
           <SeccionDatosEvento
             form={form}
+            posterResetKey={posterResetKey}
             actualizarCampo={updateField}
             actualizarPoster={updatePoster}
             errores={errors}
